@@ -1,0 +1,98 @@
+{
+    "Clientes": [
+      {
+        "_id": "cliente123",
+        "razonSocial": "TAS Cargo Ltda.",
+        "nombre": "TAS CARGO",
+        "RUT": "76.123.456-7",
+        "domicilio": "Av. Siempre Viva 123, Santiago",
+        "emails": ["ventas@tascargo.cl", "admin@tascargo.cl"],
+        "contactos": [
+          {
+            "nombre": "Juan Pérez",
+            "telefono": "+56987654321",
+            "email": "jperez@tascargo.cl"
+          },
+          {
+            "nombre": "Ana López",
+            "telefono": "+56912345678",
+            "email": "alopez@tascargo.cl"
+          }
+        ],
+        "moviles_ids": ["movil001", "movil002"]
+      }
+    ],
+    "Moviles": [
+      {
+        "_id": "movil001",
+        "condicion": "Activo",
+        "tipo": "Camión",
+        "marca": "Mercedes Benz",
+        "patente": "AA-BB-12",
+        "cliente_id": "cliente123",
+        "velocidadMaxima": 90,
+        "mandante": "RESTS",
+        "webservice": "http://api.movil.rests.cl",
+        "descripcionInterna": "Movil asignado a carga pesada",
+        "alimentacionPrincipal": "24V",
+        "equipoPrimario": "equipo001",
+        "equipoSecundario": "equipo002",
+        "accesorios": [
+          {
+            "tipo": "Corte de Motor (Módulo)",
+            "id": "12345",
+            "observaciones": "En buen estado"
+          },
+          {
+            "tipo": "Botón de Pánico",
+            "id": "67890",
+            "observaciones": "Revisar conexión"
+          }
+        ]
+      }
+    ],
+    "EquiposAVL": [
+      {
+        "_id": "equipo001",
+        "IMEI": "350317170937464",
+        "numeroSerie": "1127641342",
+        "firmware": "03.27.13.Rev.03",
+        "fabricante": "Teltonika",
+        "modelo": "FMC920",
+        "estado": "Activo",
+        "movil_id": "movil001",
+        "simcard_id": "simcard001"
+      }
+    ],
+    "Simcards": [
+      {
+        "_id": "simcard001",
+        "ICCID": "89560100001241024797",
+        "numeroTelefonico": "+56940279664",
+        "operador": "Mint",
+        "portador": "Entel",
+        "estado": "Activa",
+        "cuotaDatos": "7MB",
+        "equipoAVL_id": "equipo001"
+      }
+    ],
+    "Usuarios": [
+      {
+        "_id": "usuarioMaster",
+        "nombre": "Admin",
+        "rol": "master",
+        "email": "admin@empresa.cl",
+        "password": "hash_de_contraseña", 
+        "ultimoAcceso": "2024-11-21T10:30:00Z"
+      },
+      {
+        "_id": "usuarioBasico",
+        "nombre": "Usuario Básico",
+        "rol": "basico",
+        "email": "usuario@empresa.cl",
+        "password": "hash_de_contraseña",
+        "ultimoAcceso": "2024-11-20T14:45:00Z"
+      }
+    ]
+  }
+  
