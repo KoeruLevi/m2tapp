@@ -1,6 +1,6 @@
 const Cliente = require('../models/Cliente');
 const Movil = require('../models/Movil');
-const EquipoAVL = require('../models/EquipoAVL');
+const EquipoAVL = require('../models/EquipoAVL.js');
 const Simcard = require('../models/Simcard');
 const Usuario = require('../models/Usuario');
 
@@ -18,8 +18,6 @@ exports.searchData = async (req, res) => {
         const clientes = await Cliente.find({ nombre: { $regex: query, $options: 'i' } });
         console.log('Resultados en Cliente:', clientes);
 
-        /* const clientes = await Cliente.find({}); 
-        console.log('Todos los Clientes:', clientes); */
 
         const moviles = await Movil.find({ patente: { $regex: query, $options: 'i' } });
         console.log('Resultados en Movil:', moviles);
@@ -30,8 +28,6 @@ exports.searchData = async (req, res) => {
         const simcards = await Simcard.find({ numeroTelefonico: { $regex: query, $options: 'i' } });
         console.log('Resultados en Simcard:', simcards);
 
-        /* const usuarios = await Usuario.find();
-        console.log('Todos los Usuarios:', usuarios); */
 
         const results = [
             ...clientes.map((item) => ({ ...item.toObject(), tipo: 'Cliente' })),
