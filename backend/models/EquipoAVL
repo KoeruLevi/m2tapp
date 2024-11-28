@@ -1,0 +1,14 @@
+const mongoose = require('mongoose');
+
+const EquipoAVLSchema = new mongoose.Schema({
+    IMEI: String,
+    numeroSerie: String,
+    firmware: String,
+    fabricante: String,
+    modelo: String,
+    estado: String,
+    movil_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Movil' },
+    simcard_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Simcard' },
+});
+
+module.exports = mongoose.model('EquipoAVL', EquipoAVLSchema);

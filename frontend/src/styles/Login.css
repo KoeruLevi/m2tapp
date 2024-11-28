@@ -1,0 +1,56 @@
+.login-container {
+    display: flex;
+    justify-content: center; /* Centrar horizontalmente */
+    align-items: center; /* Centrar verticalmente */
+    height: 100vh; /* Ocupa toda la altura de la ventana */
+    background-color: #f0f2f5; /* Fondo suave */
+}
+
+/* Formulario */
+.login-form {
+    background-color: white;
+    padding: 30px 40px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    width: 300px;
+}
+
+/* Título */
+.login-form h2 {
+    margin-bottom: 20px;
+    color: #333;
+}
+
+/* Inputs */
+.login-form input {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+/* Botón */
+.login-form button {
+    width: 100%;
+    padding: 10px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.login-form button:hover {
+    background-color: #0056b3;
+}
+
+/* Mensaje de error */
+.error-message {
+    color: red;
+    font-size: 14px;
+    margin-bottom: 10px;
+}

@@ -1,0 +1,27 @@
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const connectDB = require('./config/database');
+const dataRoutes = require('./routes/dataRoutes');
+const app = express();
+
+// Middlewares
+app.use(cors());
+app.use(express.json());
+
+// Conectar base de datos
+connectDB().then(() => console.log('Base de datos conectada')).catch(console.error);
+
+
+app.use('/api/data', dataRoutes);
+
+// Rutas
+app.use('/api/auth', require('./routes/logRoutes'));
+app.use('/api/data', require('./routes/dataRoutes.js'));
+
+app.get('/', (req, res) => {
+    res.send('El backend está funcionando correctamente');
+});
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Servidor corriendo en el puerto ${PORT}`));
