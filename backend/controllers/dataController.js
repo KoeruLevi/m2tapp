@@ -14,6 +14,7 @@ exports.searchData = async (req, res) => {
 
     console.log('Término de búsqueda recibido:', query);
 
+
     try { HEAD
         const results = [];
 
@@ -30,6 +31,10 @@ exports.searchData = async (req, res) => {
         const clientes = await Cliente.find({ nombre: { $regex: query, $options: 'i' } });
         console.log('Resultados en Cliente:', clientes);
 
+    try {
+        const clientes = await Cliente.find({ nombre: { $regex: query, $options: 'i' } });
+        console.log('Resultados en Cliente:', clientes);
+
 
         const moviles = await Movil.find({ patente: { $regex: query, $options: 'i' } });
         console.log('Resultados en Movil:', moviles);
@@ -39,7 +44,18 @@ exports.searchData = async (req, res) => {
 
         const simcards = await Simcard.find({ numeroTelefonico: { $regex: query, $options: 'i' } });
         console.log('Resultados en Simcard:', simcards);
->>>>>>> parent of 034737d (Cambio de interfaz)
+
+
+
+        const moviles = await Movil.find({ patente: { $regex: query, $options: 'i' } });
+        console.log('Resultados en Movil:', moviles);
+
+        const equipos = await EquipoAVL.find({ numeroSerie: { $regex: query, $options: 'i' } });
+        console.log('Resultados en EquipoAVL:', equipos);
+
+        const simcards = await Simcard.find({ numeroTelefonico: { $regex: query, $options: 'i' } });
+        console.log('Resultados en Simcard:', simcards);
+        
 
         for (const simcard of simcards) {
             const equipo = await EquipoAVL.findById(simcard.equipoAVL_id).lean();

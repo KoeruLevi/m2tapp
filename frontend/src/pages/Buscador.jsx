@@ -56,36 +56,32 @@ const Buscador = () => {
     };
 
     return (
-        <div className="buscador-wrapper">
-            <div className="buscador-container">
-                <h1>Buscador</h1>
-                <form onSubmit={handleSearch}>
-                    <input
-                        type="text"
-                        placeholder="Ingresa un término de búsqueda"
-                        value={query}
-                        onChange={(e) => setQuery(e.target.value)}
-                    />
-                    <button type="submit">Buscar</button>
-                </form>
-                {error && <p className="error-message">{error}</p>}
-                <div className="results-grid">
-                    {results.length > 0 ? (
-                        results.map((item, index) => (
-                            <div key={index} className="result-card">
-                                <h3>{item.tipo}: {item.nombre || item.numeroSerie || 'Sin Nombre'}</h3>
-                                <p><strong>ID:</strong> {item._id}</p>
-                                {Object.keys(item).map((key) => (
-                                    <p key={key}>
-                                        <strong>{key}:</strong> {JSON.stringify(item[key])}
-                                    </p>
-                                ))}
-                            </div>
-                        ))
-                    ) : (
-                        <p className="no-results">No se encontraron resultados.</p>
-                    )}
-                </div>
+        <div className="buscador-container">
+            <h1>Buscador</h1>
+            <form onSubmit={handleSearch}>
+                <input
+                    type="text"
+                    placeholder="Ingresa un término de búsqueda"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                />
+                <button type="submit">Buscar</button>
+            </form>
+
+            {error && <p className="error-message">{error}</p>}
+
+            <div className="results-container">
+                {results.length > 0 ? (
+                    results.map((item, index) => (
+                        <div key={index} className="result-item">
+                            <h3>{item.nombre || 'Sin Nombre'}</h3>
+                            <p>ID: {item._id}</p>
+                            {/* Agrega aquí los campos que deseas mostrar */}
+                        </div>
+                    ))
+                ) : (
+                    <p>No se encontraron resultados</p>
+                )}
             </div>
         </div>
     );

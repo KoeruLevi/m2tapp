@@ -35,27 +35,23 @@ h1 {
     border: none;
     border-radius: 5px;
     cursor: pointer;
-    font-size: 16px;
+    font-size: 1rem;
+    transition: background-color 0.3s ease;
 }
 
-.search-form button:hover {
-    background-color: #0056b3;
+button:hover {
+    background-color: #084298; /* Azul más oscuro */
 }
 
-/* Resultados */
-.results-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 20px;
-    width: 100%;
+/* Mensaje de Error */
+.error-message {
+    color: red;
+    font-weight: bold;
 }
 
-.result-card {
-    background-color: #f8f9fa; /* Fondo gris claro */
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    padding: 15px 20px;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+.results-container {
+    margin-top: 20px;
+    text-align: left;
 }
 
 .result-item {
@@ -71,7 +67,7 @@ h1 {
     color: #333;
 }
 
-/* Mensaje de "Sin Resultados" */
-.no-results {
+.result-item p {
+    margin: 5px 0;
     color: #666;
 }
