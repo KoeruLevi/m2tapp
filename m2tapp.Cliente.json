@@ -1,0 +1,52 @@
+[
+  {
+      "_id": "64f720c91c88b514e945f309",
+      "razonSocial": "TAS Cargo Ltda.",
+      "nombre": "TAS CARGO",
+      "RUT": "76.123.456-7",
+      "domicilio": "Av. Siempre Viva 123, Santiago",
+      "emails": ["ventas@tascargo.cl", "admin@tascargo.cl"],
+      "contactos": [
+          {
+              "nombre": "Juan Pérez",
+              "telefono": "+56987654321",
+              "email": "jperez@tascargo.cl"
+          },
+          {
+              "nombre": "Ana López",
+              "telefono": "+56912345678",
+              "email": "alopez@tascargo.cl"
+          }
+      ],
+      "moviles_ids": ["64f720c91c88b514e945f308"]
+  },
+
+{
+  "_id": "cliente002",
+  "razonSocial": "Logística Integral S.A.",
+  "nombre": "LOGISTSA",
+  "RUT": "76.123.456-7",
+  "domicilio": "Av. Las Industrias 1234, Santiago, Chile",
+  "emails": {
+    "ventas": "ventas@logistsa.cl",
+    "comercial": "comercial@logistsa.cl",
+    "admin": "admin@logistsa.cl"
+  },
+  "contactos": [
+    {
+      "nombre": "Carlos Pérez",
+      "fono": "+56987654321",
+      "email": "cperez@logistsa.cl"
+    },
+    {
+      "nombre": "Ana López",
+      "fono": "+56912345678",
+      "email": "alopez@logistsa.cl"
+    }
+  ],
+  "movilesAsignados": [
+    "movil001",
+    "movil003",
+    "movil004"
+  ]
+}]

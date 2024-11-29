@@ -1,0 +1,16 @@
+[{
+  "_id": "64f720c91c88b514e945f305",
+  "nombre": "Admin",
+  "rol": "master",
+  "email": "admin@empresa.cl",
+  "password": "123456",
+  "ultimoAcceso": "2024-11-21T10:30:00Z"
+},
+{
+  "_id": "usuarioBasico",
+  "nombre": "Usuario Básico",
+  "rol": "basico",
+  "email": "usuario@empresa.cl",
+  "password": "hash_de_contraseña",
+  "ultimoAcceso": "2024-11-20T14:45:00Z"
+}]

@@ -1,0 +1,146 @@
+[{
+  "_id": "64f720c91c88b514e945f308",
+  "condicion": "Activo",
+  "tipo": "Camión",
+  "marca": "Mercedes Benz",
+  "patente": "AA-BB-12",
+  "cliente_id": "64f720c91c88b514e945f309",
+  "velocidadMaxima": 90,
+  "mandante": "RESTS",
+  "webservice": "http://api.movil.rests.cl",
+  "descripcionInterna": "Movil asignado a carga pesada",
+  "alimentacionPrincipal": "24V",
+  "equipoPrimario": "64f720c91c88b514e945f307",
+  "equipoSecundario": "64f720c91c88b514e945f30a",
+  "accesorios": [
+      {
+          "tipo": "Corte de Motor (Módulo)",
+          "id": "12345",
+          "observaciones": "En buen estado"
+      },
+      {
+          "tipo": "Botón de Pánico",
+          "id": "67890",
+          "observaciones": "Revisar conexión"
+      }
+  ]
+},
+{
+  "_id": "movil002",
+  "condicion": "Activo",
+  "tipo": "Camioneta",
+  "marca": "Toyota",
+  "patente": "ABC1234",
+  "cliente": "cliente123",
+  "velocidadMaxConfigurada": 120,
+  "mandante": "AGUNSA",
+  "webservice": true,
+  "descripcionInterna": "Móvil asignado para transporte pesado",
+  "alimentacionPpal": "12V",
+  "equipos": {
+    "primario": "equipo002",
+    "secundario": "equipo003"
+  },
+  "accesorios": [
+    {
+      "nombre": "Corte de Motor (Relay)",
+      "id": "acc001",
+      "serie": "RL-2023-1001",
+      "observaciones": "Instalado en noviembre 2023"
+    },
+    {
+      "nombre": "EYE BEACON",
+      "id": "acc002",
+      "serie": "EB-2023-2001",
+      "observaciones": "Instalado con sensor extra"
+    }
+  ]
+},
+{
+  "_id": "movil003",
+  "condicion": "Suspendido",
+  "tipo": "SUV",
+  "marca": "Hyundai",
+  "patente": "XYZ9876",
+  "cliente": "cliente002",
+  "velocidadMaxConfigurada": 110,
+  "mandante": "SODIMAC",
+  "webservice": false,
+  "descripcionInterna": "Móvil de reemplazo temporal",
+  "alimentacionPpal": "24V",
+  "equipos": {
+    "primario": "equipo005",
+    "secundario": null
+  },
+  "accesorios": [
+    {
+      "nombre": "Buzzer",
+      "id": "acc003",
+      "serie": "BZ-2023-3001",
+      "observaciones": "Instalado en enero 2024"
+    },
+    {
+      "nombre": "Sensor Combustible (Flotador)",
+      "id": "acc004",
+      "serie": "SC-2023-4002",
+      "observaciones": "Configurado para tanque de 80L"
+    },
+    {
+      "nombre": "iButton",
+      "id": "acc005",
+      "serie": "IB-2023-5003",
+      "observaciones": "Llave electrónica activa"
+    }
+  ]
+},
+{
+  "_id": "movil006",
+  "condicion": "Activo",
+  "tipo": "Camión",
+  "marca": "Mercedes Benz",
+  "patente": "AA-BB-12",
+  "cliente_id": "cliente123",
+  "velocidadMaxima": 90,
+  "mandante": "RESTS",
+  "webservice": "http://api.movil.rests.cl",
+  "descripcionInterna": "Movil asignado a carga pesada",
+  "alimentacionPrincipal": "24V",
+  "equipoPrimario": "equipo008",
+  "accesorios": [
+    {
+      "tipo": "Corte de Motor (Módulo)",
+      "id": "12345",
+      "observaciones": "En buen estado"
+    },
+    {
+      "tipo": "Botón de Pánico",
+      "id": "67890"
+    }
+  ]
+},
+{
+  "_id": "movil009",
+  "condicion": "Activo",
+  "tipo": "Camión",
+  "marca": "Mercedes Benz",
+  "patente": "AA-BB-12",
+  "cliente_id": "cliente123",
+  "velocidadMaxima": 90,
+  "mandante": "RESTS",
+  "webservice": "http://api.movil.rests.cl",
+  "descripcionInterna": "Movil asignado a carga pesada",
+  "alimentacionPrincipal": "24V",
+  "color": "azul",
+  "accesorios": [
+    {
+      "tipo": "Corte de Motor (Módulo)",
+      "id": "12345",
+      "observaciones": "En buen estado"
+    },
+    {
+      "tipo": "Botón de Pánico",
+      "id": "67890",
+      "observaciones": "Revisar conexión"
+    }
+  ]
+}]

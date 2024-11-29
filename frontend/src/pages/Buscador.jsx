@@ -22,6 +22,39 @@ const Buscador = () => {
         }
     };
 
+    const renderNestedData = (data, level = 0) => {
+        if (!data) return null;
+        const marginLeft = level * 20; // Aumentar margen para cada nivel de jerarquía
+        return (
+            <div style={{ marginLeft: `${marginLeft}px` }}>
+                {Object.entries(data).map(([key, value]) => (
+                    <div key={key}>
+                        {typeof value === 'object' && value !== null ? (
+                            <>
+                                <strong>{key}:</strong>
+                                {Array.isArray(value) ? (
+                                    value.map((item, index) => (
+                                        <div key={index} style={{ marginLeft: `${marginLeft + 20}px` }}>
+                                            {renderNestedData(item, level + 1)}
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div style={{ marginLeft: `${marginLeft + 20}px` }}>
+                                        {renderNestedData(value, level + 1)}
+                                    </div>
+                                )}
+                            </>
+                        ) : (
+                            <p>
+                                <strong>{key}:</strong> {value?.toString()}
+                            </p>
+                        )}
+                    </div>
+                ))}
+            </div>
+        );
+    };
+
     return (
         <div className="buscador-wrapper">
             <div className="buscador-container">
@@ -36,17 +69,11 @@ const Buscador = () => {
                     <button type="submit">Buscar</button>
                 </form>
                 {error && <p className="error-message">{error}</p>}
-                <div className="results-grid">
+                <div className="results-container">
                     {results.length > 0 ? (
                         results.map((item, index) => (
                             <div key={index} className="result-card">
-                                <h3>{item.tipo}: {item.nombre || item.numeroSerie || 'Sin Nombre'}</h3>
-                                <p><strong>ID:</strong> {item._id}</p>
-                                {Object.keys(item).map((key) => (
-                                    <p key={key}>
-                                        <strong>{key}:</strong> {JSON.stringify(item[key])}
-                                    </p>
-                                ))}
+                                {renderNestedData(item)}
                             </div>
                         ))
                     ) : (

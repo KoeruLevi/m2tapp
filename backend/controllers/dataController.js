@@ -15,61 +15,49 @@ exports.searchData = async (req, res) => {
     console.log('Término de búsqueda recibido:', query);
 
     try {
-        const clientes = await Cliente.find({
-            $or: [
-                { nombre: { $regex: query, $options: 'i' } },
-                { razonSocial: { $regex: query, $options: 'i' } },
-                { RUT: { $regex: query, $options: 'i' } },
-                { domicilio: { $regex: query, $options: 'i' } },
-                { emails: { $regex: query, $options: 'i' } },
-                { 'contactos.nombre': { $regex: query, $options: 'i' } },
-                { 'contactos.telefono': { $regex: query, $options: 'i' } },
-                { 'contactos.email': { $regex: query, $options: 'i' } },
-            ],
-        });
+        const results = [];
 
-        const moviles = await Movil.find({
-            $or: [
-                { patente: { $regex: query, $options: 'i' } },
-                { tipo: { $regex: query, $options: 'i' } },
-                { marca: { $regex: query, $options: 'i' } },
-                { mandante: { $regex: query, $options: 'i' } },
-                { descripcionInterna: { $regex: query, $options: 'i' } },
-            ],
-        });
-
-        const equipos = await EquipoAVL.find({
-            $or: [
-                { IMEI: { $regex: query, $options: 'i' } },
-                { numeroSerie: { $regex: query, $options: 'i' } },
-                { fabricante: { $regex: query, $options: 'i' } },
-                { modelo: { $regex: query, $options: 'i' } },
-                { estado: { $regex: query, $options: 'i' } },
-            ],
-        });
-
+        // Búsqueda en Simcard
         const simcards = await Simcard.find({
             $or: [
                 { numeroTelefonico: { $regex: query, $options: 'i' } },
                 { operador: { $regex: query, $options: 'i' } },
                 { portador: { $regex: query, $options: 'i' } },
                 { estado: { $regex: query, $options: 'i' } },
-                { cuotaDatos: { $regex: query, $options: 'i' } },
             ],
-        });
+        }).lean(); // .lean() para devolver objetos simples
 
+        for (const simcard of simcards) {
+            const equipo = await EquipoAVL.findById(simcard.equipoAVL_id).lean();
+            if (equipo) {
+                simcard.equipo = equipo;
 
-        const results = [
-            ...clientes.map((item) => ({ ...item.toObject(), tipo: 'Cliente' })),
-            ...moviles.map((item) => ({ ...item.toObject(), tipo: 'Movil' })),
-            ...equipos.map((item) => ({ ...item.toObject(), tipo: 'Equipo AVL' })),
-            ...simcards.map((item) => ({ ...item.toObject(), tipo: 'Simcard' })),
-        ];
+                const movil = await Movil.findById(equipo.movil_id).lean();
+                if (movil) {
+                    equipo.movil = movil;
 
-        console.log('Resultados combinados:', results);
+                    const cliente = await Cliente.findById(movil.cliente_id).lean();
+                    if (cliente) {
+                        movil.cliente = cliente;
+
+                        // Relacionar todos los moviles del cliente
+                        const otrosMoviles = await Movil.find({ _id: { $in: cliente.moviles_ids } }).lean();
+                        cliente.otrosMoviles = otrosMoviles;
+                    }
+
+                    // Obtener otros equipos del mismo movil
+                    const equiposSecundarios = await EquipoAVL.find({
+                        _id: { $in: [movil.equipoPrimario, movil.equipoSecundario] },
+                    }).lean();
+                    movil.otrosEquipos = equiposSecundarios;
+                }
+            }
+            results.push(simcard);
+        }
+
         res.json(results);
     } catch (error) {
-        console.error('Error en el controlador de búsqueda:', error.message);
+        console.error('Error al realizar la búsqueda:', error.message);
         res.status(500).json({ message: 'Error al realizar la búsqueda', error: error.message });
     }
 };

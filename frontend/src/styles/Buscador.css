@@ -72,11 +72,19 @@ button:hover {
 }
 
 .result-card {
-    background-color: #f8f9fa; /* Fondo gris claro */
+    background-color: #f8f9fa;
     border-radius: 8px;
+    padding: 15px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    padding: 15px 20px;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    margin-bottom: 20px;
+}
+
+.result-card div {
+    margin-bottom: 5px;
+}
+
+.result-card strong {
+    color: #0b5ed7;
 }
 
 .result-card:hover {
@@ -96,8 +104,8 @@ button:hover {
     color: #333;
 }
 
-/* Mensaje de "Sin Resultados" */
 .no-results {
+    text-align: center;
     color: #666;
     font-size: 1.1rem;
     font-weight: bold;
