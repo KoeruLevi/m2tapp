@@ -3,22 +3,22 @@ import axios from 'axios';
 import '../styles/Buscador.css';
 
 const Buscador = () => {
-    const [query, setQuery] = useState('');
-    const [results, setResults] = useState([]);
-    const [error, setError] = useState(null);
+    const [query, setQuery] = useState(''); // Término de búsqueda
+    const [results, setResults] = useState([]); // Resultados de la búsqueda
+    const [error, setError] = useState(null); // Manejo de errores
 
     const handleSearch = async (e) => {
-        e.preventDefault();
-        setError(null);
+        e.preventDefault(); // Evitar que el formulario recargue la página
+        setError(null); // Reiniciar error antes de buscar
 
         try {
             const response = await axios.get('http://localhost:5000/api/data/search', {
-                params: { query },
+                params: { query }, // Enviar el término de búsqueda como parámetro
             });
-            setResults(response.data);
+            setResults(response.data); // Actualizar resultados
         } catch (err) {
             console.error('Error al realizar la búsqueda:', err);
-            setError('Error al realizar la búsqueda.');
+            setError('No se pudo realizar la búsqueda. Verifica tu conexión.');
         }
     };
 
@@ -69,11 +69,17 @@ const Buscador = () => {
                     <button type="submit">Buscar</button>
                 </form>
                 {error && <p className="error-message">{error}</p>}
-                <div className="results-container">
+                <div className="results-grid">
                     {results.length > 0 ? (
                         results.map((item, index) => (
                             <div key={index} className="result-card">
-                                {renderNestedData(item)}
+                                <h3>{item.tipo}: {item.nombre || item.numeroSerie || 'Sin Nombre'}</h3>
+                                <p><strong>ID:</strong> {item._id}</p>
+                                {Object.keys(item).map((key) => (
+                                    <p key={key}>
+                                        <strong>{key}:</strong> {JSON.stringify(item[key])}
+                                    </p>
+                                ))}
                             </div>
                         ))
                     ) : (
