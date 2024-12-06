@@ -1,149 +1,114 @@
-.buscador-wrapper {
+/* Fondo general */
+body {
+    background: linear-gradient(135deg, #d0e6f5, #9dbde8); /* Colores fríos */
+    font-family: 'Arial', sans-serif;
+    color: #333;
+    margin: 0;
+    padding: 0;
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    background-color: inherit; /* Usa el color global */
-    padding: 20px;
+    flex-direction: column;
 }
 
-.buscador-container {
-    width: 100%;
-    max-width: 900px;
-    background-color: white; /* Fondo blanco para destacar */
-    border-radius: 10px;
-    padding: 20px 30px;
-    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
-    text-align: center;
-}
-
-/* Título del buscador */
-.buscador-container h1 {
-    font-size: 2.5rem;
-    color: #0b5ed7; /* Azul oscuro */
-    margin-bottom: 20px;
-}
-
-/* Formulario de búsqueda */
-.input-group {
+/* Contenedor de la barra de búsqueda */
+.position-relative {
     display: flex;
     justify-content: center;
-    margin-bottom: 30px;
-}
-
-input.form-control {
-    padding: 10px 15px;
+    margin-bottom: 20px;
     width: 100%;
-    max-width: 400px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    font-size: 16px;
+    max-width: 900px; /* Tamaño máximo */
+    position: relative; /* Para posicionar la lista de sugerencias */
 }
 
-button.btn-primary {
-    padding: 10px 20px;
-    background-color: #007bff;
-    color: white;
-    border: none;
+/* Estilo para la lista de sugerencias */
+.list-group {
+    position: absolute; /* Coloca la lista sobre otros elementos */
+    top: 100%; /* Alinea justo debajo del input */
+    left: 0;
+    right: 0;
+    z-index: 10; /* Asegura que esté encima de otros elementos */
+    max-height: 200px; /* Limita el alto máximo de la lista */
+    overflow-y: auto; /* Habilita el scroll si hay muchas sugerencias */
+    background: #ffffff;
+    border: 1px solid #d6d9dd;
     border-radius: 5px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Elementos individuales de la lista */
+.list-group-item {
+    padding: 10px;
     cursor: pointer;
-    font-size: 1rem;
     transition: background-color 0.3s ease;
 }
 
-button.btn-primary:hover {
-    background-color: #084298; /* Azul más oscuro */
+.list-group-item:hover {
+    background-color: #f1f5f8; /* Resalta al pasar el cursor */
 }
 
-/* Mensaje de error */
-.text-danger {
-    color: red;
-    font-weight: bold;
+/* Oculta la lista si no hay sugerencias */
+.list-group.hidden {
+    display: none;
 }
 
-/* Navegación de pestañas */
+/* Pestañas centradas */
 .nav-tabs {
     display: flex;
     justify-content: center;
-    border-bottom: 1px solid #ddd;
     margin-bottom: 20px;
 }
 
 .nav-tabs .nav-item {
-    margin: 0 5px;
+    margin: 0 5px; /* Espaciado entre pestañas */
 }
 
-.nav-tabs .nav-link {
-    padding: 10px 15px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    background-color: #f8f9fa; /* Fondo gris claro */
-    color: #333;
-    transition: all 0.3s ease;
-    cursor: pointer;
+/* Contenedor principal de la tabla */
+.table-container {
+    width: 100%; /* Asegura que el contenedor de la tabla no se desborde */
+    max-width: 1200px; /* Limita el tamaño máximo al contenedor principal */
+    overflow-x: auto; /* Habilita desplazamiento horizontal si es necesario */
+    margin: 0 auto; /* Centra el contenedor */
+    padding: 1rem;
+    box-sizing: border-box; /* Incluye el padding en el tamaño total */
 }
 
-.nav-tabs .nav-link:hover {
-    background-color: #e9ecef; /* Gris más claro */
-}
-
-.nav-tabs .nav-link.active {
-    background-color: #0b5ed7;
-    color: white;
-    border-color: #0b5ed7;
-}
-
+/* Estilo de la tabla */
 .table {
-    margin-top: 20px;
+    width: 100%; /* Asegura que la tabla ocupe el ancho completo del contenedor */
+    border-collapse: collapse; /* Evita espacios entre celdas */
+    margin: 0 auto; /* Centra la tabla */
+}
+
+.table th,
+.table td {
+    white-space: nowrap; /* Mantén el contenido en una línea */
+    text-overflow: ellipsis; /* Trunca el contenido si es demasiado largo */
+    overflow: hidden; /* Oculta el contenido desbordado */
+    padding: 10px;
+    border: 1px solid #d6d9dd; /* Bordes de la tabla */
+    text-align: center; /* Alinea el texto al centro */
 }
 
 .table th {
-    background-color: #0b5ed7;
-    color: white;
-    text-align: center;
-}
-
-.table td {
-    text-align: center;
-}
-
-/* Contenido de la pestaña */
-.tab-content {
-    background-color: #f8f9fa; /* Fondo gris claro */
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    padding: 20px;
-    text-align: left;
-    transition: opacity 0.3s ease;
-}
-
-.tab-content h3 {
-    font-size: 1.5rem;
-    color: #0b5ed7; /* Azul oscuro */
-    margin-bottom: 10px;
-}
-
-.tab-content pre {
-    background-color: #fff;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    padding: 10px;
-    font-size: 0.9rem;
-    overflow-x: auto;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-}
-
-/* Mensaje de "Sin Resultados" */
-.no-results {
-    color: #666;
-    font-size: 1.1rem;
+    background-color: #004085;
+    color: #ffffff;
     font-weight: bold;
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+    background-color: #f1f5f8;
+}
+
+/* Sin resultados */
+.no-results {
+    color: #6c757d;
+    font-size: 1.2rem;
+    font-weight: bold;
+    text-align: center;
     margin-top: 20px;
 }
 
-/* Estilo adicional para resaltar las categorías */
-.nav-tabs .nav-link:focus {
-    outline: none;
-    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-}
+
+

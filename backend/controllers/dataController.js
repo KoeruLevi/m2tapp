@@ -130,3 +130,86 @@ exports.searchData = async (req, res) => {
         res.status(500).json({ message: 'Error interno del servidor' });
     }
 };
+
+exports.getSuggestions = async (req, res) => {
+    try {
+        const { query } = req.query;
+        const regex = new RegExp(query, 'i'); // Búsqueda insensible a mayúsculas
+
+        const suggestions = new Set();
+
+        // Buscar en Simcards
+        const simcards = await Simcards.find({
+            $or: [
+                { ICCID: regex },
+                { numeroTelefonico: regex },
+                { operador: regex },
+                { portador: regex },
+                { estado: regex },
+            ],
+        });
+        simcards.forEach((sim) => {
+            suggestions.add(sim.ICCID);
+            suggestions.add(sim.numeroTelefonico);
+            suggestions.add(sim.operador);
+            suggestions.add(sim.portador);
+        });
+
+        // Buscar en EquiposAVL
+        const equipos = await EquiposAVL.find({
+            $or: [
+                { IMEI: regex },
+                { numeroSerie: regex },
+                { firmware: regex },
+                { fabricante: regex },
+                { modelo: regex },
+                { estado: regex },
+            ],
+        });
+        equipos.forEach((equipo) => {
+            suggestions.add(equipo.IMEI);
+            suggestions.add(equipo.numeroSerie);
+            suggestions.add(equipo.fabricante);
+            suggestions.add(equipo.modelo);
+        });
+
+        // Buscar en Moviles
+        const moviles = await Moviles.find({
+            $or: [
+                { condicion: regex },
+                { tipo: regex },
+                { marca: regex },
+                { patente: regex },
+                { mandante: regex },
+                { descripcionInterna: regex },
+            ],
+        });
+        moviles.forEach((movil) => {
+            suggestions.add(movil.tipo);
+            suggestions.add(movil.marca);
+            suggestions.add(movil.patente);
+            suggestions.add(movil.mandante);
+        });
+
+        // Buscar en Clientes
+        const clientes = await Clientes.find({
+            $or: [
+                { nombre: regex },
+                { razonSocial: regex },
+                { RUT: regex },
+                { domicilio: regex },
+                { emails: regex },
+            ],
+        });
+        clientes.forEach((cliente) => {
+            suggestions.add(cliente.nombre);
+            suggestions.add(cliente.razonSocial);
+            suggestions.add(cliente.RUT);
+        });
+
+        res.json([...suggestions]); // Convertimos el Set a un array
+    } catch (error) {
+        console.error('Error al obtener sugerencias:', error);
+        res.status(500).json({ message: 'Error interno del servidor' });
+    }
+};
