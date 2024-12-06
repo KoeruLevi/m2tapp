@@ -1,18 +1,19 @@
 const mongoose = require('mongoose');
 
 const MovilSchema = new mongoose.Schema({
+    _id: { type: String }, // Identificador legible
     condicion: { type: String },
     tipo: { type: String },
     marca: { type: String },
     patente: { type: String },
-    cliente_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Cliente' },
+    cliente_id: { type: String, ref: 'Cliente' }, // Referencia basada en string
     velocidadMaxima: { type: Number },
     mandante: { type: String },
     webservice: { type: String },
     descripcionInterna: { type: String },
     alimentacionPrincipal: { type: String },
-    equipoPrimario: { type: mongoose.Schema.Types.ObjectId, ref: 'EquipoAVL' },
-    equipoSecundario: { type: mongoose.Schema.Types.ObjectId, ref: 'EquipoAVL' },
+    equipoPrimario: { type: String, ref: 'EquipoAVL' },
+    equipoSecundario: { type: String, ref: 'EquipoAVL' },
     accesorios: [
         {
             tipo: { type: String },

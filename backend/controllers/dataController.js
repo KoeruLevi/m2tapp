@@ -1,45 +1,132 @@
-const Cliente = require('../models/Cliente');
-const Movil = require('../models/Movil');
-const EquipoAVL = require('../models/EquipoAVL.js');
-const Simcard = require('../models/Simcard');
-const Usuario = require('../models/Usuario');
+const Clientes = require('../models/Cliente');
+const Moviles = require('../models/Movil');
+const EquiposAVL = require('../models/EquipoAVL');
+const Simcards = require('../models/Simcard');
 
-// Controlador para manejar la búsqueda
 exports.searchData = async (req, res) => {
-    const { query } = req.query;
-
-    if (!query) {
-        return res.status(400).json({ message: 'El término de búsqueda es obligatorio' });
-    }
-
-    console.log('Término de búsqueda recibido:', query);
-
     try {
-        const clientes = await Cliente.find({ nombre: { $regex: query, $options: 'i' } });
-        console.log('Resultados en Cliente:', clientes);
+        const { query } = req.query;
+        const regex = new RegExp(query, 'i'); // Búsqueda insensible a mayúsculas
 
+        const resultados = {
+            Simcard: [],
+            EquipoAVL: [],
+            Movil: [],
+            Cliente: [],
+        };
 
-        const moviles = await Movil.find({ patente: { $regex: query, $options: 'i' } });
-        console.log('Resultados en Movil:', moviles);
+        // Buscar en Simcards
+        const simcards = await Simcards.find({
+            $or: [
+                { ICCID: regex },
+                { numeroTelefonico: regex },
+                { operador: regex },
+                { portador: regex },
+                { estado: regex },
+            ],
+        });
 
-        const equipos = await EquipoAVL.find({ numeroSerie: { $regex: query, $options: 'i' } });
-        console.log('Resultados en EquipoAVL:', equipos);
+        for (const sim of simcards) {
+            const equipo = await EquiposAVL.findOne({ _id: sim.equipoAVL_id });
+            const movil = equipo ? await Moviles.findOne({ _id: equipo.movil_id }) : null;
+            const cliente = movil ? await Clientes.findOne({ _id: movil.cliente_id }) : null;
 
-        const simcards = await Simcard.find({ numeroTelefonico: { $regex: query, $options: 'i' } });
-        console.log('Resultados en Simcard:', simcards);
+            resultados.Simcard.push(sim);
+            if (equipo) resultados.EquipoAVL.push(equipo);
+            if (movil) resultados.Movil.push(movil);
+            if (cliente) resultados.Cliente.push(cliente);
+        }
 
+        // Buscar en EquiposAVL
+        const equipos = await EquiposAVL.find({
+            $or: [
+                { IMEI: regex },
+                { numeroSerie: regex },
+                { firmware: regex },
+                { fabricante: regex },
+                { modelo: regex },
+                { estado: regex },
+            ],
+        });
 
-        const results = [
-            ...clientes.map((item) => ({ ...item.toObject(), tipo: 'Cliente' })),
-            ...moviles.map((item) => ({ ...item.toObject(), tipo: 'Movil' })),
-            ...equipos.map((item) => ({ ...item.toObject(), tipo: 'Equipo AVL' })),
-            ...simcards.map((item) => ({ ...item.toObject(), tipo: 'Simcard' })),
-        ];
+        for (const equipo of equipos) {
+            const movil = await Moviles.findOne({ _id: equipo.movil_id });
+            const cliente = movil ? await Clientes.findOne({ _id: movil.cliente_id }) : null;
+            const sim = await Simcards.findOne({ _id: equipo.simcard_id });
 
-        console.log('Resultados combinados:', results);
-        res.json(results);
+            resultados.EquipoAVL.push(equipo);
+            if (sim) resultados.Simcard.push(sim);
+            if (movil) resultados.Movil.push(movil);
+            if (cliente) resultados.Cliente.push(cliente);
+        }
+
+        // Buscar en Moviles
+        const moviles = await Moviles.find({
+            $or: [
+                { condicion: regex },
+                { tipo: regex },
+                { marca: regex },
+                { patente: regex },
+                { mandante: regex },
+                { descripcionInterna: regex },
+            ],
+        });
+
+        for (const movil of moviles) {
+            const cliente = await Clientes.findOne({ _id: movil.cliente_id });
+            const equipoPrimario = await EquiposAVL.findOne({ _id: movil.equipoPrimario });
+            const equipoSecundario = await EquiposAVL.findOne({ _id: movil.equipoSecundario });
+
+            resultados.Movil.push(movil);
+            if (cliente) resultados.Cliente.push(cliente);
+            if (equipoPrimario) {
+                resultados.EquipoAVL.push(equipoPrimario);
+                const simPrimaria = await Simcards.findOne({ _id: equipoPrimario.simcard_id });
+                if (simPrimaria) resultados.Simcard.push(simPrimaria);
+            }
+            if (equipoSecundario) {
+                resultados.EquipoAVL.push(equipoSecundario);
+                const simSecundaria = await Simcards.findOne({ _id: equipoSecundario.simcard_id });
+                if (simSecundaria) resultados.Simcard.push(simSecundaria);
+            }
+        }
+
+        // Buscar en Clientes
+        const clientes = await Clientes.find({
+            $or: [
+                { nombre: regex },
+                { razonSocial: regex },
+                { RUT: regex },
+                { domicilio: regex },
+                { emails: regex },
+            ],
+        });
+
+        for (const cliente of clientes) {
+            const moviles = await Moviles.find({ cliente_id: cliente._id });
+
+            resultados.Cliente.push(cliente);
+            for (const movil of moviles) {
+                const equipoPrimario = await EquiposAVL.findOne({ _id: movil.equipoPrimario });
+                const equipoSecundario = await EquiposAVL.findOne({ _id: movil.equipoSecundario });
+
+                resultados.Movil.push(movil);
+                if (equipoPrimario) {
+                    resultados.EquipoAVL.push(equipoPrimario);
+                    const simPrimaria = await Simcards.findOne({ _id: equipoPrimario.simcard_id });
+                    if (simPrimaria) resultados.Simcard.push(simPrimaria);
+                }
+                if (equipoSecundario) {
+                    resultados.EquipoAVL.push(equipoSecundario);
+                    const simSecundaria = await Simcards.findOne({ _id: equipoSecundario.simcard_id });
+                    if (simSecundaria) resultados.Simcard.push(simSecundaria);
+                }
+            }
+        }
+
+        res.json(resultados);
     } catch (error) {
-        console.error('Error al realizar la búsqueda:', error.message);
-        res.status(500).json({ message: 'Error al realizar la búsqueda', error: error.message });
+        console.error('Error al buscar datos:', error);
+        res.status(500).json({ message: 'Error interno del servidor' });
     }
 };

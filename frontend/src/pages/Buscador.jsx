@@ -1,88 +1,144 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import 'bootstrap/dist/css/bootstrap.min.css';
 import '../styles/Buscador.css';
 
 const Buscador = () => {
-    const [query, setQuery] = useState(''); // Término de búsqueda
-    const [results, setResults] = useState([]); // Resultados de la búsqueda
-    const [error, setError] = useState(null); // Manejo de errores
+    const [term, setTerm] = useState('');
+    const [resultados, setResultados] = useState({
+        Simcard: [],
+        EquipoAVL: [],
+        Movil: [],
+        Cliente: [],
+    });
+    const [error, setError] = useState(null);
+    const [activeTab, setActiveTab] = useState('Simcard');
 
-    const handleSearch = async (e) => {
-        e.preventDefault(); // Evitar que el formulario recargue la página
-        setError(null); // Reiniciar error antes de buscar
-
+    const handleSearch = async () => {
         try {
+            setError(null);
             const response = await axios.get('http://localhost:5000/api/data/search', {
-                params: { query }, // Enviar el término de búsqueda como parámetro
+                params: { query: term },
             });
-            setResults(response.data); // Actualizar resultados
+            setResultados(response.data);
+            setActiveTab('Simcard'); // Resetea la pestaña activa
         } catch (err) {
-            console.error('Error al realizar la búsqueda:', err);
-            setError('No se pudo realizar la búsqueda. Verifica tu conexión.');
+            console.error('Error al buscar datos:', err);
+            setError(err.response?.data?.message || 'Error desconocido');
         }
     };
 
-    const renderNestedData = (data, level = 0) => {
-        if (!data) return null;
-        const marginLeft = level * 20; // Aumentar margen para cada nivel de jerarquía
+    const handleTabChange = (tab) => {
+        setActiveTab(tab);
+    };
+
+    const renderTable = (data) => {
+        if (!data || data.length === 0) {
+            return <p>No hay datos para esta categoría</p>;
+        }
+    
+        // Obtener las claves de las columnas de manera dinámica
+        const headers = Object.keys(data[0]);
+    
         return (
-            <div style={{ marginLeft: `${marginLeft}px` }}>
-                {Object.entries(data).map(([key, value]) => (
-                    <div key={key}>
-                        {typeof value === 'object' && value !== null ? (
-                            <>
-                                <strong>{key}:</strong>
-                                {Array.isArray(value) ? (
-                                    value.map((item, index) => (
-                                        <div key={index} style={{ marginLeft: `${marginLeft + 20}px` }}>
-                                            {renderNestedData(item, level + 1)}
-                                        </div>
-                                    ))
-                                ) : (
-                                    <div style={{ marginLeft: `${marginLeft + 20}px` }}>
-                                        {renderNestedData(value, level + 1)}
-                                    </div>
-                                )}
-                            </>
-                        ) : (
-                            <p>
-                                <strong>{key}:</strong> {value?.toString()}
-                            </p>
-                        )}
-                    </div>
-                ))}
-            </div>
+            <table className="table table-striped table-bordered">
+                <thead>
+                    <tr>
+                        {headers.map((header) => (
+                            <th key={header}>{header}</th>
+                        ))}
+                    </tr>
+                </thead>
+                <tbody>
+                    {data.map((item, index) => (
+                        <tr key={index}>
+                            {headers.map((header) => (
+                                <td key={header}>
+                                    {/* Renderiza objetos o arrays de forma legible */}
+                                    {typeof item[header] === 'object' && item[header] !== null ? (
+                                        Array.isArray(item[header]) ? (
+                                            // Si es un array, renderízalo como una lista
+                                            <ul>
+                                                {item[header].map((subItem, subIndex) =>
+                                                    typeof subItem === 'object' ? (
+                                                        <li key={subIndex}>
+                                                            {Object.entries(subItem).map(([key, value]) => (
+                                                                <span key={key}>
+                                                                    <strong>{key}:</strong> {value} <br />
+                                                                </span>
+                                                            ))}
+                                                        </li>
+                                                    ) : (
+                                                        <li key={subIndex}>{subItem}</li>
+                                                    )
+                                                )}
+                                            </ul>
+                                        ) : (
+                                            // Si es un objeto, renderízalo como pares clave-valor
+                                            <ul>
+                                                {Object.entries(item[header]).map(([key, value]) => (
+                                                    <li key={key}>
+                                                        <strong>{key}:</strong> {value}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        )
+                                    ) : (
+                                        // Si no es un objeto ni array, renderízalo directamente
+                                        item[header]
+                                    )}
+                                </td>
+                            ))}
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
         );
     };
 
     return (
-        <div className="buscador-container">
-            <h1>Buscador</h1>
-            <form onSubmit={handleSearch}>
+        <div className="container mt-4">
+            <h1>Buscador Universal</h1>
+            <div className="input-group mb-3">
                 <input
                     type="text"
+                    value={term}
+                    onChange={(e) => setTerm(e.target.value)}
                     placeholder="Ingresa un término de búsqueda"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
+                    className="form-control"
                 />
-                <button type="submit">Buscar</button>
-            </form>
-
-            {error && <p className="error-message">{error}</p>}
-
-            <div className="results-container">
-                {results.length > 0 ? (
-                    results.map((item, index) => (
-                        <div key={index} className="result-item">
-                            <h3>{item.nombre || 'Sin Nombre'}</h3>
-                            <p>ID: {item._id}</p>
-                            {/* Agrega aquí los campos que deseas mostrar */}
-                        </div>
-                    ))
-                ) : (
-                    <p>No se encontraron resultados</p>
-                )}
+                <button className="btn btn-primary" onClick={handleSearch}>
+                    Buscar
+                </button>
             </div>
+
+            {error && <p className="text-danger">{error}</p>}
+
+            {Object.values(resultados).some((arr) => arr.length > 0) ? (
+                <div>
+                    <ul className="nav nav-tabs">
+                        {Object.keys(resultados).map((tab) => (
+                            <li className="nav-item" key={tab}>
+                                <button
+                                    className={`nav-link ${activeTab === tab ? 'active' : ''}`}
+                                    onClick={() => handleTabChange(tab)}
+                                >
+                                    {tab} ({resultados[tab].length})
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+
+                    <div className="tab-content mt-3">
+                        <div className="tab-pane fade show active">
+                            <h3>Datos de {activeTab}</h3>
+                            {renderTable(resultados[activeTab])}
+                        </div>
+                    </div>
+                </div>
+            ) : (
+                !error && <p>No se encontraron resultados</p>
+            )}
         </div>
     );
 };
