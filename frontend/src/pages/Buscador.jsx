@@ -3,23 +3,31 @@ import axios from 'axios';
 import '../styles/Buscador.css';
 
 const Buscador = () => {
-    const [query, setQuery] = useState('');
-    const [results, setResults] = useState({ Cliente: [], Movil: [], EquipoAVL: [] });
+    const [filters, setFilters] = useState({
+        cliente: '',
+        movil: '',
+        equipo: ''
+    });
+    const [results, setResults] = useState([]);
     const [error, setError] = useState('');
-    const [activeTab, setActiveTab] = useState('Cliente'); // Tab activa
+
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFilters({
+            ...filters,
+            [name]: value
+        });
+    };
 
     const handleSearch = async (e) => {
         e.preventDefault();
         setError('');
-        setResults({ Cliente: [], Movil: [], EquipoAVL: [] });
-
-        if (!query.trim()) {
-            setError('El campo de búsqueda no puede estar vacío.');
-            return;
-        }
+        setResults([]);
 
         try {
-            const response = await axios.get(`http://localhost:5000/api/data/search?query=${encodeURIComponent(query)}`);
+            // Construir la consulta con los filtros
+            const queryParams = new URLSearchParams(filters).toString();
+            const response = await axios.get(`http://localhost:5000/api/data/search?${queryParams}`);
             setResults(response.data);
         } catch (error) {
             console.error('Error al realizar la búsqueda:', error);
@@ -28,133 +36,111 @@ const Buscador = () => {
     };
 
     return (
-        <div className="buscador-wrapper">
         <div className="buscador-container">
             <h1 className="buscador-titulo">Buscador Universal</h1>
             <form className="buscador-form" onSubmit={handleSearch}>
                 <input
                     type="text"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
+                    name="cliente"
+                    value={filters.cliente}
+                    onChange={handleInputChange}
                     className="buscador-input"
-                    placeholder="Ingresa un término de búsqueda"
+                    placeholder="Filtrar por Cliente"
+                />
+                <input
+                    type="text"
+                    name="movil"
+                    value={filters.movil}
+                    onChange={handleInputChange}
+                    className="buscador-input"
+                    placeholder="Filtrar por Móvil"
+                />
+                <input
+                    type="text"
+                    name="equipo"
+                    value={filters.equipo}
+                    onChange={handleInputChange}
+                    className="buscador-input"
+                    placeholder="Filtrar por Equipo"
                 />
                 <button type="submit" className="buscador-boton">Buscar</button>
             </form>
 
             {error && <p className="buscador-error">{error}</p>}
 
-            <div className="buscador-tabs">
-                <button
-                    className={`tab-button ${activeTab === 'Cliente' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('Cliente')}
-                >
-                    Clientes
-                </button>
-                <button
-                    className={`tab-button ${activeTab === 'Movil' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('Movil')}
-                >
-                    Móviles
-                </button>
-                <button
-                    className={`tab-button ${activeTab === 'EquipoAVL' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('EquipoAVL')}
-                >
-                    Equipos AVL
-                </button>
-            </div>
-
             <div className="buscador-resultados">
-                {activeTab === 'Cliente' && (
+                {results.Cliente?.length > 0 && (
                     <div>
                         <h2>Clientes</h2>
-                        {results.Cliente.length > 0 ? (
-                            <table className="result-table">
-                                <thead>
-                                    <tr>
-                                        <th>Nombre</th>
-                                        <th>RUT</th>
-                                        <th>Razón Social</th>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>RUT</th>
+                                    <th>Razón Social</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {results.Cliente.map((cliente, index) => (
+                                    <tr key={index}>
+                                        <td>{cliente.Cliente}</td>
+                                        <td>{cliente.RUT}</td>
+                                        <td>{cliente['Razon Social']}</td>
                                     </tr>
-                                </thead>
-                                <tbody>
-                                    {results.Cliente.map((cliente, index) => (
-                                        <tr key={index}>
-                                            <td>{cliente.Cliente}</td>
-                                            <td>{cliente.RUT}</td>
-                                            <td>{cliente['Razon Social']}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        ) : (
-                            <p>No se encontraron resultados para Clientes.</p>
-                        )}
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
                 )}
 
-                {activeTab === 'Movil' && (
+                {results.Movil?.length > 0 && (
                     <div>
                         <h2>Móviles</h2>
-                        {results.Movil.length > 0 ? (
-                            <table className="result-table">
-                                <thead>
-                                    <tr>
-                                        <th>Patente</th>
-                                        <th>Cliente</th>
-                                        <th>Marca</th>
-                                        <th>Tipo</th>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Patente</th>
+                                    <th>Cliente</th>
+                                    <th>Marca</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {results.Movil.map((movil, index) => (
+                                    <tr key={index}>
+                                        <td>{movil.Patente}</td>
+                                        <td>{movil.Cliente}</td>
+                                        <td>{movil.Marca}</td>
                                     </tr>
-                                </thead>
-                                <tbody>
-                                    {results.Movil.map((movil, index) => (
-                                        <tr key={index}>
-                                            <td>{movil.Patente}</td>
-                                            <td>{movil.Cliente}</td>
-                                            <td>{movil.Marca}</td>
-                                            <td>{movil.Tipo}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        ) : (
-                            <p>No se encontraron resultados para Móviles.</p>
-                        )}
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
                 )}
 
-                {activeTab === 'EquipoAVL' && (
+                {results.EquipoAVL?.length > 0 && (
                     <div>
                         <h2>Equipos AVL</h2>
-                        {results.EquipoAVL.length > 0 ? (
-                            <table className="result-table">
-                                <thead>
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>Modelo</th>
-                                        <th>IMEI</th>
-                                        <th>Serial</th>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>IMEI</th>
+                                    <th>Serial</th>
+                                    <th>Modelo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {results.EquipoAVL.map((equipo, index) => (
+                                    <tr key={index}>
+                                        <td>{equipo.imei}</td>
+                                        <td>{equipo.serial}</td>
+                                        <td>{equipo.model}</td>
                                     </tr>
-                                </thead>
-                                <tbody>
-                                    {results.EquipoAVL.map((equipo, index) => (
-                                        <tr key={index}>
-                                            <td>{equipo.ID}</td>
-                                            <td>{equipo.model}</td>
-                                            <td>{equipo.imei}</td>
-                                            <td>{equipo.serial}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        ) : (
-                            <p>No se encontraron resultados para Equipos AVL.</p>
-                        )}
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
                 )}
             </div>
-        </div>
         </div>
     );
 };

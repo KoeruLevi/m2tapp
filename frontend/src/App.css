@@ -19,12 +19,24 @@ body, html {
 /* Contenedor principal del root */
 #root {
   display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
+  justify-content: center; /* Centra horizontalmente */
+  align-items: center; /* Centra verticalmente */
+  min-height: 100vh; /* Ocupa toda la altura de la ventana */
+  background: #202020; /* Fondo general oscuro */
+  color: #ffffff; /* Texto blanco para contraste */
+  font-family: 'Arial', sans-serif; /* Tipografía general */
+  margin: 0; /* Sin márgenes */
+}
+
+/* Asegura que las páginas no desborden el contenedor */
+.page-container {
   width: 100%;
-  text-align: center;
-  padding: 20px;
+  max-width: 900px; /* Ancho máximo de las páginas */
+  padding: 20px; /* Espaciado interno */
+  background: #ffffff; /* Fondo blanco para el contenido */
+  border-radius: 10px; /* Bordes redondeados */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Sombra sutil */
+  color: #000; /* Texto oscuro dentro del contenido */
 }
 
 /* Contenedor del buscador */

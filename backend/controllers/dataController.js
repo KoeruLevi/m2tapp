@@ -4,168 +4,111 @@ const Movil = require('../models/Movil');
 
 
 exports.searchData = async (req, res) => {
-    const { query } = req.query;
+    const { cliente, movil, equipo } = req.query;
 
-    if (!query) {
-        return res.status(400).json({ message: 'El término de búsqueda es obligatorio' });
-    }
+    console.log('\n=== INICIO DE BÚSQUEDA CON FILTROS ===');
+    console.log(`Cliente: ${cliente || 'Sin filtro'}, Móvil: ${movil || 'Sin filtro'}, Equipo: ${equipo || 'Sin filtro'}`);
 
     try {
-        const searchTerm = query.trim();
-        if (!searchTerm) {
-            throw new Error('El término de búsqueda está vacío después de recortar espacios.');
-        }
-
-        console.log('\n=== INICIO DE BÚSQUEDA ===');
-        console.log(`Término de búsqueda: "${searchTerm}"`);
-
-        const regex = new RegExp(searchTerm, 'i');
-        const numericTerm = !isNaN(searchTerm) ? Number(searchTerm) : null;
-
         let clientes = [];
         let moviles = [];
         let equipos = [];
 
-        // === Búsqueda inicial en Cliente ===
-        console.log('\n=== BÚSQUEDA INICIAL EN CLIENTE ===');
-        clientes = await Cliente.find({
-            $or: [
-                { Cliente: regex },
-                { 'Razon Social': regex },
-                { RUT: regex },
-            ],
-        }).lean();
-        console.log('Clientes encontrados inicialmente:', clientes);
+        const clienteFilter = cliente ? new RegExp(cliente, 'i') : null;
+        const movilFilter = movil ? new RegExp(movil, 'i') : null;
+        const equipoFilter = equipo ? new RegExp(equipo, 'i') : null;
 
-        // === Búsqueda inicial en Movil ===
-        console.log('\n=== BÚSQUEDA INICIAL EN MOVIL ===');
-        moviles = await Movil.find({
-            $or: [
-                { Cliente: regex },
-                { Patente: regex },
-                { Marca: regex },
-                { Tipo: regex },
-            ],
-        }).lean();
-        console.log('Móviles encontrados inicialmente:', moviles);
-
-        // === Búsqueda inicial en EquipoAVL ===
-        console.log('\n=== BÚSQUEDA INICIAL EN EQUIPOAVL ===');
-        equipos = await EquipoAVL.find({
-            $or: [
-                { imei: numericTerm || regex },
-                { serial: numericTerm || regex },
-                { model: regex },
-                { ID: numericTerm },
-            ],
-        }).lean();
-        console.log('Equipos encontrados inicialmente:', equipos);
-
-        // === Propagación desde EquipoAVL ===
-        if (equipos.length > 0) {
-            console.log('\n=== PROPAGACIÓN DESDE EQUIPOAVL ===');
-            const equipoIds = equipos.map((equipo) => equipo.ID).filter(Boolean);
-            console.log('IDs de equipos extraídos de EquipoAVL:', equipoIds);
-
-            const movilesPorEquipo = await Movil.find().lean();
-            const movilesRelacionados = movilesPorEquipo.filter((movil) => {
-                const equipoPrinc = movil['Equipo Princ'];
-                const extractedId = extractEquipoPrinc(equipoPrinc);
-                return equipoIds.includes(extractedId);
-            });
-            console.log('Móviles encontrados por equipos:', movilesRelacionados);
-
-            moviles = [...moviles, ...movilesRelacionados];
-            console.log('Estado actual de Móviles después de búsqueda por equipos:', moviles);
-
-            const clienteNames = movilesRelacionados.map((movil) => movil.Cliente).filter(Boolean);
-            console.log('Clientes extraídos de Móviles:', clienteNames);
-
-            const clientesPorEquipo = await Cliente.find({
-                Cliente: { $in: clienteNames },
+        // Filtrar clientes
+        if (clienteFilter) {
+            console.log('\n=== FILTRANDO POR CLIENTE ===');
+            clientes = await Cliente.find({
+                $or: [
+                    { Cliente: clienteFilter },
+                    { 'Razon Social': clienteFilter },
+                    { RUT: clienteFilter },
+                ],
             }).lean();
-            console.log('Clientes encontrados por móviles relacionados a equipos:', clientesPorEquipo);
-
-            clientes = [...clientes, ...clientesPorEquipo];
-            console.log('Estado actual de Clientes después de propagación desde EquipoAVL:', clientes);
+            console.log('Clientes filtrados:', clientes);
         }
 
-        // === Propagación desde Movil ===
-        if (moviles.length > 0) {
-            console.log('\n=== PROPAGACIÓN DESDE MOVILES ===');
-            const clienteNames = moviles.map((movil) => movil.Cliente).filter(Boolean);
-            console.log('Clientes extraídos de Móviles:', clienteNames);
+        // Filtrar móviles relacionados a clientes o con el filtro de móvil
+        if (movilFilter || clienteFilter) {
+            console.log('\n=== FILTRANDO POR MÓVIL ===');
+            const movilQuery = {
+                ...(movilFilter && {
+                    $or: [
+                        { Marca: movilFilter },
+                        { Tipo: movilFilter },
+                        { Patente: movilFilter },
+                    ],
+                }),
+                ...(clienteFilter && { Cliente: { $in: clientes.map((c) => c.Cliente) } }),
+            };
 
-            const clientesPorMovil = await Cliente.find({
-                Cliente: { $in: clienteNames },
-            }).lean();
-            console.log('Clientes encontrados por móviles:', clientesPorMovil);
+            moviles = await Movil.find(movilQuery).lean();
+            console.log('Móviles filtrados:', moviles);
 
-            clientes = [...clientes, ...clientesPorMovil];
-            console.log('Estado actual de Clientes después de propagación desde Móviles:', clientes);
+            // Relacionar clientes desde móviles si no hay filtro de cliente
+            if (!clienteFilter && moviles.length > 0) {
+                const clienteNames = [...new Set(moviles.map((m) => m.Cliente))];
+                console.log('Clientes relacionados desde móviles:', clienteNames);
+                clientes = await Cliente.find({ Cliente: { $in: clienteNames } }).lean();
+            }
+        }
 
+        // Filtrar equipos relacionados a móviles o con el filtro de equipo
+        if (equipoFilter || moviles.length > 0) {
+            console.log('\n=== FILTRANDO POR EQUIPO AVL ===');
+
+            // Normalizar los valores del campo "Equipo Princ" en móviles
             const equipoIds = moviles
-                .map((movil) => extractEquipoPrinc(movil['Equipo Princ']))
-                .filter((id) => id !== null);
-            console.log('IDs de equipos extraídos de Móviles:', equipoIds);
+                .map((m) => m['Equipo Princ'])
+                .filter((e) => e && typeof e === 'object' && e[''])
+                .map((e) => e['']);
 
-            const equiposPorMovil = await EquipoAVL.find({
-                ID: { $in: equipoIds },
-            }).lean();
-            console.log('Equipos encontrados por IDs de Móviles:', equiposPorMovil);
+            console.log('IDs de equipos normalizados:', equipoIds);
 
-            equipos = [...equipos, ...equiposPorMovil];
-            console.log('Estado actual de Equipos después de propagación desde Móviles:', equipos);
+            const equipoQuery = {
+                ...(equipoFilter && {
+                    $or: [
+                        { imei: equipoFilter },
+                        { serial: equipoFilter },
+                        { model: equipoFilter },
+                        { ID: equipoFilter },
+                    ],
+                }),
+                ...(equipoIds.length > 0 && { ID: { $in: equipoIds } }),
+            };
+
+            equipos = await EquipoAVL.find(equipoQuery).lean();
+            console.log('Equipos filtrados:', equipos);
+
+            // Relacionar móviles desde equipos si no hay filtro de móvil
+            if (!movilFilter && equipos.length > 0) {
+                const relatedMovilIds = equipos.map((e) => e.ID);
+                console.log('IDs de móviles relacionados desde equipos:', relatedMovilIds);
+
+                const relatedMoviles = await Movil.find({
+                    'Equipo Princ': { $in: relatedMovilIds.map((id) => ({ '': id })) },
+                }).lean();
+
+                console.log('Móviles relacionados desde equipos:', relatedMoviles);
+
+                moviles = [...moviles, ...relatedMoviles];
+            }
         }
-
-        // === Propagación desde Cliente ===
-        if (clientes.length > 0) {
-            console.log('\n=== PROPAGACIÓN DESDE CLIENTES ===');
-            const clienteNames = clientes.map((c) => c.Cliente).filter(Boolean);
-            console.log('Nombres de clientes para búsqueda en Móviles:', clienteNames);
-
-            const movilesPorCliente = await Movil.find({
-                Cliente: { $in: clienteNames },
-            }).lean();
-            console.log('Móviles encontrados por clientes:', movilesPorCliente);
-
-            moviles = [...moviles, ...movilesPorCliente];
-            console.log('Estado actual de Móviles después de propagación desde Clientes:', moviles);
-
-            const equipoIds = movilesPorCliente
-                .map((movil) => extractEquipoPrinc(movil['Equipo Princ']))
-                .filter((id) => id !== null);
-            console.log('IDs de equipos extraídos de Móviles:', equipoIds);
-
-            const equiposPorCliente = await EquipoAVL.find({
-                ID: { $in: equipoIds },
-            }).lean();
-            console.log('Equipos encontrados por IDs de Móviles:', equiposPorCliente);
-
-            equipos = [...equipos, ...equiposPorCliente];
-            console.log('Estado actual de Equipos después de propagación desde Clientes:', equipos);
-        }
-
-        // Eliminar duplicados
-        clientes = Array.from(new Set(clientes.map((c) => JSON.stringify(c)))).map((c) =>
-            JSON.parse(c)
-        );
-        moviles = Array.from(new Set(moviles.map((m) => JSON.stringify(m)))).map((m) =>
-            JSON.parse(m)
-        );
-        equipos = Array.from(new Set(equipos.map((e) => JSON.stringify(e)))).map((e) =>
-            JSON.parse(e)
-        );
 
         console.log('\n=== RESULTADOS FINALES ===');
-        console.log(`Clientes: ${clientes.length}`);
-        console.log(`Móviles: ${moviles.length}`);
-        console.log(`Equipos: ${equipos.length}`);
+        console.log(`Clientes: ${clientes.length}, Móviles: ${moviles.length}, Equipos: ${equipos.length}`);
 
-        res.json({ Cliente: clientes, Movil: moviles, EquipoAVL: equipos });
+        res.json({
+            Cliente: clientes,
+            Movil: moviles,
+            EquipoAVL: equipos,
+        });
     } catch (error) {
         console.error('\n=== ERROR EN LA BÚSQUEDA ===');
-        console.error('Error completo:', error);
+        console.error(error);
         res.status(500).json({
             message: 'Error al realizar la búsqueda',
             error: error.message,
