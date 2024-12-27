@@ -1,114 +1,117 @@
-/* Fondo general */
-body {
-    background: linear-gradient(135deg, #d0e6f5, #9dbde8); /* Colores fríos */
-    font-family: 'Arial', sans-serif;
-    color: #333;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    flex-direction: column;
-}
-
-/* Contenedor de la barra de búsqueda */
-.position-relative {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 20px;
-    width: 100%;
-    max-width: 900px; /* Tamaño máximo */
-    position: relative; /* Para posicionar la lista de sugerencias */
-}
-
-/* Estilo para la lista de sugerencias */
-.list-group {
-    position: absolute; /* Coloca la lista sobre otros elementos */
-    top: 100%; /* Alinea justo debajo del input */
-    left: 0;
-    right: 0;
-    z-index: 10; /* Asegura que esté encima de otros elementos */
-    max-height: 200px; /* Limita el alto máximo de la lista */
-    overflow-y: auto; /* Habilita el scroll si hay muchas sugerencias */
-    background: #ffffff;
-    border: 1px solid #d6d9dd;
-    border-radius: 5px;
+/* Contenedor principal */
+.buscador-container {
+    max-width: 900px;
+    margin: 0 auto;
+    text-align: center;
+    padding: 20px;
+    background-color: #ffffff; /* Fondo blanco */
+    border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* Elementos individuales de la lista */
-.list-group-item {
+/* Título */
+.buscador-titulo {
+    font-size: 2rem;
+    color: #004085; /* Texto en azul oscuro */
+    margin-bottom: 20px;
+}
+
+/* Formulario */
+.buscador-form {
+    margin-bottom: 20px;
+}
+
+.buscador-input {
     padding: 10px;
+    font-size: 1rem;
+    border: 1px solid #d6d9dd;
+    border-radius: 5px;
+    margin-right: 10px;
+    width: 70%;
+    color: #333; /* Texto en gris oscuro */
+    background-color: #f9f9f9; /* Fondo claro */
+}
+
+.buscador-boton {
+    padding: 10px 20px;
+    font-size: 1rem;
+    background-color: #004085; /* Azul oscuro */
+    color: white; /* Texto blanco */
+    border: none;
+    border-radius: 5px;
     cursor: pointer;
     transition: background-color 0.3s ease;
 }
 
-.list-group-item:hover {
-    background-color: #f1f5f8; /* Resalta al pasar el cursor */
+.buscador-boton:hover {
+    background-color: #002952; /* Azul más oscuro */
 }
 
-/* Oculta la lista si no hay sugerencias */
-.list-group.hidden {
-    display: none;
+/* Errores */
+.buscador-error {
+    color: red;
+    margin-bottom: 10px;
 }
 
-/* Pestañas centradas */
-.nav-tabs {
+/* Pestañas */
+.buscador-tabs {
     display: flex;
     justify-content: center;
     margin-bottom: 20px;
 }
 
-.nav-tabs .nav-item {
-    margin: 0 5px; /* Espaciado entre pestañas */
+.tab-button {
+    background-color: #e1e7f5; /* Fondo azul claro */
+    color: #004085; /* Texto azul oscuro */
+    padding: 10px 20px;
+    margin: 0 5px;
+    border: 1px solid #004085;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
 }
 
-/* Contenedor principal de la tabla */
-.table-container {
-    width: 100%; /* Asegura que el contenedor de la tabla no se desborde */
-    max-width: 1200px; /* Limita el tamaño máximo al contenedor principal */
-    overflow-x: auto; /* Habilita desplazamiento horizontal si es necesario */
-    margin: 0 auto; /* Centra el contenedor */
-    padding: 1rem;
-    box-sizing: border-box; /* Incluye el padding en el tamaño total */
+.tab-button:hover {
+    background-color: #c2d4f0; /* Azul más claro al pasar el cursor */
 }
 
-/* Estilo de la tabla */
-.table {
-    width: 100%; /* Asegura que la tabla ocupe el ancho completo del contenedor */
-    border-collapse: collapse; /* Evita espacios entre celdas */
-    margin: 0 auto; /* Centra la tabla */
-}
-
-.table th,
-.table td {
-    white-space: nowrap; /* Mantén el contenido en una línea */
-    text-overflow: ellipsis; /* Trunca el contenido si es demasiado largo */
-    overflow: hidden; /* Oculta el contenido desbordado */
-    padding: 10px;
-    border: 1px solid #d6d9dd; /* Bordes de la tabla */
-    text-align: center; /* Alinea el texto al centro */
-}
-
-.table th {
-    background-color: #004085;
-    color: #ffffff;
+.tab-button.active {
+    background-color: #004085; /* Fondo azul oscuro */
+    color: white; /* Texto blanco */
     font-weight: bold;
 }
 
-.table-striped tbody tr:nth-of-type(odd) {
-    background-color: #f1f5f8;
-}
-
-/* Sin resultados */
-.no-results {
-    color: #6c757d;
-    font-size: 1.2rem;
-    font-weight: bold;
-    text-align: center;
+/* Tablas de resultados */
+.result-table {
+    width: 100%;
+    border-collapse: collapse;
     margin-top: 20px;
+    color: #333; /* Asegura que el texto de las tablas sea visible */
 }
 
+.result-table th,
+.result-table td {
+    border: 1px solid #d6d9dd; /* Bordes grises */
+    padding: 10px;
+    text-align: center;
+    color: #333; /* Texto gris oscuro */
+}
 
+.result-table th {
+    background-color: #004085; /* Azul oscuro */
+    color: white; /* Texto blanco */
+}
 
+.result-table td {
+    background-color: #f9f9f9; /* Fondo claro */
+}
+
+.result-table tr:nth-child(even) {
+    background-color: #e1e7f5; /* Azul muy claro para filas pares */
+}
+
+/* Resaltar al pasar el cursor */
+.result-table td:hover {
+    background-color: #c2d4f0; /* Fondo azul claro al pasar el cursor */
+    color: #004085; /* Texto azul oscuro */
+}

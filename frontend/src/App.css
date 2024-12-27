@@ -1,33 +1,167 @@
-/* Centrado de toda la página */
-#root {
-  display: flex;
-  flex-direction: column;
-  align-items: center; /* Centra todo horizontalmente */
-  justify-content: center; /* Centra verticalmente si es necesario */
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
-  overflow-x: hidden;
-  box-sizing: border-box; /* Asegura que el padding se incluya en el tamaño total */
+/* Configuración general */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-/* Asegura que el contenido principal esté bien centrado */
-.buscador-wrapper {
+body, html {
   width: 100%;
-  max-width: 1280px; /* Limita el ancho máximo */
-  margin: 0 auto;
-  padding: 2rem;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #282c34; /* Fondo oscuro */
+  font-family: 'Arial', sans-serif;
+  color: #333; /* Color de texto predeterminado */
+}
+
+/* Contenedor principal del root */
+#root {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  width: 100%;
+  text-align: center;
+  padding: 20px;
 }
 
 /* Contenedor del buscador */
 .buscador-container {
   width: 100%;
-  max-width: 900px;
-  background: #ffffff;
+  max-width: 600px;
+  background: #ffffff; /* Fondo blanco */
   border-radius: 10px;
-  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
   padding: 30px;
   text-align: center;
+  margin: auto; /* Asegura que se mantenga centrado en dispositivos pequeños */
 }
 
+/* Botón buscar */
+.buscador-boton {
+  display: inline-block;
+  background-color: #004085; /* Azul oscuro */
+  color: #fff; /* Texto blanco */
+  border: none;
+  border-radius: 5px;
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-top: 20px;
+}
+
+.buscador-boton:hover {
+  background-color: #0056b3; /* Azul más claro */
+}
+
+/* Título del buscador */
+.buscador-titulo {
+  font-size: 24px;
+  color: #004085;
+  margin-bottom: 20px;
+}
+
+/* Input de búsqueda */
+.buscador-input {
+  width: calc(100% - 20px);
+  padding: 10px;
+  margin: 10px 0;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 16px;
+}
+
+/* Mensaje de error */
+.buscador-error {
+  color: red;
+  font-size: 14px;
+  margin: 10px 0;
+}
+
+/* Resultados del buscador */
+.buscador-resultados {
+  margin-top: 20px;
+  text-align: left; /* Alineación a la izquierda para listas */
+}
+
+.buscador-resultado {
+  background-color: #f8f9fa; /* Fondo gris claro */
+  border: 1px solid #d6d9dd;
+  border-radius: 5px;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+/* Pestañas */
+.pestanas {
+  display: flex;
+  justify-content: center;
+  margin: 20px 0;
+  gap: 10px;
+}
+
+.pestana {
+  padding: 10px 20px;
+  border: 1px solid #004085;
+  border-radius: 5px;
+  background-color: #004085;
+  color: #fff;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.pestana.active {
+  background-color: #fff;
+  color: #004085;
+  border-color: #004085;
+}
+
+.pestana:hover {
+  background-color: #0056b3;
+  color: #fff;
+}
+
+/* Tablas */
+.tabla-container {
+  margin-top: 20px;
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+.tabla th,
+.tabla td {
+  border: 1px solid #d6d9dd;
+  padding: 10px;
+  text-align: left;
+}
+
+.tabla th {
+  background-color: #004085;
+  color: #fff;
+  font-weight: bold;
+}
+
+.tabla-striped tbody tr:nth-of-type(odd) {
+  background-color: #f1f5f8;
+}
+
+.tabla-striped tbody tr:nth-of-type(even) {
+  background-color: #ffffff;
+}
+
+/* Sin resultados */
+.no-results {
+  color: #6c757d;
+  font-size: 1.2rem;
+  font-weight: bold;
+  text-align: center;
+  margin-top: 20px;
+}

@@ -1,178 +1,160 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import 'bootstrap/dist/css/bootstrap.min.css';
 import '../styles/Buscador.css';
 
-
 const Buscador = () => {
-    const [term, setTerm] = useState('');
-    const [suggestions, setSuggestions] = useState([]);
-    const [resultados, setResultados] = useState({
-        Simcard: [],
-        EquipoAVL: [],
-        Movil: [],
-        Cliente: [],
-    });
-    const [error, setError] = useState(null);
-    const [activeTab, setActiveTab] = useState('Simcard');
+    const [query, setQuery] = useState('');
+    const [results, setResults] = useState({ Cliente: [], Movil: [], EquipoAVL: [] });
+    const [error, setError] = useState('');
+    const [activeTab, setActiveTab] = useState('Cliente'); // Tab activa
 
     const handleSearch = async (e) => {
-        if (e) e.preventDefault(); // Prevenir comportamiento por defecto en Enter
+        e.preventDefault();
+        setError('');
+        setResults({ Cliente: [], Movil: [], EquipoAVL: [] });
+
+        if (!query.trim()) {
+            setError('El campo de búsqueda no puede estar vacío.');
+            return;
+        }
+
         try {
-            setError(null);
-            const response = await axios.get('http://localhost:5000/api/data/search', {
-                params: { query: term },
-            });
-            setResultados(response.data); // Actualiza resultados
-            setActiveTab('Simcard'); // Resetea la pestaña activa
-            setSuggestions([]); // Limpia sugerencias tras buscar
-        } catch (err) {
-            console.error('Error al buscar datos:', err);
-            setError(err.response?.data?.message || 'Error desconocido');
+            const response = await axios.get(`http://localhost:5000/api/data/search?query=${encodeURIComponent(query)}`);
+            setResults(response.data);
+        } catch (error) {
+            console.error('Error al realizar la búsqueda:', error);
+            setError('Hubo un problema al realizar la búsqueda. Intenta nuevamente.');
         }
-    };
-
-    const fetchSuggestions = async (value) => {
-        try {
-            if (value.trim() === '') {
-                setSuggestions([]);
-                return;
-            }
-            const response = await axios.get('http://localhost:5000/api/data/suggestions', {
-                params: { query: value },
-            });
-            setSuggestions(response.data);
-        } catch (err) {
-            console.error('Error al obtener sugerencias:', err);
-        }
-    };
-
-    const handleInputChange = (e) => {
-        const value = e.target.value;
-        setTerm(value);
-        fetchSuggestions(value);
-    };
-
-    const handleSuggestionClick = (suggestion) => {
-        setTerm(suggestion);
-        setSuggestions([]); // Limpia sugerencias tras seleccionar una
-    };
-
-    const renderTable = (data) => {
-        if (!data || data.length === 0) {
-            return <p className="no-results">No hay datos para esta categoría</p>;
-        }
-
-        const headers = Object.keys(data[0]);
-
-        return (
-            <div className="table-container">
-                <table className="table table-striped">
-                    <thead>
-                        <tr>
-                            {headers.map((header) => (
-                                <th key={header}>{header}</th>
-                            ))}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {data.map((item, index) => (
-                            <tr key={index}>
-                                {headers.map((header) => (
-                                    <td key={header}>
-                                        {Array.isArray(item[header]) ? (
-                                            <ul>
-                                                {item[header].map((subItem, subIndex) =>
-                                                    typeof subItem === 'object' ? (
-                                                        <li key={subIndex}>
-                                                            {Object.entries(subItem).map(([key, value]) => (
-                                                                <span key={key}>
-                                                                    <strong>{key}:</strong> {value} <br />
-                                                                </span>
-                                                            ))}
-                                                        </li>
-                                                    ) : (
-                                                        <li key={subIndex}>{subItem}</li>
-                                                    )
-                                                )}
-                                            </ul>
-                                        ) : typeof item[header] === 'object' && item[header] !== null ? (
-                                            <ul>
-                                                {Object.entries(item[header]).map(([key, value]) => (
-                                                    <li key={key}>
-                                                        <strong>{key}:</strong> {value}
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        ) : (
-                                            item[header]
-                                        )}
-                                    </td>
-                                ))}
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-        );
     };
 
     return (
-        <div className="container mt-4 buscador-wrapper">
-            <h1>Buscador Universal</h1>
-            <form className="position-relative" onSubmit={handleSearch}>
+        <div className="buscador-wrapper">
+        <div className="buscador-container">
+            <h1 className="buscador-titulo">Buscador Universal</h1>
+            <form className="buscador-form" onSubmit={handleSearch}>
                 <input
                     type="text"
-                    value={term}
-                    onChange={handleInputChange}
-                    onKeyDown={(e) => {
-                        if (e.key === 'Enter') handleSearch(e);
-                    }}
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    className="buscador-input"
                     placeholder="Ingresa un término de búsqueda"
-                    className="form-control"
                 />
-                {suggestions.length > 0 && (
-                    <ul className="list-group">
-                        {suggestions.map((suggestion, index) => (
-                            <li
-                                key={index}
-                                className="list-group-item"
-                                onClick={() => handleSuggestionClick(suggestion)}
-                            >
-                                {suggestion}
-                            </li>
-                        ))}
-                    </ul>
-                )}
+                <button type="submit" className="buscador-boton">Buscar</button>
             </form>
-            <button className="btn btn-primary mt-3" onClick={handleSearch}>
-                Buscar
-            </button>
 
-            {error && <p className="text-danger mt-3">{error}</p>}
+            {error && <p className="buscador-error">{error}</p>}
 
-            {Object.values(resultados).some((arr) => arr.length > 0) && (
-                <div>
-                    <ul className="nav nav-tabs mt-4">
-                        {Object.keys(resultados).map((tab) => (
-                            <li className="nav-item" key={tab}>
-                                <button
-                                    className={`nav-link ${activeTab === tab ? 'active' : ''}`}
-                                    onClick={() => setActiveTab(tab)}
-                                >
-                                    {tab} ({resultados[tab].length})
-                                </button>
-                            </li>
-                        ))}
-                    </ul>
-                    <div className="tab-content mt-3">
-                        <div className="tab-pane fade show active">
-                            <h3>Datos de {activeTab}</h3>
-                            {renderTable(resultados[activeTab])}
-                        </div>
+            <div className="buscador-tabs">
+                <button
+                    className={`tab-button ${activeTab === 'Cliente' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('Cliente')}
+                >
+                    Clientes
+                </button>
+                <button
+                    className={`tab-button ${activeTab === 'Movil' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('Movil')}
+                >
+                    Móviles
+                </button>
+                <button
+                    className={`tab-button ${activeTab === 'EquipoAVL' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('EquipoAVL')}
+                >
+                    Equipos AVL
+                </button>
+            </div>
+
+            <div className="buscador-resultados">
+                {activeTab === 'Cliente' && (
+                    <div>
+                        <h2>Clientes</h2>
+                        {results.Cliente.length > 0 ? (
+                            <table className="result-table">
+                                <thead>
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>RUT</th>
+                                        <th>Razón Social</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {results.Cliente.map((cliente, index) => (
+                                        <tr key={index}>
+                                            <td>{cliente.Cliente}</td>
+                                            <td>{cliente.RUT}</td>
+                                            <td>{cliente['Razon Social']}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        ) : (
+                            <p>No se encontraron resultados para Clientes.</p>
+                        )}
                     </div>
-                </div>
-            )}
+                )}
+
+                {activeTab === 'Movil' && (
+                    <div>
+                        <h2>Móviles</h2>
+                        {results.Movil.length > 0 ? (
+                            <table className="result-table">
+                                <thead>
+                                    <tr>
+                                        <th>Patente</th>
+                                        <th>Cliente</th>
+                                        <th>Marca</th>
+                                        <th>Tipo</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {results.Movil.map((movil, index) => (
+                                        <tr key={index}>
+                                            <td>{movil.Patente}</td>
+                                            <td>{movil.Cliente}</td>
+                                            <td>{movil.Marca}</td>
+                                            <td>{movil.Tipo}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        ) : (
+                            <p>No se encontraron resultados para Móviles.</p>
+                        )}
+                    </div>
+                )}
+
+                {activeTab === 'EquipoAVL' && (
+                    <div>
+                        <h2>Equipos AVL</h2>
+                        {results.EquipoAVL.length > 0 ? (
+                            <table className="result-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Modelo</th>
+                                        <th>IMEI</th>
+                                        <th>Serial</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {results.EquipoAVL.map((equipo, index) => (
+                                        <tr key={index}>
+                                            <td>{equipo.ID}</td>
+                                            <td>{equipo.model}</td>
+                                            <td>{equipo.imei}</td>
+                                            <td>{equipo.serial}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        ) : (
+                            <p>No se encontraron resultados para Equipos AVL.</p>
+                        )}
+                    </div>
+                )}
+            </div>
+        </div>
         </div>
     );
 };

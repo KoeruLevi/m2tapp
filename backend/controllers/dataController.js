@@ -1,215 +1,235 @@
-const Clientes = require('../models/Cliente');
-const Moviles = require('../models/Movil');
-const EquiposAVL = require('../models/EquipoAVL');
-const Simcards = require('../models/Simcard');
+const Cliente = require('../models/Cliente');
+const EquipoAVL = require('../models/EquipoAVL');
+const Movil = require('../models/Movil');
+
 
 exports.searchData = async (req, res) => {
+    const { query } = req.query;
+
+    if (!query) {
+        return res.status(400).json({ message: 'El término de búsqueda es obligatorio' });
+    }
+
     try {
-        const { query } = req.query;
-        const regex = new RegExp(query, 'i'); // Búsqueda insensible a mayúsculas
-
-        const resultados = {
-            Simcard: [],
-            EquipoAVL: [],
-            Movil: [],
-            Cliente: [],
-        };
-
-        // Buscar en Simcards
-        const simcards = await Simcards.find({
-            $or: [
-                { ICCID: regex },
-                { numeroTelefonico: regex },
-                { operador: regex },
-                { portador: regex },
-                { estado: regex },
-            ],
-        });
-
-        for (const sim of simcards) {
-            const equipo = await EquiposAVL.findOne({ _id: sim.equipoAVL_id });
-            const movil = equipo ? await Moviles.findOne({ _id: equipo.movil_id }) : null;
-            const cliente = movil ? await Clientes.findOne({ _id: movil.cliente_id }) : null;
-
-            resultados.Simcard.push(sim);
-            if (equipo) resultados.EquipoAVL.push(equipo);
-            if (movil) resultados.Movil.push(movil);
-            if (cliente) resultados.Cliente.push(cliente);
+        const searchTerm = query.trim();
+        if (!searchTerm) {
+            throw new Error('El término de búsqueda está vacío después de recortar espacios.');
         }
 
-        // Buscar en EquiposAVL
-        const equipos = await EquiposAVL.find({
+        console.log('\n=== INICIO DE BÚSQUEDA ===');
+        console.log(`Término de búsqueda: "${searchTerm}"`);
+
+        const regex = new RegExp(searchTerm, 'i');
+        const numericTerm = !isNaN(searchTerm) ? Number(searchTerm) : null;
+
+        let clientes = [];
+        let moviles = [];
+        let equipos = [];
+
+        // === Búsqueda inicial en Cliente ===
+        console.log('\n=== BÚSQUEDA INICIAL EN CLIENTE ===');
+        clientes = await Cliente.find({
             $or: [
-                { IMEI: regex },
-                { numeroSerie: regex },
-                { firmware: regex },
-                { fabricante: regex },
-                { modelo: regex },
-                { estado: regex },
-            ],
-        });
-
-        for (const equipo of equipos) {
-            const movil = await Moviles.findOne({ _id: equipo.movil_id });
-            const cliente = movil ? await Clientes.findOne({ _id: movil.cliente_id }) : null;
-            const sim = await Simcards.findOne({ _id: equipo.simcard_id });
-
-            resultados.EquipoAVL.push(equipo);
-            if (sim) resultados.Simcard.push(sim);
-            if (movil) resultados.Movil.push(movil);
-            if (cliente) resultados.Cliente.push(cliente);
-        }
-
-        // Buscar en Moviles
-        const moviles = await Moviles.find({
-            $or: [
-                { condicion: regex },
-                { tipo: regex },
-                { marca: regex },
-                { patente: regex },
-                { mandante: regex },
-                { descripcionInterna: regex },
-            ],
-        });
-
-        for (const movil of moviles) {
-            const cliente = await Clientes.findOne({ _id: movil.cliente_id });
-            const equipoPrimario = await EquiposAVL.findOne({ _id: movil.equipoPrimario });
-            const equipoSecundario = await EquiposAVL.findOne({ _id: movil.equipoSecundario });
-
-            resultados.Movil.push(movil);
-            if (cliente) resultados.Cliente.push(cliente);
-            if (equipoPrimario) {
-                resultados.EquipoAVL.push(equipoPrimario);
-                const simPrimaria = await Simcards.findOne({ _id: equipoPrimario.simcard_id });
-                if (simPrimaria) resultados.Simcard.push(simPrimaria);
-            }
-            if (equipoSecundario) {
-                resultados.EquipoAVL.push(equipoSecundario);
-                const simSecundaria = await Simcards.findOne({ _id: equipoSecundario.simcard_id });
-                if (simSecundaria) resultados.Simcard.push(simSecundaria);
-            }
-        }
-
-        // Buscar en Clientes
-        const clientes = await Clientes.find({
-            $or: [
-                { nombre: regex },
-                { razonSocial: regex },
+                { Cliente: regex },
+                { 'Razon Social': regex },
                 { RUT: regex },
-                { domicilio: regex },
-                { emails: regex },
             ],
-        });
+        }).lean();
+        console.log('Clientes encontrados inicialmente:', clientes);
 
-        for (const cliente of clientes) {
-            const moviles = await Moviles.find({ cliente_id: cliente._id });
+        // === Búsqueda inicial en Movil ===
+        console.log('\n=== BÚSQUEDA INICIAL EN MOVIL ===');
+        moviles = await Movil.find({
+            $or: [
+                { Cliente: regex },
+                { Patente: regex },
+                { Marca: regex },
+                { Tipo: regex },
+            ],
+        }).lean();
+        console.log('Móviles encontrados inicialmente:', moviles);
 
-            resultados.Cliente.push(cliente);
-            for (const movil of moviles) {
-                const equipoPrimario = await EquiposAVL.findOne({ _id: movil.equipoPrimario });
-                const equipoSecundario = await EquiposAVL.findOne({ _id: movil.equipoSecundario });
+        // === Búsqueda inicial en EquipoAVL ===
+        console.log('\n=== BÚSQUEDA INICIAL EN EQUIPOAVL ===');
+        equipos = await EquipoAVL.find({
+            $or: [
+                { imei: numericTerm || regex },
+                { serial: numericTerm || regex },
+                { model: regex },
+                { ID: numericTerm },
+            ],
+        }).lean();
+        console.log('Equipos encontrados inicialmente:', equipos);
 
-                resultados.Movil.push(movil);
-                if (equipoPrimario) {
-                    resultados.EquipoAVL.push(equipoPrimario);
-                    const simPrimaria = await Simcards.findOne({ _id: equipoPrimario.simcard_id });
-                    if (simPrimaria) resultados.Simcard.push(simPrimaria);
-                }
-                if (equipoSecundario) {
-                    resultados.EquipoAVL.push(equipoSecundario);
-                    const simSecundaria = await Simcards.findOne({ _id: equipoSecundario.simcard_id });
-                    if (simSecundaria) resultados.Simcard.push(simSecundaria);
-                }
-            }
+        // === Propagación desde EquipoAVL ===
+        if (equipos.length > 0) {
+            console.log('\n=== PROPAGACIÓN DESDE EQUIPOAVL ===');
+            const equipoIds = equipos.map((equipo) => equipo.ID).filter(Boolean);
+            console.log('IDs de equipos extraídos de EquipoAVL:', equipoIds);
+
+            const movilesPorEquipo = await Movil.find().lean();
+            const movilesRelacionados = movilesPorEquipo.filter((movil) => {
+                const equipoPrinc = movil['Equipo Princ'];
+                const extractedId = extractEquipoPrinc(equipoPrinc);
+                return equipoIds.includes(extractedId);
+            });
+            console.log('Móviles encontrados por equipos:', movilesRelacionados);
+
+            moviles = [...moviles, ...movilesRelacionados];
+            console.log('Estado actual de Móviles después de búsqueda por equipos:', moviles);
+
+            const clienteNames = movilesRelacionados.map((movil) => movil.Cliente).filter(Boolean);
+            console.log('Clientes extraídos de Móviles:', clienteNames);
+
+            const clientesPorEquipo = await Cliente.find({
+                Cliente: { $in: clienteNames },
+            }).lean();
+            console.log('Clientes encontrados por móviles relacionados a equipos:', clientesPorEquipo);
+
+            clientes = [...clientes, ...clientesPorEquipo];
+            console.log('Estado actual de Clientes después de propagación desde EquipoAVL:', clientes);
         }
 
-        res.json(resultados);
+        // === Propagación desde Movil ===
+        if (moviles.length > 0) {
+            console.log('\n=== PROPAGACIÓN DESDE MOVILES ===');
+            const clienteNames = moviles.map((movil) => movil.Cliente).filter(Boolean);
+            console.log('Clientes extraídos de Móviles:', clienteNames);
+
+            const clientesPorMovil = await Cliente.find({
+                Cliente: { $in: clienteNames },
+            }).lean();
+            console.log('Clientes encontrados por móviles:', clientesPorMovil);
+
+            clientes = [...clientes, ...clientesPorMovil];
+            console.log('Estado actual de Clientes después de propagación desde Móviles:', clientes);
+
+            const equipoIds = moviles
+                .map((movil) => extractEquipoPrinc(movil['Equipo Princ']))
+                .filter((id) => id !== null);
+            console.log('IDs de equipos extraídos de Móviles:', equipoIds);
+
+            const equiposPorMovil = await EquipoAVL.find({
+                ID: { $in: equipoIds },
+            }).lean();
+            console.log('Equipos encontrados por IDs de Móviles:', equiposPorMovil);
+
+            equipos = [...equipos, ...equiposPorMovil];
+            console.log('Estado actual de Equipos después de propagación desde Móviles:', equipos);
+        }
+
+        // === Propagación desde Cliente ===
+        if (clientes.length > 0) {
+            console.log('\n=== PROPAGACIÓN DESDE CLIENTES ===');
+            const clienteNames = clientes.map((c) => c.Cliente).filter(Boolean);
+            console.log('Nombres de clientes para búsqueda en Móviles:', clienteNames);
+
+            const movilesPorCliente = await Movil.find({
+                Cliente: { $in: clienteNames },
+            }).lean();
+            console.log('Móviles encontrados por clientes:', movilesPorCliente);
+
+            moviles = [...moviles, ...movilesPorCliente];
+            console.log('Estado actual de Móviles después de propagación desde Clientes:', moviles);
+
+            const equipoIds = movilesPorCliente
+                .map((movil) => extractEquipoPrinc(movil['Equipo Princ']))
+                .filter((id) => id !== null);
+            console.log('IDs de equipos extraídos de Móviles:', equipoIds);
+
+            const equiposPorCliente = await EquipoAVL.find({
+                ID: { $in: equipoIds },
+            }).lean();
+            console.log('Equipos encontrados por IDs de Móviles:', equiposPorCliente);
+
+            equipos = [...equipos, ...equiposPorCliente];
+            console.log('Estado actual de Equipos después de propagación desde Clientes:', equipos);
+        }
+
+        // Eliminar duplicados
+        clientes = Array.from(new Set(clientes.map((c) => JSON.stringify(c)))).map((c) =>
+            JSON.parse(c)
+        );
+        moviles = Array.from(new Set(moviles.map((m) => JSON.stringify(m)))).map((m) =>
+            JSON.parse(m)
+        );
+        equipos = Array.from(new Set(equipos.map((e) => JSON.stringify(e)))).map((e) =>
+            JSON.parse(e)
+        );
+
+        console.log('\n=== RESULTADOS FINALES ===');
+        console.log(`Clientes: ${clientes.length}`);
+        console.log(`Móviles: ${moviles.length}`);
+        console.log(`Equipos: ${equipos.length}`);
+
+        res.json({ Cliente: clientes, Movil: moviles, EquipoAVL: equipos });
     } catch (error) {
-        console.error('Error al buscar datos:', error);
-        res.status(500).json({ message: 'Error interno del servidor' });
+        console.error('\n=== ERROR EN LA BÚSQUEDA ===');
+        console.error('Error completo:', error);
+        res.status(500).json({
+            message: 'Error al realizar la búsqueda',
+            error: error.message,
+        });
     }
 };
 
-exports.getSuggestions = async (req, res) => {
-    try {
-        const { query } = req.query;
-        const regex = new RegExp(query, 'i'); // Búsqueda insensible a mayúsculas
+// Función para extraer valores de "Equipo Princ"
+const extractEquipoPrinc = (equipoPrincField) => {
+    if (typeof equipoPrincField === 'number') {
+        return equipoPrincField;
+    } else if (typeof equipoPrincField === 'object' && equipoPrincField !== null) {
+        const values = Object.values(equipoPrincField);
+        return values.find((val) => typeof val === 'number') || null;
+    }
+    return null;
+};
 
+// Controlador para manejar sugerencias de búsqueda
+exports.getSuggestions = async (req, res) => {
+    const { query } = req.query;
+
+    if (!query) {
+        return res.status(400).json({ message: 'El término de búsqueda es obligatorio' });
+    }
+
+    try {
+        const regex = new RegExp(query, 'i');
         const suggestions = new Set();
 
-        // Buscar en Simcards
-        const simcards = await Simcards.find({
+        // Buscar sugerencias en clientes
+        const clientes = await Cliente.find({
             $or: [
-                { ICCID: regex },
-                { numeroTelefonico: regex },
-                { operador: regex },
-                { portador: regex },
-                { estado: regex },
-            ],
+                { Cliente: regex },
+                { "Razon Social": regex },
+                { RUT: regex }
+            ]
         });
-        simcards.forEach((sim) => {
-            suggestions.add(sim.ICCID);
-            suggestions.add(sim.numeroTelefonico);
-            suggestions.add(sim.operador);
-            suggestions.add(sim.portador);
-        });
+        clientes.forEach(c => suggestions.add(c.Cliente).add(c["Razon Social"]).add(c.RUT));
 
-        // Buscar en EquiposAVL
-        const equipos = await EquiposAVL.find({
+        // Buscar sugerencias en móviles
+        const moviles = await Movil.find({
             $or: [
-                { IMEI: regex },
-                { numeroSerie: regex },
-                { firmware: regex },
-                { fabricante: regex },
-                { modelo: regex },
-                { estado: regex },
-            ],
+                { Cliente: regex },
+                { Marca: regex },
+                { Patente: regex }
+            ]
         });
-        equipos.forEach((equipo) => {
-            suggestions.add(equipo.IMEI);
-            suggestions.add(equipo.numeroSerie);
-            suggestions.add(equipo.fabricante);
-            suggestions.add(equipo.modelo);
-        });
+        moviles.forEach(m => suggestions.add(m.Cliente).add(m.Marca).add(m.Patente));
 
-        // Buscar en Moviles
-        const moviles = await Moviles.find({
+        // Buscar sugerencias en equipos
+        const equipos = await EquipoAVL.find({
             $or: [
-                { condicion: regex },
-                { tipo: regex },
-                { marca: regex },
-                { patente: regex },
-                { mandante: regex },
-                { descripcionInterna: regex },
-            ],
+                { imei: regex },
+                { serial: regex },
+                { model: regex }
+            ]
         });
-        moviles.forEach((movil) => {
-            suggestions.add(movil.tipo);
-            suggestions.add(movil.marca);
-            suggestions.add(movil.patente);
-            suggestions.add(movil.mandante);
-        });
+        equipos.forEach(e => suggestions.add(e.imei).add(e.model));
 
-        // Buscar en Clientes
-        const clientes = await Clientes.find({
-            $or: [
-                { nombre: regex },
-                { razonSocial: regex },
-                { RUT: regex },
-                { domicilio: regex },
-                { emails: regex },
-            ],
-        });
-        clientes.forEach((cliente) => {
-            suggestions.add(cliente.nombre);
-            suggestions.add(cliente.razonSocial);
-            suggestions.add(cliente.RUT);
-        });
-
-        res.json([...suggestions]); // Convertimos el Set a un array
+        res.json([...suggestions]);
     } catch (error) {
         console.error('Error al obtener sugerencias:', error);
         res.status(500).json({ message: 'Error interno del servidor' });
     }
 };
+

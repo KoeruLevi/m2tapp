@@ -7,7 +7,7 @@ const Search = () => {
 
     const handleSearch = async () => {
         try {
-            const { data } = await axios.post('/api/data/search', { query });
+            const { data } = await axios.post('/api/data/search', { query }); // Asegúrate de que la ruta coincide con el backend
             setResults(data);
         } catch (error) {
             console.error('Error buscando datos', error);
