@@ -1,117 +1,89 @@
-/* Contenedor principal */
-.buscador-container {
-    max-width: 900px;
-    margin: 0 auto;
-    text-align: center;
+.buscador-wrapper {
+    font-family: Arial, sans-serif;
+    background-color: #f4faff;
     padding: 20px;
-    background-color: #ffffff; /* Fondo blanco */
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    height: 100vh; /* Ocupa toda la ventana */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    overflow: hidden; /* Evitar scroll inesperado */
 }
 
-/* Título */
-.buscador-titulo {
-    font-size: 2rem;
-    color: #004085; /* Texto en azul oscuro */
-    margin-bottom: 20px;
+.tabs-container {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    height: 75vh; /* Aprovechar la altura disponible */
+    gap: 20px;
 }
 
-/* Formulario */
-.buscador-form {
-    margin-bottom: 20px;
+.tab {
+    flex: 1;
+    background-color: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    overflow-y: auto;
 }
 
-.buscador-input {
-    padding: 10px;
-    font-size: 1rem;
+.card {
+    background-color: #f8f9fa;
     border: 1px solid #d6d9dd;
     border-radius: 5px;
-    margin-right: 10px;
-    width: 70%;
-    color: #333; /* Texto en gris oscuro */
-    background-color: #f9f9f9; /* Fondo claro */
-}
-
-.buscador-boton {
-    padding: 10px 20px;
-    font-size: 1rem;
-    background-color: #004085; /* Azul oscuro */
-    color: white; /* Texto blanco */
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-}
-
-.buscador-boton:hover {
-    background-color: #002952; /* Azul más oscuro */
-}
-
-/* Errores */
-.buscador-error {
-    color: red;
+    padding: 10px;
     margin-bottom: 10px;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    cursor: pointer;
 }
 
-/* Pestañas */
-.buscador-tabs {
+.card:hover {
+    background-color: #e9ecef;
+    transform: scale(1.02);
+}
+
+.card.selected {
+    background-color: #0056b3;
+    color: #ffffff;
+    border-color: #004085;
+}
+
+.popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7); /* Fondo oscuro traslúcido */
     display: flex;
     justify-content: center;
-    margin-bottom: 20px;
+    align-items: center;
+    z-index: 1000; /* Asegura que esté sobre todo */
 }
 
-.tab-button {
-    background-color: #e1e7f5; /* Fondo azul claro */
-    color: #004085; /* Texto azul oscuro */
-    padding: 10px 20px;
-    margin: 0 5px;
-    border: 1px solid #004085;
-    border-radius: 5px;
+.popup-content {
+    background: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    width: 60%;
+    max-height: 80%;
+    overflow-y: auto;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+}
+
+.checkbox-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.close-btn {
+    background: #ff4d4d;
+    border: none;
+    color: #fff;
+    padding: 5px 10px;
     cursor: pointer;
-    transition: background-color 0.3s ease;
-}
-
-.tab-button:hover {
-    background-color: #c2d4f0; /* Azul más claro al pasar el cursor */
-}
-
-.tab-button.active {
-    background-color: #004085; /* Fondo azul oscuro */
-    color: white; /* Texto blanco */
-    font-weight: bold;
-}
-
-/* Tablas de resultados */
-.result-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-    color: #333; /* Asegura que el texto de las tablas sea visible */
-}
-
-.result-table th,
-.result-table td {
-    border: 1px solid #d6d9dd; /* Bordes grises */
-    padding: 10px;
-    text-align: center;
-    color: #333; /* Texto gris oscuro */
-}
-
-.result-table th {
-    background-color: #004085; /* Azul oscuro */
-    color: white; /* Texto blanco */
-}
-
-.result-table td {
-    background-color: #f9f9f9; /* Fondo claro */
-}
-
-.result-table tr:nth-child(even) {
-    background-color: #e1e7f5; /* Azul muy claro para filas pares */
-}
-
-/* Resaltar al pasar el cursor */
-.result-table td:hover {
-    background-color: #c2d4f0; /* Fondo azul claro al pasar el cursor */
-    color: #004085; /* Texto azul oscuro */
+    border-radius: 5px;
+    font-size: 14px;
 }
