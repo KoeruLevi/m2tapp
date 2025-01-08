@@ -1,0 +1,21 @@
+.header-container {
+    background-color: #007bff;
+    color: white;
+    padding: 15px;
+    text-align: center;
+    cursor: pointer;
+    position: sticky; /* Cambiar a sticky para que no se superponga */
+    top: 0;
+    width: 100%;
+    z-index: 1000;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.header-container:hover {
+    background-color: #0056b3;
+}
+
+.header-title {
+    font-size: 24px;
+    margin: 0;
+}

@@ -176,3 +176,39 @@ exports.getSuggestions = async (req, res) => {
     }
 };
 
+
+
+exports.createCliente = async (req, res) => {
+    try {
+        const cliente = new Cliente(req.body);
+        const savedCliente = await cliente.save();
+        res.status(201).json(savedCliente);
+    } catch (error) {
+        console.error('Error al crear Cliente:', error);
+        res.status(500).json({ message: 'Error al crear Cliente', error: error.message });
+    }
+};
+
+// Crear nuevo Movil
+exports.createMovil = async (req, res) => {
+    try {
+        const movil = new Movil(req.body);
+        const savedMovil = await movil.save();
+        res.status(201).json(savedMovil);
+    } catch (error) {
+        console.error('Error al crear Movil:', error);
+        res.status(500).json({ message: 'Error al crear Movil', error: error.message });
+    }
+};
+
+// Crear nuevo EquipoAVL
+exports.createEquipoAVL = async (req, res) => {
+    try {
+        const equipo = new EquipoAVL(req.body);
+        const savedEquipo = await equipo.save();
+        res.status(201).json(savedEquipo);
+    } catch (error) {
+        console.error('Error al crear EquipoAVL:', error);
+        res.status(500).json({ message: 'Error al crear EquipoAVL', error: error.message });
+    }
+};
