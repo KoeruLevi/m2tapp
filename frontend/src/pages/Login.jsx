@@ -12,7 +12,7 @@ const Login = () => {
         setError(null); // Reinicia el estado de errores
 
         try {
-            const response = await axios.post('http://localhost:5000/api/auth/login', {
+            const response = await axios.post('https://m2t-backend.onrender.com/api/auth/login', {
                 email,
                 password,
             });

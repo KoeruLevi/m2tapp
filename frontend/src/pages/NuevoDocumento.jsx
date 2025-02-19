@@ -13,7 +13,7 @@ const NuevoDocumento = ({ tipo }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const endpoint = `http://localhost:5000/api/data/${tipo.toLowerCase()}`;
+            const endpoint = `https://m2t-backend.onrender.com/api/data/${tipo.toLowerCase()}`;
             const response = await axios.post(endpoint, formData);
             setMensaje(`Nuevo ${tipo} creado con éxito: ${JSON.stringify(response.data)}`);
         } catch (error) {

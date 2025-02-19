@@ -29,7 +29,7 @@ const [editedData, setEditedData] = useState({});
         console.log("🔍 Búsqueda iniciada con:", query);
     
         try {
-            const response = await axios.get(`http://localhost:5000/api/data/search`, { params: query });
+            const response = await axios.get(`https://m2t-backend.onrender.com/api/data/search`, { params: query });
             console.log("✅ Respuesta de la API:", response.data);
     
             let clientes = response.data.Cliente || [];
@@ -188,7 +188,7 @@ const [editedData, setEditedData] = useState({});
             };
     
             const response = await axios.put(
-                `http://localhost:5000/api/data/update`,
+                `https://m2t-backend.onrender.com/api/data/update`,
                 payload
             );
     

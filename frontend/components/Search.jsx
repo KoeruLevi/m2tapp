@@ -17,7 +17,7 @@ const Search = () => {
         setError(null);
 
         try {
-            const { data } = await axios.get('http://localhost:5000/api/data/search', { params: { cliente: query, movil: query, equipo: query, simcard: query } });
+            const { data } = await axios.get('https://m2t-backend.onrender.com/api/data/search', { params: { cliente: query, movil: query, equipo: query, simcard: query } });
             console.log("Datos recibidos:", data);
             setResults(data);
         } catch (error) {
