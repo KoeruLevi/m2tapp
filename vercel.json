@@ -1,5 +1,9 @@
 {
-    "rewrites": [
-      { "source": "/(.*)", "destination": "/index.html" }
-    ]
+    "redirects": [
+    { "source": "/dashboard", "destination": "/", "permanent": false },
+    { "source": "/buscador", "destination": "/", "permanent": false },
+    { "source": "/nuevo-cliente", "destination": "/", "permanent": false },
+    { "source": "/nuevo-movil", "destination": "/", "permanent": false },
+    { "source": "/nuevo-equipo", "destination": "/", "permanent": false }
+  ]
   }
