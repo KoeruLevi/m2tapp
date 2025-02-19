@@ -6,15 +6,15 @@ import Header from "../components/Header";
 const Buscador = () => {
     const [query, setQuery] = useState({ cliente: '', movil: '', equipo: '', simcard: '' });
     const [results, setResults] = useState({ Cliente: [], Movil: [], EquipoAVL: [], Simcard: [] });
-
     const [filteredClientes, setFilteredClientes] = useState([]);
     const [filteredMoviles, setFilteredMoviles] = useState([]);
     const [filteredEquipos, setFilteredEquipos] = useState([]);
     const [filteredSimcards, setFilteredSimcards] = useState([]);
-    const [selectedItem, setSelectedItem] = useState(null);
     const [selectedFilters, setSelectedFilters] = useState({ Cliente: null, Movil: null, EquipoAVL: null, Simcard: null });
     const [popupData, setPopupData] = useState(null);
     const [popupType, setPopupType] = useState('');
+    const [isEditing, setIsEditing] = useState(false); // Estado para activar modo edición
+const [editedData, setEditedData] = useState({});
 
     useEffect(() => {
         console.log("🔄 UI Actualizada - Clientes:", filteredClientes);
@@ -23,16 +23,15 @@ const Buscador = () => {
         console.log("🔄 UI Actualizada - Simcards:", filteredSimcards);
     }, [filteredClientes, filteredMoviles, filteredEquipos, filteredSimcards]);
 
+    // 📌 FUNCIONALIDAD PARA BUSCAR DATOS
     const handleSearch = async (e) => {
         e.preventDefault();
         console.log("🔍 Búsqueda iniciada con:", query);
     
         try {
-            // 📌 Llamada a la API
             const response = await axios.get(`http://localhost:5000/api/data/search`, { params: query });
             console.log("✅ Respuesta de la API:", response.data);
     
-            // 📌 Variables con los datos de cada colección
             let clientes = response.data.Cliente || [];
             let moviles = response.data.Movil || [];
             let equipos = response.data.EquipoAVL || [];
@@ -44,116 +43,30 @@ const Buscador = () => {
             console.log("   - Equipos:", equipos.length);
             console.log("   - Simcards:", simcards.length);
     
-            // 📌 Variables de filtrado
-            let filteredClientes = [...clientes];
-            let filteredMoviles = [...moviles];
-            let filteredEquipos = [...equipos];
-            let filteredSimcards = [...simcards];
+            // 🔹 Eliminar duplicados en los móviles basados en el _id
+            const uniqueMoviles = moviles.filter((movil, index, self) =>
+                index === self.findIndex((m) => m._id === movil._id)
+            );
     
-            // 📌 Filtrar por CLIENTE
-            if (query.cliente) {
-                console.log("🔎 Filtrando por cliente:", query.cliente);
-                filteredMoviles = moviles.filter(movil =>
-                    movil.Cliente &&
-                    typeof movil.Cliente === "string" &&
-                    movil.Cliente.trim().toLowerCase() === query.cliente.trim().toLowerCase()
-                );
-                console.log("   - Móviles después del filtro:", filteredMoviles.length);
-            
-                // 🔹 Eliminar duplicados antes de continuar con los IDs
-                filteredMoviles = filteredMoviles.filter((movil, index, self) =>
-                    index === self.findIndex((m) => m._id === movil._id)
-                );
-                console.log("✅ Móviles después de eliminar duplicados:", filteredMoviles.length);
-            
-                // 🔹 Extraer IDs de equipos desde "Equipo Princ"
-                const movilIds = filteredMoviles.map(movil => {
-                    console.log("   🔎 Revisando Equipo Princ:", movil["Equipo Princ"]);
-                    
-                    if (!movil["Equipo Princ"]) return null; // Evitar undefined/null
-            
-                    if (typeof movil["Equipo Princ"] === "object") {
-                        return movil["Equipo Princ"][""] || movil["Equipo Princ"]["ID"] || null;
-                    }
-            
-                    return movil["Equipo Princ"]; // Si es string o número, devolverlo directamente
-                }).filter(id => id); // Eliminar null/undefined
-            
-                console.log("   - ID de Equipos obtenidos desde Móviles:", movilIds);
-            
-                // 🔹 Filtrar Equipos usando IDs obtenidos
-                filteredEquipos = equipos.filter(equipo => movilIds.includes(equipo.ID));
-                console.log("   - Equipos después del filtro por móviles:", filteredEquipos.length);
-            
-                // 🔹 Filtrar Simcards en base a los Equipos obtenidos
-                const equipoIds = filteredEquipos.map(equipo => equipo.ID);
-                filteredSimcards = simcards.filter(simcard => equipoIds.includes(simcard.ID));
-                console.log("   - Simcards después del filtro por equipos:", filteredSimcards.length);
-            }
+            console.log("✅ Móviles después de eliminar duplicados:", uniqueMoviles.length);
     
-            // 📌 Filtrar por MOVIL sin eliminar los datos previos filtrados
-            if (query.movil) {
-                console.log("🔎 Filtrando por móvil:", query.movil);
-    
-                filteredMoviles = filteredMoviles.filter(movil => {
-                    if (!movil.Tipo) {
-                        console.log("   ⚠️ Móvil sin Tipo válido:", movil);
-                        return false;
-                    }
-                    return movil.Tipo.toLowerCase().includes(query.movil.toLowerCase());
-                });
-    
-                console.log("   - Móviles después del filtro por Tipo:", filteredMoviles.length);
-            }
-    
-            // 📌 Filtrar por EQUIPO
-            if (query.equipo) {
-                console.log("🔎 Filtrando por equipo:", query.equipo);
-    
-                filteredEquipos = equipos.filter(equipo =>
-                    equipo.model &&
-                    equipo.model.toString().toLowerCase().includes(query.equipo.toLowerCase())
-                );
-    
-                console.log("   - Equipos después del filtro:", filteredEquipos.length);
-            }
-    
-            // 📌 Filtrar por SIMCARD
-            if (query.simcard) {
-                console.log("🔎 Filtrando por simcard:", query.simcard);
-    
-                filteredSimcards = simcards.filter(simcard =>
-                    simcard.operador &&
-                    simcard.operador.toString().toLowerCase().includes(query.simcard.toLowerCase())
-                );
-    
-                console.log("   - Simcards después del filtro:", filteredSimcards.length);
-            }
-
-            
-    
-            // 📌 Actualizar estados con los resultados filtrados
-            setFilteredClientes(filteredClientes);
-            setFilteredMoviles(filteredMoviles);
-            setFilteredEquipos(filteredEquipos);
-            setFilteredSimcards(filteredSimcards);
-    
-            console.log("✅ Resultados finales:");
-            console.log("   - Clientes:", filteredClientes.length);
-            console.log("   - Móviles:", filteredMoviles.length);
-            console.log("   - Equipos:", filteredEquipos.length);
-            console.log("   - Simcards:", filteredSimcards.length);
+            setResults(response.data);
+            setFilteredClientes(clientes);
+            setFilteredMoviles(uniqueMoviles); // Usamos la versión sin duplicados
+            setFilteredEquipos(equipos);
+            setFilteredSimcards(simcards);
     
         } catch (error) {
             console.error("❌ Error al realizar la búsqueda:", error);
         }
     };
 
+    // 📌 FUNCIÓN PARA APLICAR FILTROS Y RESTAURAR DATOS AL DESELECCIONAR
     const handleFilterClick = (type, data) => {
         console.log(`🔵 Clic en ${type}:`, data);
-    
+
         let updatedFilters = { ...selectedFilters };
-    
+
         // Si el elemento ya estaba seleccionado, lo eliminamos del filtro
         if (selectedFilters[type] && selectedFilters[type]._id === data._id) {
             console.log(`❌ Deseleccionando ${type}`);
@@ -162,141 +75,152 @@ const Buscador = () => {
             applyActiveFilters(updatedFilters);
             return;
         }
-    
+
         // Agregar el nuevo filtro
         updatedFilters[type] = data;
         setSelectedFilters(updatedFilters);
-    
+
         console.log("🔍 Aplicando filtrado basado en selección...");
+        applyActiveFilters(updatedFilters);
+    };
+
+    const applyActiveFilters = (filters) => {
+        console.log("🔄 Restaurando datos con filtros activos...", filters);
     
-        // Inicializar variables con todos los datos originales
         let newFilteredClientes = [...results.Cliente];
         let newFilteredMoviles = [...results.Movil];
         let newFilteredEquipos = [...results.EquipoAVL];
         let newFilteredSimcards = [...results.Simcard];
     
-        // 🔹 Si se selecciona un Cliente, filtramos sus móviles, equipos y simcards
-        if (type === "Cliente") {
-            console.log("🔍 Filtrando datos relacionados con el Cliente seleccionado...");
-            newFilteredMoviles = newFilteredMoviles.filter(movil => movil.Cliente === data.Cliente);
-            const movilIDs = newFilteredMoviles.map(movil => movil["Equipo Princ"]?.[''] || movil["Equipo Princ"]).filter(id => id);
-            newFilteredEquipos = newFilteredEquipos.filter(equipo => movilIDs.includes(equipo.ID));
-            const equipoIDs = newFilteredEquipos.map(equipo => equipo.ID);
-            newFilteredSimcards = newFilteredSimcards.filter(simcard => equipoIDs.includes(simcard.ID));
-        }
+        Object.entries(filters).forEach(([type, filter]) => {
+            if (!filter) return;
     
-        // 🔹 Si se selecciona un Móvil, filtramos su Cliente, Equipos y Simcards
-        if (type === "Movil") {
-            console.log("🔍 Filtrando datos relacionados con el Móvil seleccionado...");
-            newFilteredClientes = newFilteredClientes.filter(cliente => cliente.Cliente === data.Cliente);
-            const equipoID = data?.["Equipo Princ"]?.[''] || data?.["Equipo Princ"];
-            if (equipoID) {
-                newFilteredEquipos = newFilteredEquipos.filter(equipo => equipo.ID === equipoID);
-                const equipoIDs = newFilteredEquipos.map(equipo => equipo.ID);
-                newFilteredSimcards = newFilteredSimcards.filter(simcard => equipoIDs.includes(simcard.ID));
-            }
-            newFilteredMoviles = [data]; // Mantener solo el móvil seleccionado
-        }
+            switch (type) {
+                case "Cliente": {
+                    newFilteredMoviles = newFilteredMoviles.filter(movil => movil.Cliente === filter.Cliente);
     
-        // 🔹 Si se selecciona un EquipoAVL, filtramos los Móviles, Clientes y Simcards
-        if (type === "EquipoAVL") {
-            console.log("🔍 Filtrando datos relacionados con el Equipo seleccionado...");
-            newFilteredMoviles = newFilteredMoviles.filter(movil => movil["Equipo Princ"]?.[''] === data.ID || movil["Equipo Princ"] === data.ID);
-            newFilteredClientes = newFilteredClientes.filter(cliente => newFilteredMoviles.some(movil => movil.Cliente === cliente.Cliente));
-            newFilteredSimcards = newFilteredSimcards.filter(simcard => simcard.ID === data.ID);
-            newFilteredEquipos = [data]; // Mantener solo el equipo seleccionado
-        }
+                    const movilIds = newFilteredMoviles
+                        .map(movil => movil["Equipo Princ"]?.[""] || movil["Equipo Princ"])
+                        .filter(Boolean);
     
-        // 🔹 Si se selecciona una Simcard, filtramos los Equipos, Móviles y Clientes
-        if (type === "Simcard") {
-            console.log("🔍 Filtrando datos relacionados con la Simcard seleccionada...");
-            newFilteredEquipos = newFilteredEquipos.filter(equipo => equipo.ID === data.ID);
-            newFilteredMoviles = newFilteredMoviles.filter(movil => movil["Equipo Princ"]?.[''] === data.ID || movil["Equipo Princ"] === data.ID);
-            newFilteredClientes = newFilteredClientes.filter(cliente => newFilteredMoviles.some(movil => movil.Cliente === cliente.Cliente));
-            newFilteredSimcards = [data]; // Mantener solo la simcard seleccionada
-        }
+                    newFilteredEquipos = newFilteredEquipos.filter(equipo => movilIds.includes(equipo.ID));
+                    const equipoIds = newFilteredEquipos.map(equipo => equipo.ID);
     
-        console.log("📌 Resultados después del filtrado:");
-        console.log("   - Clientes:", newFilteredClientes.length);
-        console.log("   - Móviles:", newFilteredMoviles.length);
-        console.log("   - Equipos:", newFilteredEquipos.length);
-        console.log("   - Simcards:", newFilteredSimcards.length);
+                    newFilteredSimcards = newFilteredSimcards.filter(simcard => equipoIds.includes(simcard.ID));
+                    break;
+                }
     
-        setFilteredClientes(newFilteredClientes);
-        setFilteredMoviles(newFilteredMoviles);
-        setFilteredEquipos(newFilteredEquipos);
-        setFilteredSimcards(newFilteredSimcards);
-    };
+                case "Movil": {
+                    newFilteredClientes = newFilteredClientes.filter(cliente => cliente.Cliente === filter.Cliente);
     
-    /**
-     * Función para restaurar datos en base a los filtros activos después de deseleccionar un item.
-     */
-    const applyActiveFilters = (activeFilters) => {
-        console.log("🔄 Restaurando datos con filtros activos...", activeFilters);
+                    const equipoId = filter["Equipo Princ"]?.[""] || filter["Equipo Princ"];
+                    newFilteredEquipos = newFilteredEquipos.filter(equipo => equipo.ID === equipoId);
+                    newFilteredSimcards = newFilteredSimcards.filter(simcard => simcard.ID === equipoId);
     
-        // Restaurar todos los datos desde el estado original
-        let activeFilteredClientes = [...results.Cliente];
-        let activeFilteredMoviles = [...results.Movil];
-        let activeFilteredEquipos = [...results.EquipoAVL];
-        let activeFilteredSimcards = [...results.Simcard];
+                    newFilteredMoviles = [filter]; // Mantener solo el móvil seleccionado
+                    break;
+                }
     
-        Object.entries(activeFilters).forEach(([type, filter]) => {
-            if (type === "Cliente") {
-                activeFilteredMoviles = activeFilteredMoviles.filter(movil => movil.Cliente === filter.Cliente);
-                const movilIDs = activeFilteredMoviles.map(movil => movil["Equipo Princ"]?.[''] || movil["Equipo Princ"]).filter(id => id);
-                activeFilteredEquipos = activeFilteredEquipos.filter(equipo => movilIDs.includes(equipo.ID));
-                const equipoIDs = activeFilteredEquipos.map(equipo => equipo.ID);
-                activeFilteredSimcards = activeFilteredSimcards.filter(simcard => equipoIDs.includes(simcard.ID));
-            }
+                case "EquipoAVL": {
+                    newFilteredMoviles = newFilteredMoviles.filter(
+                        movil => movil["Equipo Princ"]?.[""] === filter.ID || movil["Equipo Princ"] === filter.ID
+                    );
     
-            if (type === "Movil") {
-                activeFilteredClientes = activeFilteredClientes.filter(cliente => cliente.Cliente === filter.Cliente);
-                const equipoID = filter?.["Equipo Princ"]?.[''] || filter?.["Equipo Princ"];
-                if (equipoID) {
-                    activeFilteredEquipos = activeFilteredEquipos.filter(equipo => equipo.ID === equipoID);
-                    const equipoIDs = activeFilteredEquipos.map(equipo => equipo.ID);
-                    activeFilteredSimcards = activeFilteredSimcards.filter(simcard => equipoIDs.includes(simcard.ID));
+                    newFilteredClientes = newFilteredClientes.filter(cliente =>
+                        newFilteredMoviles.some(movil => movil.Cliente === cliente.Cliente)
+                    );
+    
+                    newFilteredSimcards = newFilteredSimcards.filter(simcard => simcard.ID === filter.ID);
+                    newFilteredEquipos = [filter]; // Mantener solo el equipo seleccionado
+                    break;
+                }
+    
+                case "Simcard": {
+                    newFilteredEquipos = newFilteredEquipos.filter(equipo => equipo.ID === filter.ID);
+                    newFilteredMoviles = newFilteredMoviles.filter(
+                        movil => movil["Equipo Princ"]?.[""] === filter.ID || movil["Equipo Princ"] === filter.ID
+                    );
+    
+                    newFilteredClientes = newFilteredClientes.filter(cliente =>
+                        newFilteredMoviles.some(movil => movil.Cliente === cliente.Cliente)
+                    );
+    
+                    newFilteredSimcards = [filter]; // Mantener solo la simcard seleccionada
+                    break;
                 }
             }
         });
     
-        console.log("🔄 Datos restaurados tras deselección:");
-        setFilteredClientes(activeFilteredClientes);
-        setFilteredMoviles(activeFilteredMoviles);
-        setFilteredEquipos(activeFilteredEquipos);
-        setFilteredSimcards(activeFilteredSimcards);
-    };
-    const handleSelectOrDeselectItem = (type, item) => {
-        console.log(`🔵 Clic en ${type}:`, item);
+        // ✅ Eliminar duplicados después de aplicar filtros
+        const uniqueMoviles = newFilteredMoviles.filter((movil, index, self) =>
+            index === self.findIndex((m) => m._id === movil._id)
+        );
     
-        // Si el elemento ya está seleccionado, lo deseleccionamos y restauramos la lista original
-        if (selectedFilters[type] && selectedFilters[type]["ID"] === item["ID"]) {
-            console.log(`❌ Deseleccionando ${type}`);
-            setSelectedFilters((prev) => {
-                const updatedFilters = { ...prev };
-                delete updatedFilters[type]; // Remueve solo el filtro específico
-                return updatedFilters;
-            });
+        setFilteredClientes(newFilteredClientes);
+        setFilteredMoviles(uniqueMoviles);
+        setFilteredEquipos(newFilteredEquipos);
+        setFilteredSimcards(newFilteredSimcards);
     
-            // Restaurar los datos originales sin filtro
-            setFilteredClientes(results.Cliente);
-            setFilteredMoviles(results.Movil);
-            setFilteredEquipos(results.EquipoAVL);
-            setFilteredSimcards(results.Simcard);
-        } else {
-            // Si no está seleccionado, aplicar filtro normalmente
-            handleFilterClick(type, item);
-        }
+        console.log("✅ Móviles después de eliminar duplicados:", uniqueMoviles.length);
     };
 
+    // 📌 DOBLE CLIC PARA ABRIR DETALLE DEL ELEMENTO
     const handleCardDoubleClick = (type, data) => {
+        console.log(`🔎 Mostrando detalles de ${type}:`, data);
         setPopupType(type);
         setPopupData(data);
     };
 
+    // 📌 FUNCIÓN PARA CERRAR EL POPUP
     const closePopup = () => {
         setPopupData(null);
         setPopupType('');
+    };
+
+    const handleSaveChanges = async () => {
+        try {
+            const payload = {
+                type: popupType,  // Asegurar que el backend sabe qué tipo de documento actualizar
+                data: {
+                    ...popupData,  // Mantener los datos originales
+                    ...editedData, // Reemplazar con los cambios realizados
+                }
+            };
+    
+            const response = await axios.put(
+                `http://localhost:5000/api/data/update`,
+                payload
+            );
+    
+            console.log("✅ Datos actualizados con éxito:", response.data);
+    
+            // Actualizar UI con los nuevos datos
+            setPopupData((prev) => ({ ...prev, ...editedData }));
+            setIsEditing(false);
+            alert("✅ Cambios guardados exitosamente.");
+        } catch (error) {
+            console.error("❌ Error al actualizar los datos:", error);
+            alert("Hubo un problema al guardar los cambios.");
+        }
+    };
+
+    const handleItemClick = (type, item) => {
+        let clickTimeout;
+    
+        return () => {
+            if (clickTimeout) {
+                // Si ya hubo un clic antes, lo cancelamos y abrimos detalles
+                clearTimeout(clickTimeout);
+                clickTimeout = null;
+                handleCardDoubleClick(type, item);
+            } else {
+                // Si es el primer clic, esperamos un poco antes de decidir qué hacer
+                clickTimeout = setTimeout(() => {
+                    handleFilterClick(type, item);
+                    clickTimeout = null;
+                }, 250); // 250ms es el tiempo que espera antes de marcar/desmarcar
+            }
+        };
     };
 
     return (
@@ -326,15 +250,34 @@ const Buscador = () => {
                             JSON.stringify(selectedFilters[type]) === JSON.stringify(item)
                             ? 'selected' 
                             : ''}`}
-                        onClick={() => handleFilterClick(type, item)}
-                        onDoubleClick={() => handleCardDoubleClick(type, item)}
+                        onClick={handleItemClick(type, item)}
                     >
-                        {Object.entries(item)
-                            .filter(([key]) => key !== "_id")
-                            .slice(0, 2)
-                            .map(([key, value]) => (
-                                <p key={key}><strong>{key}:</strong> {value?.toString()}</p>
-                            ))}
+                        {/* ✅ Mostrar parámetros específicos según el tipo de entidad */}
+                        {type === "Movil" ? (
+                            <>
+                                <p><strong>Cliente:</strong> {item.Cliente}</p>
+                                <p><strong>Nombre:</strong> {item.Nombre}</p>
+                                <p><strong>Patente:</strong> {item.Patente}</p>
+                            </>
+                        ) : type === "EquipoAVL" ? (
+                            <>
+                                <p><strong>IMEI:</strong> {item.imei}</p>
+                                <p><strong>ID:</strong> {item.ID}</p>
+                            </>
+                        ) : type === "Simcard" ? (
+                            <>
+                                <p><strong>Fono:</strong> {item.fono}</p>
+                                <p><strong>Operador:</strong> {item.operador}</p>
+                            </>
+                        ) : (
+                            /* Cliente */
+                            Object.entries(item)
+                                .filter(([key]) => key !== "_id")
+                                .slice(0, 2)
+                                .map(([key, value]) => (
+                                    <p key={key}><strong>{key}:</strong> {value?.toString()}</p>
+                                ))
+                        )}
                     </div>
                 ))}
             </div>
@@ -348,56 +291,108 @@ const Buscador = () => {
             <button className="close-btn" onClick={closePopup}>X</button>
             <h2>Detalles de {popupType}</h2>
 
-            {Object.entries(popupData)
-                .filter(([key]) => key !== "_id")
-                .map(([key, value]) => (
-                    <div key={key} style={{ marginBottom: "10px" }}>
-                        <strong>{key}:</strong>
+            {/* 🔹 Botón para cambiar a modo edición */}
+            {!isEditing ? (
+                <button className="edit-btn" onClick={() => setIsEditing(true)}>Editar</button>
+            ) : (
+                <button className="save-btn" onClick={handleSaveChanges}>Guardar</button>
+            )}
 
-                        {/* 🔹 Si el valor es un objeto */}
-                        {typeof value === "object" && value !== null ? (
-                            key === "Equipo Princ" ? (
-                                // ✅ Mostrar ID dentro de "Equipo Princ" sin JSON ni checkbox
-                                <span> {value[""] || value["ID"] || "No disponible"} </span>
-                            ) : key === "Acc" || key === "Id" ? (
-                                // ✅ Mostrar accesorios e ID con checkboxes correctamente
-                                <div className="accesorios-container" style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
-                                    {Object.entries(value)
-                                        .filter(([accKey]) => accKey.trim() !== "") // Eliminar claves vacías
-                                        .map(([accKey, accValue]) => {
-                                            const isChecked = typeof accValue === "string" ? accValue.trim() !== "" : !!accValue;
-                                            return (
-                                                <label key={accKey.trim()} className="accesorio-item" style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                                                    <input type="checkbox" checked={isChecked} readOnly />
-                                                    {accKey.replace(/\n/g, "").trim()} {/* Eliminar saltos de línea y espacios extra */}
-                                                </label>
-                                            );
-                                        })}
-                                </div>
-                            ) : key === "Sensor Temp" ? (
-                                // ✅ Solución para Sensor Temp
-                                <span> {value["(Cable)"] || "No disponible"} </span>
-                            ) : (
-                                // 🔹 Si es otro objeto, desglosarlo en una lista de valores
-                                <ul>
-                                    {Object.entries(value)
-                                        .filter(([subKey]) => subKey.trim() !== "") // Evitar claves vacías
-                                        .map(([subKey, subValue]) => (
-                                            <li key={subKey.trim()}>
-                                                <strong>{subKey.replace(/\n/g, "").trim()}:</strong> {subValue.toString()}
-                                            </li>
-                                        ))}
-                                </ul>
-                            )
-                        ) : typeof value === "boolean" ? (
-                            // ✅ Si es un booleano, mostrar como checkbox
-                            <input type="checkbox" checked={value} readOnly />
+            {/* 🔹 Formulario editable si está en modo edición */}
+            {Object.entries(popupData)
+    .filter(([key]) => key !== "_id")
+    .map(([key, value]) => {
+        let displayValue = value;
+
+        if (key === "ICCID") {
+            displayValue = typeof value === "object" && value !== null 
+                ? (value.low || value.high || "No disponible") 
+                : value;
+        } 
+        
+        if (key === "Equipo Princ") {
+            displayValue = typeof value === "object" && value !== null 
+                ? (value[""] || value["ID"] || "No disponible") 
+                : value;
+        }
+
+        return (
+            <div key={key} style={{ marginBottom: "10px" }}>
+                <strong>{key}:</strong>
+                
+                {isEditing ? (
+                    key === "ICCID" || key === "Equipo Princ" ? (
+                        <input
+                            type="text"
+                            value={editedData[key] ?? displayValue}
+                            onChange={(e) => setEditedData({ ...editedData, [key]: e.target.value })}
+                            style={{ width: "100%" }}
+                        />
+                    ) : typeof value === "object" && value !== null ? (
+                        key === "Acc" || key === "Id" ? (
+                            // ✅ Checkboxes editables en modo edición
+                            <div className="accesorios-container" style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+                                {Object.entries(value).map(([accKey, accValue]) => (
+                                    <label key={accKey} className="accesorio-item" style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={!!editedData[key]?.[accKey]}
+                                            onChange={(e) =>
+                                                setEditedData({
+                                                    ...editedData,
+                                                    [key]: { ...editedData[key], [accKey]: e.target.checked }
+                                                })
+                                            }
+                                        />
+                                        {accKey}
+                                    </label>
+                                ))}
+                            </div>
                         ) : (
-                            // 🔹 Si es un valor normal, lo mostramos en texto
-                            <span> {value.toString()} </span>
-                        )}
-                    </div>
-                ))}
+                            <textarea
+                                value={JSON.stringify(editedData[key] || value, null, 2)}
+                                onChange={(e) => setEditedData({ ...editedData, [key]: JSON.parse(e.target.value) })}
+                                rows={3}
+                                style={{ width: "100%" }}
+                            />
+                        )
+                    ) : typeof value === "boolean" ? (
+                        <input
+                            type="checkbox"
+                            checked={editedData[key] ?? value}
+                            onChange={(e) => setEditedData({ ...editedData, [key]: e.target.checked })}
+                        />
+                    ) : (
+                        <input
+                            type="text"
+                            value={editedData[key] ?? displayValue}
+                            onChange={(e) => setEditedData({ ...editedData, [key]: e.target.value })}
+                            style={{ width: "100%" }}
+                        />
+                    )
+                ) : (
+                    typeof value === "object" && value !== null ? (
+                        key === "Acc" || key === "Id" ? (
+                            <div className="accesorios-container" style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+                                {Object.entries(value).map(([accKey, accValue]) => (
+                                    <label key={accKey} className="accesorio-item" style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                                        <input type="checkbox" checked={!!accValue} readOnly />
+                                        {accKey}
+                                    </label>
+                                ))}
+                            </div>
+                        ) : (
+                            <span>{displayValue}</span>
+                        )
+                    ) : typeof value === "boolean" ? (
+                        <input type="checkbox" checked={value} readOnly />
+                    ) : (
+                        <span>{displayValue.toString()}</span>
+                    )
+                )}
+            </div>
+        );
+    })}
         </div>
     </div>
 )}
