@@ -1,0 +1,111 @@
+/* === Fondo global para toda la página === */
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #EAF6FF; /* Azul claro uniforme */
+    font-family: 'Arial', sans-serif;
+    color: #003366; /* Color de texto oscuro para buena visibilidad */
+}
+
+/* === Contenedor principal del Dashboard === */
+.dashboard-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    max-width: 600px;
+    height: 100vh; /* Asegurar que ocupe toda la pantalla */
+    padding: 40px;
+    text-align: center;
+  }
+
+.dashboard-container h1 {
+    font-size: 36px;
+    margin-bottom: 20px;
+}
+
+/* === Estilo para el título === */
+.dashboard-title {
+    font-size: 36px;
+    font-weight: bold;
+    color: #0056b3; /* Azul oscuro para buena visibilidad */
+    margin-bottom: 20px;
+}
+
+/* === Botones estilizados === */
+.dashboard-button {
+    margin: 10px auto;
+    padding: 12px 20px;
+    background-color: #007ACC; /* Azul profesional */
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: bold;
+    width: 250px; /* Ancho uniforme */
+    text-align: center;
+    transition: all 0.3s ease-in-out;
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.15);
+}
+
+.dashboard-button:hover {
+    background-color: #0056b3; /* Azul más oscuro */
+    transform: scale(1.05);
+}
+
+/* === Centrar correctamente el contenido de todo el proyecto === */
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+}
+
+/* === Navbar profesional === */
+.navbar {
+    width: 100%;
+    background-color: #007ACC; /* Azul corporativo */
+    color: white;
+    padding: 15px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* === Mejor espaciado en los formularios y buscador === */
+.buscador-form input {
+    width: 250px;
+    padding: 10px;
+    margin: 5px;
+    border: 1px solid #007ACC;
+    border-radius: 5px;
+}
+
+/* === Ajustar bien los tabs para los resultados === */
+.tabs-container {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 20px;
+}
+
+.tab {
+    background: white;
+    padding: 15px;
+    margin: 10px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    width: 300px;
+    text-align: center;
+}
