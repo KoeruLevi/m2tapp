@@ -1,26 +1,27 @@
 const Cliente = require('../models/Cliente');
 const EquipoAVL = require('../models/EquipoAVL');
 const Movil = require('../models/Movil');
-
+const Simcard = require('../models/Simcard'); // Importar modelo Simcard
 
 exports.searchData = async (req, res) => {
-    const { cliente, movil, equipo } = req.query;
+    const { cliente, movil, equipo, simcard } = req.query;
 
     console.log('\n=== INICIO DE BÚSQUEDA CON FILTROS ===');
-    console.log(`Cliente: ${cliente || 'Sin filtro'}, Móvil: ${movil || 'Sin filtro'}, Equipo: ${equipo || 'Sin filtro'}`);
+    console.log(`Cliente: ${cliente || 'Sin filtro'}, Móvil: ${movil || 'Sin filtro'}, Equipo: ${equipo || 'Sin filtro'}, Simcard: ${simcard || 'Sin filtro'}`);
 
     try {
         let clientes = [];
         let moviles = [];
         let equipos = [];
+        let simcards = [];
 
         const clienteFilter = cliente ? new RegExp(cliente, 'i') : null;
         const movilFilter = movil ? new RegExp(movil, 'i') : null;
-        const equipoFilter = equipo ? new RegExp(equipo, 'i') : null;
+        const equipoFilter = equipo ? equipo : null; 
+        const simcardFilter = simcard ? new RegExp(simcard, 'i') : null;
 
-        // Filtrar clientes
+        // 🔹 Filtrar clientes
         if (clienteFilter) {
-            console.log('\n=== FILTRANDO POR CLIENTE ===');
             clientes = await Cliente.find({
                 $or: [
                     { Cliente: clienteFilter },
@@ -28,12 +29,10 @@ exports.searchData = async (req, res) => {
                     { RUT: clienteFilter },
                 ],
             }).lean();
-            console.log('Clientes filtrados:', clientes);
         }
 
-        // Filtrar móviles relacionados a clientes o con el filtro de móvil
+        // 🔹 Filtrar móviles relacionados a clientes o con el filtro de móvil
         if (movilFilter || clienteFilter) {
-            console.log('\n=== FILTRANDO POR MÓVIL ===');
             const movilQuery = {
                 ...(movilFilter && {
                     $or: [
@@ -46,65 +45,76 @@ exports.searchData = async (req, res) => {
             };
 
             moviles = await Movil.find(movilQuery).lean();
-            console.log('Móviles filtrados:', moviles);
 
             // Relacionar clientes desde móviles si no hay filtro de cliente
             if (!clienteFilter && moviles.length > 0) {
                 const clienteNames = [...new Set(moviles.map((m) => m.Cliente))];
-                console.log('Clientes relacionados desde móviles:', clienteNames);
                 clientes = await Cliente.find({ Cliente: { $in: clienteNames } }).lean();
             }
         }
 
-        // Filtrar equipos relacionados a móviles o con el filtro de equipo
+        // 🔹 Filtrar equipos relacionados a móviles o con el filtro de equipo
         if (equipoFilter || moviles.length > 0) {
-            console.log('\n=== FILTRANDO POR EQUIPO AVL ===');
-
-            // Normalizar los valores del campo "Equipo Princ" en móviles
             const equipoIds = moviles
                 .map((m) => m['Equipo Princ'])
                 .filter((e) => e && typeof e === 'object' && e[''])
                 .map((e) => e['']);
 
-            console.log('IDs de equipos normalizados:', equipoIds);
+            let equipoQuery = {};
+            if (equipoFilter) {
+                if (!isNaN(equipoFilter)) {
+                    equipoQuery.ID = Number(equipoFilter);
+                } else {
+                    equipoQuery.$or = [
+                        { imei: new RegExp(equipoFilter, 'i') },
+                        { serial: new RegExp(equipoFilter, 'i') },
+                        { model: new RegExp(equipoFilter, 'i') },
+                    ];
+                }
+            }
 
-            const equipoQuery = {
-                ...(equipoFilter && {
-                    $or: [
-                        { imei: equipoFilter },
-                        { serial: equipoFilter },
-                        { model: equipoFilter },
-                        { ID: equipoFilter },
-                    ],
-                }),
-                ...(equipoIds.length > 0 && { ID: { $in: equipoIds } }),
-            };
+            if (equipoIds.length > 0) {
+                equipoQuery.ID = { $in: equipoIds };
+            }
 
             equipos = await EquipoAVL.find(equipoQuery).lean();
-            console.log('Equipos filtrados:', equipos);
 
             // Relacionar móviles desde equipos si no hay filtro de móvil
             if (!movilFilter && equipos.length > 0) {
                 const relatedMovilIds = equipos.map((e) => e.ID);
-                console.log('IDs de móviles relacionados desde equipos:', relatedMovilIds);
-
                 const relatedMoviles = await Movil.find({
                     'Equipo Princ': { $in: relatedMovilIds.map((id) => ({ '': id })) },
                 }).lean();
-
-                console.log('Móviles relacionados desde equipos:', relatedMoviles);
 
                 moviles = [...moviles, ...relatedMoviles];
             }
         }
 
+        // 🔹 Filtrar simcards relacionadas con los equipos o por filtro de simcard
+        if (simcardFilter || equipos.length > 0) {
+            const simcardQuery = {
+                ...(simcardFilter && { ICCID: simcardFilter }),
+                ...(equipos.length > 0 && { ID: { $in: equipos.map((e) => e.ID) } }),
+            };
+
+            simcards = await Simcard.find(simcardQuery).lean();
+        }
+
+        // 🔹 Incluir Clientes de Moviles relacionados si la búsqueda no es directa por Cliente
+        if (!clienteFilter && moviles.length > 0) {
+            const clienteNames = [...new Set(moviles.map(m => m.Cliente))];
+            const clientesRelacionados = await Cliente.find({ Cliente: { $in: clienteNames } }).lean();
+            clientes = [...clientes, ...clientesRelacionados];
+        }
+
         console.log('\n=== RESULTADOS FINALES ===');
-        console.log(`Clientes: ${clientes.length}, Móviles: ${moviles.length}, Equipos: ${equipos.length}`);
+        console.log(`Clientes: ${clientes.length}, Móviles: ${moviles.length}, Equipos: ${equipos.length}, Simcards: ${simcards.length}`);
 
         res.json({
             Cliente: clientes,
             Movil: moviles,
             EquipoAVL: equipos,
+            Simcard: simcards,
         });
     } catch (error) {
         console.error('\n=== ERROR EN LA BÚSQUEDA ===');
@@ -116,18 +126,7 @@ exports.searchData = async (req, res) => {
     }
 };
 
-// Función para extraer valores de "Equipo Princ"
-const extractEquipoPrinc = (equipoPrincField) => {
-    if (typeof equipoPrincField === 'number') {
-        return equipoPrincField;
-    } else if (typeof equipoPrincField === 'object' && equipoPrincField !== null) {
-        const values = Object.values(equipoPrincField);
-        return values.find((val) => typeof val === 'number') || null;
-    }
-    return null;
-};
-
-// Controlador para manejar sugerencias de búsqueda
+// 🔹 Controlador para manejar sugerencias de búsqueda
 exports.getSuggestions = async (req, res) => {
     const { query } = req.query;
 
@@ -163,11 +162,10 @@ exports.getSuggestions = async (req, res) => {
         const equipos = await EquipoAVL.find({
             $or: [
                 { imei: regex },
-                { serial: regex },
-                { model: regex }
+                { serial: regex }
             ]
         });
-        equipos.forEach(e => suggestions.add(e.imei).add(e.model));
+        equipos.forEach(e => suggestions.add(e.imei));
 
         res.json([...suggestions]);
     } catch (error) {
@@ -176,8 +174,7 @@ exports.getSuggestions = async (req, res) => {
     }
 };
 
-
-
+// Crear Cliente
 exports.createCliente = async (req, res) => {
     try {
         const cliente = new Cliente(req.body);
@@ -189,7 +186,7 @@ exports.createCliente = async (req, res) => {
     }
 };
 
-// Crear nuevo Movil
+// Crear Movil
 exports.createMovil = async (req, res) => {
     try {
         const movil = new Movil(req.body);
@@ -201,7 +198,7 @@ exports.createMovil = async (req, res) => {
     }
 };
 
-// Crear nuevo EquipoAVL
+// Crear Equipo AVL
 exports.createEquipoAVL = async (req, res) => {
     try {
         const equipo = new EquipoAVL(req.body);
@@ -210,5 +207,17 @@ exports.createEquipoAVL = async (req, res) => {
     } catch (error) {
         console.error('Error al crear EquipoAVL:', error);
         res.status(500).json({ message: 'Error al crear EquipoAVL', error: error.message });
+    }
+};
+
+// Crear Simcard
+exports.createSimcard = async (req, res) => {
+    try {
+        const simcard = new Simcard(req.body);
+        const savedSimcard = await simcard.save();
+        res.status(201).json(savedSimcard);
+    } catch (error) {
+        console.error('Error al crear Simcard:', error);
+        res.status(500).json({ message: 'Error al crear Simcard', error: error.message });
     }
 };

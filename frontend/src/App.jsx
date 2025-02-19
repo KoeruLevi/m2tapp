@@ -5,14 +5,14 @@ import Dashboard from './pages/Dashboard';
 import Buscador from './pages/Buscador';
 import NuevoDocumento from './pages/NuevoDocumento';
 import Header from './components/Header';
-import './App.css'; // Asegúrate de importar los estilos globales
+import './App.css';
 
 const App = () => {
     return (
         <Router>
             <div className="app-container">
-                <Header /> {/* Colocar Header aquí, fuera de Routes */}
-                <div className="page-container">
+                <Header /> {/* Se mantiene el Header en la parte superior */}
+                <main className="page-container">
                     <Routes>
                         <Route path="/" element={<Login />} />
                         <Route path="/dashboard" element={<Dashboard />} />
@@ -21,7 +21,7 @@ const App = () => {
                         <Route path="/nuevo-movil" element={<NuevoDocumento tipo="Movil" />} />
                         <Route path="/nuevo-equipo" element={<NuevoDocumento tipo="EquipoAVL" />} />
                     </Routes>
-                </div>
+                </main>
             </div>
         </Router>
     );

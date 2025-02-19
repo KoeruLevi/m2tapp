@@ -252,6 +252,22 @@ const NuevoDocumento = ({ tipo }) => {
                     </>
                 )}
 
+                {tipo === 'Simcard' && (
+                    <>
+                        <input type="text" name="_id" placeholder="Identificador" onChange={handleInputChange} required />
+                        <input type="text" name="ICCID" placeholder="ICCID" onChange={handleInputChange} required />
+                        <input type="number" name="fono" placeholder="Fono" onChange={handleInputChange} required />
+                        <input type="text" name="operador" placeholder="Operador" onChange={handleInputChange} required />
+                        <input type="text" name="portador" placeholder="Portador" onChange={handleInputChange} />
+                        <select name="estado" onChange={handleInputChange}>
+                            <option value="Activo">Activo</option>
+                            <option value="Inactivo">Inactivo</option>
+                            <option value="Suspendido">Suspendido</option>
+                        </select>
+                        <input type="text" name="quota" placeholder="Quota" onChange={handleInputChange} />
+                        <input type="number" name="ID" placeholder="ID del EquipoAVL" onChange={handleInputChange} required />
+                    </>
+                )}
                 <button type="submit">Crear {tipo}</button>
             </form>
             {mensaje && <p className="mensaje">{mensaje}</p>}

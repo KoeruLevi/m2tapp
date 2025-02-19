@@ -1,14 +1,13 @@
 const mongoose = require('mongoose');
 
 const SimcardSchema = new mongoose.Schema({
-    _id: { type: String }, // Identificador legible
-    ICCID: { type: String },
-    numeroTelefonico: { type: String },
-    operador: { type: String },
-    portador: { type: String },
-    estado: { type: String },
-    cuotaDatos: { type: String },
-    equipoAVL_id: { type: String, ref: 'EquipoAVL' }, // Referencia basada en string
+    ICCID: { type: String, required: true, unique: true }, // Asegura que el ICCID sea único
+    fono: { type: Number, required: true }, // Asegura que el fono sea requerido
+    operador: { type: String, required: true }, // Operador requerido
+    portador: { type: String }, // Opcional
+    estado: { type: String, enum: ['Activo', 'Inactivo', 'Suspendido'], default: 'Activo' }, // Opciones predefinidas
+    quota: { type: String },
+    ID: { type: Number, ref: 'EquipoAVL', required: true }, // Relación con EquipoAVL
 }, { collection: 'Simcard' });
 
 module.exports = mongoose.model('Simcard', SimcardSchema);
