@@ -8,7 +8,6 @@ export default defineConfig({
     outDir: 'dist',  // Directorio donde Vercel busca los archivos
   },
   server: {
-    port: 3000,
     historyApiFallback: true,
   }
 });
