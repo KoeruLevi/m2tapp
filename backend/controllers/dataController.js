@@ -78,21 +78,36 @@ exports.searchData = async (req, res) => {
         // 🔹 Filtrar Equipos AVL relacionados a los móviles encontrados
         if (moviles.length > 0) {
             const equipoIds = moviles
-                .map(movil => movil["Equipo Princ"])
+                .map(movil => movil["Equipo Princ"]?.[""] || movil["Equipo Princ"])
                 .filter(id => id); // Solo IDs válidos
 
             equipos = await EquipoAVL.find({ ID: { $in: equipoIds } }).lean();
         }
 
-        // 🔹 Filtrar Simcards asociadas a los Equipos AVL encontrados
+        // 🔹 Filtrar Simcards SOLO de los Equipos AVL encontrados
         if (equipos.length > 0) {
             const equipoIds = equipos.map(e => e.ID);
             simcards = await Simcard.find({ ID: { $in: equipoIds } }).lean();
         }
 
+        // 🔹 Aplicar filtro manual si se busca una Simcard específica
+        if (simcardFilter) {
+            simcards = simcards.filter(sc => simcardFilter.test(sc.ICCID));
+        }
+
         // 🔹 Evitar clientes duplicados
         clientes = clientes.filter((cliente, index, self) =>
             index === self.findIndex((c) => c._id.toString() === cliente._id.toString())
+        );
+
+        // 🔹 Evitar Equipos AVL duplicados
+        equipos = equipos.filter((equipo, index, self) =>
+            index === self.findIndex((e) => e.ID === equipo.ID)
+        );
+
+        // 🔹 Evitar Simcards duplicadas
+        simcards = simcards.filter((simcard, index, self) =>
+            index === self.findIndex((s) => s.ICCID === simcard.ICCID)
         );
 
         console.log('\n=== RESULTADOS FINALES ===');
