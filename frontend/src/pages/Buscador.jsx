@@ -47,6 +47,10 @@ const [editedData, setEditedData] = useState({});
             const uniqueMoviles = moviles.filter((movil, index, self) =>
                 index === self.findIndex((m) => m._id === movil._id)
             );
+
+            const uniqueClientes = clientes.filter((cliente, index, self) =>
+                index === self.findIndex((c) => c._id === cliente._id)
+            );
     
             console.log("✅ Móviles después de eliminar duplicados:", uniqueMoviles.length);
     
@@ -55,6 +59,7 @@ const [editedData, setEditedData] = useState({});
             setFilteredMoviles(uniqueMoviles); // Usamos la versión sin duplicados
             setFilteredEquipos(equipos);
             setFilteredSimcards(simcards);
+            setFilteredClientes(uniqueClientes);
     
         } catch (error) {
             console.error("❌ Error al realizar la búsqueda:", error);

@@ -54,58 +54,46 @@ exports.searchData = async (req, res) => {
         }
 
         // 🔹 Filtrar equipos relacionados a móviles o con el filtro de equipo
-        if (equipoFilter || moviles.length > 0) {
-            const equipoIds = moviles
-                .map((m) => m['Equipo Princ'])
-                .filter((e) => e && typeof e === 'object' && e[''])
-                .map((e) => e['']);
-
-            let equipoQuery = {};
-            if (equipoFilter) {
-                if (!isNaN(equipoFilter)) {
-                    equipoQuery.ID = Number(equipoFilter);
-                } else {
-                    equipoQuery.$or = [
-                        { imei: new RegExp(equipoFilter, 'i') },
-                        { serial: new RegExp(equipoFilter, 'i') },
-                        { model: new RegExp(equipoFilter, 'i') },
-                    ];
-                }
-            }
-
-            if (equipoIds.length > 0) {
-                equipoQuery.ID = { $in: equipoIds };
-            }
-
-            equipos = await EquipoAVL.find(equipoQuery).lean();
-
-            // Relacionar móviles desde equipos si no hay filtro de móvil
-            if (!movilFilter && equipos.length > 0) {
-                const relatedMovilIds = equipos.map((e) => e.ID);
-                const relatedMoviles = await Movil.find({
-                    'Equipo Princ': { $in: relatedMovilIds.map((id) => ({ '': id })) },
-                }).lean();
-
-                moviles = [...moviles, ...relatedMoviles];
-            }
-        }
-
-        // 🔹 Filtrar simcards relacionadas con los equipos o por filtro de simcard
-        if (simcardFilter || equipos.length > 0) {
-            const simcardQuery = {
-                ...(simcardFilter && { ICCID: simcardFilter }),
-                ...(equipos.length > 0 && { ID: { $in: equipos.map((e) => e.ID) } }),
+        if (movilFilter || clienteFilter) {
+            const movilQuery = {
+                ...(movilFilter && {
+                    $or: [
+                        { Marca: movilFilter },
+                        { Tipo: movilFilter },
+                        { Patente: movilFilter },
+                    ],
+                }),
+                ...(clienteFilter && { Cliente: { $in: clientes.map((c) => c.Cliente) } }),
             };
 
-            simcards = await Simcard.find(simcardQuery).lean();
+            moviles = await Movil.find(movilQuery).lean();
+
+            // Si no hay clientes pero sí móviles, obtener clientes relacionados a los móviles
+            if (!clienteFilter && moviles.length > 0) {
+                const clienteNames = [...new Set(moviles.map((m) => m.Cliente))];
+                clientes = await Cliente.find({ Cliente: { $in: clienteNames } }).lean();
+            }
         }
 
-        // 🔹 Incluir Clientes de Moviles relacionados si la búsqueda no es directa por Cliente
-        if (!clienteFilter && moviles.length > 0) {
-            const clienteNames = [...new Set(moviles.map(m => m.Cliente))];
-            const clientesRelacionados = await Cliente.find({ Cliente: { $in: clienteNames } }).lean();
-            clientes = [...clientes, ...clientesRelacionados];
+        // 🔹 Filtrar Equipos AVL relacionados a los móviles encontrados
+        if (moviles.length > 0) {
+            const equipoIds = moviles
+                .map(movil => movil["Equipo Princ"])
+                .filter(id => id); // Solo IDs válidos
+
+            equipos = await EquipoAVL.find({ ID: { $in: equipoIds } }).lean();
         }
+
+        // 🔹 Filtrar Simcards asociadas a los Equipos AVL encontrados
+        if (equipos.length > 0) {
+            const equipoIds = equipos.map(e => e.ID);
+            simcards = await Simcard.find({ ID: { $in: equipoIds } }).lean();
+        }
+
+        // 🔹 Evitar clientes duplicados
+        clientes = clientes.filter((cliente, index, self) =>
+            index === self.findIndex((c) => c._id.toString() === cliente._id.toString())
+        );
 
         console.log('\n=== RESULTADOS FINALES ===');
         console.log(`Clientes: ${clientes.length}, Móviles: ${moviles.length}, Equipos: ${equipos.length}, Simcards: ${simcards.length}`);
