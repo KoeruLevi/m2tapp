@@ -78,10 +78,19 @@ exports.searchData = async (req, res) => {
         // 🔹 Filtrar Equipos AVL relacionados a los móviles encontrados
         if (moviles.length > 0) {
             const equipoIds = moviles
-                .map(movil => movil["Equipo Princ"]?.[""] || movil["Equipo Princ"])
-                .filter(id => id); // Solo IDs válidos
-
-            equipos = await EquipoAVL.find({ ID: { $in: equipoIds } }).lean();
+                .map(movil => {
+                    const equipoPrinc = movil["Equipo Princ"];
+                    if (typeof equipoPrinc === "number") return equipoPrinc; // ✅ Si es número, está bien
+                    if (typeof equipoPrinc === "object" && equipoPrinc !== null) {
+                        return equipoPrinc[""] || equipoPrinc.ID || null; // ✅ Verificar estructura interna
+                    }
+                    return null; // ❌ Si no es válido, ignorarlo
+                })
+                .filter(id => id && !isNaN(id)); // Filtrar solo números válidos
+        
+            if (equipoIds.length > 0) {
+                equipos = await EquipoAVL.find({ ID: { $in: equipoIds } }).lean();
+            }
         }
 
         // 🔹 Filtrar Simcards SOLO de los Equipos AVL encontrados
