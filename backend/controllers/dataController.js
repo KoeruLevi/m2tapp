@@ -212,6 +212,34 @@ exports.searchData = async (req, res) => {
             }
         }
 
+        // 🔽 Filtrar EquiposAVL según los móviles filtrados
+        if (moviles.length > 0) {
+            const equipoIds = moviles
+                .map((movil) => {
+                    const equipoPrinc = movil["Equipo Princ"];
+                    if (typeof equipoPrinc === "number") return equipoPrinc;
+                    if (typeof equipoPrinc === "object" && equipoPrinc !== null) {
+                        return equipoPrinc[""] || equipoPrinc.ID || null;
+                    }
+                    return null;
+                })
+                .filter((id) => id && !isNaN(id));
+
+            if (equipoIds.length > 0) {
+                equipos = await EquipoAVL.find({ ID: { $in: equipoIds } }).lean();
+            } else {
+                equipos = [];
+            }
+        }
+
+        // 🔽 Filtrar Simcards según los equipos filtrados
+        if (equipos.length > 0) {
+            const equipoIds = equipos.map((e) => e.ID);
+            simcards = await Simcard.find({ ID: { $in: equipoIds } }).lean();
+        } else {
+            simcards = [];
+        }
+
         console.log('\n=== RESULTADOS FINALES ===');
         console.log(`Clientes: ${clientes.length}, Móviles: ${moviles.length}, Equipos: ${equipos.length}, Simcards: ${simcards.length}`);
 
