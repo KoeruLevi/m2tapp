@@ -145,28 +145,7 @@ exports.searchData = async (req, res) => {
             simcards = await Simcard.find(simcardQuery).lean();
             }
 
-            // 🔎 Filtro final: combinar Cliente + EquipoAVL si ambos fueron ingresados
-        if (clienteFilter && equipoFilter && !isNaN(equipoFilter)) {
-            const equipoId = Number(equipoFilter);
-
-            // Filtrar móviles que tengan ese equipo
-            moviles = moviles.filter(movil => {
-                const equipoPrinc = movil['Equipo Princ'];
-                if (typeof equipoPrinc === 'number') return equipoPrinc === equipoId;
-                if (typeof equipoPrinc === 'object' && equipoPrinc !== null) {
-                    return equipoPrinc[''] === equipoId || equipoPrinc.ID === equipoId;
-                }
-                return false;
-            });
-
-            // Filtrar clientes si no hay móviles asociados ya
-            if (moviles.length > 0) {
-                const clienteNames = [...new Set(moviles.map((m) => m.Cliente))];
-                clientes = clientes.filter((c) => clienteNames.includes(c.Cliente));
-            } else {
-                clientes = [];
-            }
-        }
+            
 
             // 🔄 Buscar móviles relacionados a los equipos encontrados
         if (!moviles.length && equipos.length > 0) {
@@ -209,6 +188,29 @@ exports.searchData = async (req, res) => {
         simcards = simcards.filter((simcard, index, self) =>
             index === self.findIndex((s) => s.ICCID === simcard.ICCID)
         );
+
+        // 🔎 Filtro final: combinar Cliente + EquipoAVL si ambos fueron ingresados
+        if (clienteFilter && equipoFilter && !isNaN(equipoFilter)) {
+            const equipoId = Number(equipoFilter);
+
+            // Filtrar móviles que tengan ese equipo
+            moviles = moviles.filter(movil => {
+                const equipoPrinc = movil['Equipo Princ'];
+                if (typeof equipoPrinc === 'number') return equipoPrinc === equipoId;
+                if (typeof equipoPrinc === 'object' && equipoPrinc !== null) {
+                    return equipoPrinc[''] === equipoId || equipoPrinc.ID === equipoId;
+                }
+                return false;
+            });
+
+            // Filtrar clientes si no hay móviles asociados ya
+            if (moviles.length > 0) {
+                const clienteNames = [...new Set(moviles.map((m) => m.Cliente))];
+                clientes = clientes.filter((c) => clienteNames.includes(c.Cliente));
+            } else {
+                clientes = [];
+            }
+        }
 
         console.log('\n=== RESULTADOS FINALES ===');
         console.log(`Clientes: ${clientes.length}, Móviles: ${moviles.length}, Equipos: ${equipos.length}, Simcards: ${simcards.length}`);
