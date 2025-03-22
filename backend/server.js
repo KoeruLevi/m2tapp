@@ -12,6 +12,14 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+const corsOptions = {
+    origin: ['https://m2tapp.vercel.app'], // 🟢 tu frontend en Vercel
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true
+  };
+  
+  app.use(cors(corsOptions));
+
 // Conectar a la base de datos
 connectDB()
     .then(() => console.log('Base de datos conectada'))
