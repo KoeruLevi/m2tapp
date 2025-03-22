@@ -145,6 +145,21 @@ exports.searchData = async (req, res) => {
             simcards = await Simcard.find(simcardQuery).lean();
             }
 
+            // 🔄 Buscar móviles relacionados a los equipos encontrados
+        if (!moviles.length && equipos.length > 0) {
+            const equipoIds = equipos.map(e => e.ID);
+            const movilesRelacionados = await Movil.find({
+                'Equipo Princ': { $in: equipoIds.map(id => ({ '': id })) }
+            }).lean();
+
+            moviles = [...moviles, ...movilesRelacionados];
+        }
+
+        // 🔄 Buscar clientes desde esos móviles si no hay clientes aún
+        if (!clientes.length && moviles.length > 0) {
+            const clienteNames = [...new Set(moviles.map(m => m.Cliente))];
+            clientes = await Cliente.find({ Cliente: { $in: clienteNames } }).lean();
+        }
 
         // 🔹 Filtrar Simcards SOLO de los Equipos AVL encontrados
         if (equipos.length > 0) {
