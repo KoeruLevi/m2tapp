@@ -93,6 +93,59 @@ exports.searchData = async (req, res) => {
             }
         }
 
+        if (equipoFilter || moviles.length > 0) {
+            let equipoQuery = {};
+        
+            if (equipoFilter) {
+                if (!isNaN(equipoFilter)) {
+                    equipoQuery.ID = Number(equipoFilter);
+                } else {
+                    equipoQuery.$or = [
+                        { imei: new RegExp(equipoFilter, 'i') },
+                        { serial: new RegExp(equipoFilter, 'i') },
+                        { model: new RegExp(equipoFilter, 'i') },
+                    ];
+                }
+            }
+        
+            // Asociar equipos desde móviles si existen
+            const equipoIdsFromMoviles = moviles
+                .map((m) => m['Equipo Princ'])
+                .filter((e) => e && typeof e === 'object' && e[''])
+                .map((e) => e['']);
+        
+            if (equipoIdsFromMoviles.length > 0) {
+                equipoQuery = {
+                    $or: [
+                        ...(equipoQuery.$or || []),
+                        { ID: { $in: equipoIdsFromMoviles } }
+                    ]
+                };
+            }
+        
+            equipos = await EquipoAVL.find(equipoQuery).lean();
+        }
+        // 🔹 Buscar Simcards directamente si hay filtro o si ya tenemos equipos
+            if (simcardFilter || equipos.length > 0) {
+                const simcardQuery = {};
+
+            if (simcardFilter) {
+                    simcardQuery.$or = [
+                        { ICCID: simcardFilter },
+                        { fono: simcardFilter },
+                        { operador: simcardFilter }
+                    ];
+                }
+
+            if (equipos.length > 0) {
+                const equipoIds = equipos.map((e) => e.ID);
+                simcardQuery.ID = { $in: equipoIds };
+            }
+
+            simcards = await Simcard.find(simcardQuery).lean();
+            }
+
+
         // 🔹 Filtrar Simcards SOLO de los Equipos AVL encontrados
         if (equipos.length > 0) {
             const equipoIds = equipos.map(e => e.ID);

@@ -38,7 +38,7 @@ router.put('/update', async (req, res) => {
 
 router.post('/cliente', dataController.createCliente);
 router.post('/movil', dataController.createMovil);
-router.post('/equipo', dataController.createEquipoAVL);
+router.post('/equipoavl', dataController.createEquipoAVL);
 router.post('/simcard', dataController.createSimcard);
 
 module.exports = router;
