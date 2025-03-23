@@ -243,6 +243,7 @@ const Buscador = () => {
                 <button type="submit" disabled={loading}>
                     {loading ? 'Buscando...': 'Buscar'}
                 </button>
+                {loading && <p style={{ marginTop: '10px', fontWeight: 'bold', color: '#007bff' }}>Cargando resultados...</p>}
             </form>
 
             <div className="tabs-container">
