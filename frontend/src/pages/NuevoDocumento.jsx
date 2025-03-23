@@ -261,7 +261,6 @@ const NuevoDocumento = ({ tipo }) => {
 
                 {tipo === 'Simcard' && (
                     <>
-                        <input type="text" name="_id" placeholder="Identificador" onChange={handleInputChange} required />
                         <input type="text" name="ICCID" placeholder="ICCID" onChange={handleInputChange} required />
                         <input type="number" name="fono" placeholder="Fono" onChange={handleInputChange} required />
                         <input type="text" name="operador" placeholder="Operador" onChange={handleInputChange} required />
