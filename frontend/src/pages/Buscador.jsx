@@ -14,7 +14,8 @@ const Buscador = () => {
     const [popupData, setPopupData] = useState(null);
     const [popupType, setPopupType] = useState('');
     const [isEditing, setIsEditing] = useState(false); // Estado para activar modo edición
-const [editedData, setEditedData] = useState({});
+    const [editedData, setEditedData] = useState({});
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         console.log("🔄 UI Actualizada - Clientes:", filteredClientes);
@@ -27,7 +28,7 @@ const [editedData, setEditedData] = useState({});
     const handleSearch = async (e) => {
         e.preventDefault();
         console.log("🔍 Búsqueda iniciada con:", query);
-    
+        setLoading(true);
         try {
             const response = await axios.get(`https://m2t-backend.onrender.com/api/data/search`, { params: query });
             console.log("✅ Respuesta de la API:", response.data);
@@ -63,6 +64,8 @@ const [editedData, setEditedData] = useState({});
     
         } catch (error) {
             console.error("❌ Error al realizar la búsqueda:", error);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -237,7 +240,9 @@ const [editedData, setEditedData] = useState({});
                 <input type="text" placeholder="Filtrar por Móvil" value={query.movil} onChange={(e) => setQuery({ ...query, movil: e.target.value })} />
                 <input type="text" placeholder="Filtrar por Equipo" value={query.equipo} onChange={(e) => setQuery({ ...query, equipo: e.target.value })} />
                 <input type="text" placeholder="Filtrar por Simcard" value={query.simcard} onChange={(e) => setQuery({ ...query, simcard: e.target.value })} />
-                <button type="submit">Buscar</button>
+                <button type="submit" disabled={loading}>
+                    {loading ? 'Buscando...': 'Buscar'}
+                </button>
             </form>
 
             <div className="tabs-container">
