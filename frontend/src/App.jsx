@@ -20,6 +20,7 @@ const App = () => {
                         <Route path="/nuevo-cliente" element={<NuevoDocumento tipo="Cliente" />} />
                         <Route path="/nuevo-movil" element={<NuevoDocumento tipo="Movil" />} />
                         <Route path="/nuevo-equipo" element={<NuevoDocumento tipo="EquipoAVL" />} />
+                        <Route path="/nueva-simcard" element={<NuevoDocumento tipo="Simcard" />} />
                     </Routes>
                 </main>
             </div>

@@ -19,6 +19,10 @@ const Dashboard = () => {
     const goToNuevoEquipoAVL = () => {
         navigate('/nuevo-equipo');
     };
+
+    const goToNuevaSimcard = () => {
+        navigate('/nueva-simcard');
+    };
     return (
         <div className="dashboard-container">
             <h1>Bienvenido al Dashboard</h1>
@@ -33,6 +37,9 @@ const Dashboard = () => {
             </button>
             <button className="dashboard-button" onClick={goToNuevoEquipoAVL}>
                 Crear Nuevo Equipo AVL
+            </button>
+            <button className="dashboard-button" onClick={goToNuevaSimcard}>
+                Crear Nueva Simcard
             </button>
         </div>
     );

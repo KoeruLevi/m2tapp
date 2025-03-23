@@ -310,6 +310,11 @@ exports.getSuggestions = async (req, res) => {
 // Crear Cliente
 exports.createCliente = async (req, res) => {
     try {
+        const existing = await Cliente.findOne({ RUT: req.body.RUT });
+        if (existing) {
+            return res.status(400).json({ message: 'Cliente con este RUT ya existe.' });
+        }
+
         const cliente = new Cliente(req.body);
         const savedCliente = await cliente.save();
         res.status(201).json(savedCliente);
@@ -319,9 +324,13 @@ exports.createCliente = async (req, res) => {
     }
 };
 
-// Crear Movil
 exports.createMovil = async (req, res) => {
     try {
+        const existing = await Movil.findOne({ Patente: req.body.Patente });
+        if (existing) {
+            return res.status(400).json({ message: 'Ya existe un móvil con esta patente.' });
+        }
+
         const movil = new Movil(req.body);
         const savedMovil = await movil.save();
         res.status(201).json(savedMovil);
@@ -331,9 +340,13 @@ exports.createMovil = async (req, res) => {
     }
 };
 
-// Crear Equipo AVL
 exports.createEquipoAVL = async (req, res) => {
     try {
+        const existing = await EquipoAVL.findOne({ ID: req.body.ID });
+        if (existing) {
+            return res.status(400).json({ message: 'Ya existe un equipo con este ID.' });
+        }
+
         const equipo = new EquipoAVL(req.body);
         const savedEquipo = await equipo.save();
         res.status(201).json(savedEquipo);
@@ -343,9 +356,13 @@ exports.createEquipoAVL = async (req, res) => {
     }
 };
 
-// Crear Simcard
 exports.createSimcard = async (req, res) => {
     try {
+        const existing = await Simcard.findOne({ fono: req.body.fono });
+        if (existing) {
+            return res.status(400).json({ message: 'Ya existe una simcard con este número.' });
+        }
+
         const simcard = new Simcard(req.body);
         const savedSimcard = await simcard.save();
         res.status(201).json(savedSimcard);

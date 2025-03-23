@@ -5,6 +5,7 @@ import '../styles/NuevoDocumento.css';
 const NuevoDocumento = ({ tipo }) => {
     const [formData, setFormData] = useState({});
     const [mensaje, setMensaje] = useState('');
+    const [loading, setLoading] = useState(false);
 
     const handleInputChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -12,13 +13,19 @@ const NuevoDocumento = ({ tipo }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setLoading(true);
+        setMensaje('');
         try {
             const endpoint = `https://m2t-backend.onrender.com/api/data/${tipo.toLowerCase()}`;
             const response = await axios.post(endpoint, formData);
-            setMensaje(`Nuevo ${tipo} creado con éxito: ${JSON.stringify(response.data)}`);
+            setMensaje(`✅ ${tipo} creado: ${JSON.stringify(response.data)}`);
         } catch (error) {
             console.error('Error al crear documento:', error);
-            setMensaje('Error al crear el documento. Revisa los datos ingresados.');
+            setMensaje(
+                error?.response?.data?.message || '❌ Error al crear el documento.'
+            );
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -268,7 +275,9 @@ const NuevoDocumento = ({ tipo }) => {
                         <input type="number" name="ID" placeholder="ID del EquipoAVL" onChange={handleInputChange} required />
                     </>
                 )}
-                <button type="submit">Crear {tipo}</button>
+                <button type="submit" disabled={loading}>
+                {loading ? 'Creando...' : `Crear ${tipo}`}
+                </button>
             </form>
             {mensaje && <p className="mensaje">{mensaje}</p>}
         </div>
