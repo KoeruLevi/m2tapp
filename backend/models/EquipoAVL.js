@@ -5,6 +5,8 @@ const EquipoAVLSchema = new mongoose.Schema({
     serial: { type: String},
     current_firmware: { type: String },
     ID: { type: Number, unique: true }, // ID único para enlazar con Movil
-}, { collection: 'EquipoAVL' });
+}, { collection: 'EquipoAVL',
+    timestamps: true
+});
 
 module.exports = mongoose.model('EquipoAVL', EquipoAVLSchema);

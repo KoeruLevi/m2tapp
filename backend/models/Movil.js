@@ -37,6 +37,8 @@ const MovilSchema = new mongoose.Schema({
    IMAGEN_3: { type: String },
    IMAGEN_4: { type: String },
    'ORIGEN DEL DATO': { type: String }
-}, { collection: 'Movil' });
+}, { collection: 'Movil',
+    timestamps: true
+});
 
 module.exports = mongoose.model('Movil', MovilSchema);

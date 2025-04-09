@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const ClienteSchema = new mongoose.Schema({
-    Cliente: { type: String, required: true }, // Nombre del cliente
+    Cliente: { type: String, required: true },
     "CONDICION \nCLIENTE": { type: String },
     RUT: { type: String },
     "Razon Social": { type: String },
@@ -9,6 +9,8 @@ const ClienteSchema = new mongoose.Schema({
     "MAIL CONTACTO_1": { type: String },
     "Domicilio": { type: String },
     "ORIGEN DEL \nDATO": { type: String },
-}, { collection: 'Cliente' });
+}, { collection: 'Cliente', 
+    timestamps: true
+});
 
 module.exports = mongoose.model('Cliente', ClienteSchema);
