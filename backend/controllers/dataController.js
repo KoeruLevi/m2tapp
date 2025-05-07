@@ -371,3 +371,36 @@ exports.createSimcard = async (req, res) => {
         res.status(500).json({ message: 'Error al crear Simcard', error: error.message });
     }
 };
+
+exports.getHistorial = async (req, res) => {
+    const { type, id } = req.query;
+
+    try {
+        let historial = [];
+
+        if (type === 'Movil') {
+            // Historial de móviles con misma patente
+            historial = await Movil.find({ Patente: id }).sort({ updatedAt: -1 }).lean();
+        } else if (type === 'Cliente') {
+            // Historial de móviles asociados a ese cliente
+            historial = await Movil.find({ Cliente: id }).sort({ updatedAt: -1 }).lean();
+        } else if (type === 'EquipoAVL') {
+            // Móviles que alguna vez usaron ese equipo como principal
+            historial = await Movil.find({ 
+                $or: [
+                    { 'Equipo Princ': id },
+                    { 'Equipo Princ.ID': id },
+                    { 'Equipo Princ.': id }
+                ]
+            }).sort({ updatedAt: -1 }).lean();
+        } else if (type === 'Simcard') {
+            // Simcards con mismo ICCID o mismo ID de equipo
+            historial = await Simcard.find({ ICCID: id }).sort({ updatedAt: -1 }).lean();
+        }
+
+        res.json(historial);
+    } catch (error) {
+        console.error('Error al obtener historial:', error);
+        res.status(500).json({ message: 'Error al obtener historial' });
+    }
+};

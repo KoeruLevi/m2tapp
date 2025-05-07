@@ -8,6 +8,7 @@ const Simcard = require('../models/Simcard');
 
 router.get('/search', dataController.searchData);
 router.get('/suggestions', dataController.getSuggestions);
+router.get('/historial', dataController.getHistorial);
 
 router.put('/update', async (req, res) => {
     const { type, data } = req.body;
@@ -35,6 +36,7 @@ router.put('/update', async (req, res) => {
         res.status(500).json({ message: 'Error al actualizar el documento', error });
     }
 });
+
 
 router.post('/cliente', dataController.createCliente);
 router.post('/movil', dataController.createMovil);

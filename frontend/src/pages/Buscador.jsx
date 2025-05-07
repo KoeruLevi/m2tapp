@@ -16,6 +16,7 @@ const Buscador = () => {
     const [isEditing, setIsEditing] = useState(false); // Estado para activar modo edición
     const [editedData, setEditedData] = useState({});
     const [loading, setLoading] = useState(false);
+    const [historial, setHistorial] = useState([]);
 
     useEffect(() => {
         console.log("🔄 UI Actualizada - Clientes:", filteredClientes);
@@ -177,6 +178,16 @@ const Buscador = () => {
         console.log(`🔎 Mostrando detalles de ${type}:`, data);
         setPopupType(type);
         setPopupData(data);
+
+        try {
+            const response = await axios.get('https://m2t-backend.onrender.com/api/data/historial', {
+                params: { type, id: type === 'EquipoAVL' ? data.ID : type === 'Cliente' ? data.Cliente : data.Patente || data.ICCID }
+            });
+            setHistorial(response.data);
+        } catch (error) {
+            console.error('❌ Error al obtener historial:', error);
+            setHistorial([]);
+        }
     };
 
     // 📌 FUNCIÓN PARA CERRAR EL POPUP
@@ -404,6 +415,33 @@ const Buscador = () => {
             </div>
         );
     })}
+    {historial.length > 0 && (
+  <div className="historial-section">
+    <h3>📚 Historial de Asignaciones</h3>
+    {historial.map((item, index) => (
+      <div
+        key={index}
+        style={{
+          borderBottom: '1px solid #ccc',
+          paddingBottom: '8px',
+          marginBottom: '12px',
+        }}
+      >
+        {Object.entries(item)
+          .filter(([key]) => !['_id', '__v'].includes(key))
+          .slice(0, 4)
+          .map(([key, value]) => (
+            <p key={key}>
+              <strong>{key}:</strong>{' '}
+              {typeof value === 'object'
+                ? JSON.stringify(value)
+                : value?.toString()}
+            </p>
+          ))}
+      </div>
+    ))}
+  </div>
+)}
         </div>
     </div>
 )}
