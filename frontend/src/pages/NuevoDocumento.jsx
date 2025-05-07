@@ -275,7 +275,14 @@ const NuevoDocumento = ({ tipo }) => {
                     </>
                 )}
                 <button type="submit" disabled={loading}>
-                {loading ? 'Creando...' : `Crear ${tipo}`}
+                    {loading ? (
+                        <>
+                         Creando...
+                            <span className="spinner" />
+                        </>
+                    ) : (
+                     `Crear ${tipo}`
+                    )}
                 </button>
             </form>
             {mensaje && <p className="mensaje">{mensaje}</p>}
