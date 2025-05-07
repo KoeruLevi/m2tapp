@@ -6,7 +6,7 @@ const Header = () => {
     const navigate = useNavigate();
     const location = useLocation();
 
-    // Si estamos en el login, no renderizamos el encabezado
+    // No mostrar el header en la ruta de login
     if (location.pathname === '/') return null;
 
     const goToDashboard = () => {
@@ -16,7 +16,7 @@ const Header = () => {
 
     return (
         <header className="header">
-            <div className="header-content" onClick={goToDashboard}>
+            <div className="header-content">
                 <img 
                     src="https://static.wixstatic.com/media/be77b1_6f1fc88227c94c8aa303bc6dc225c26c~mv2.png/v1/fill/w_73,h_86,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/Logo-M2-Tech.png" 
                     alt="M2T Logo" 
@@ -24,6 +24,9 @@ const Header = () => {
                 />
                 <h1 className="header-title">Soporte M2T</h1>
             </div>
+            <button className="home-button" onClick={goToDashboard}>
+                🏠 Home
+            </button>
         </header>
     );
 };
