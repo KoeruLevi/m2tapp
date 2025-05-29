@@ -18,6 +18,18 @@ const Buscador = () => {
     const [loading, setLoading] = useState(false);
     const [historial, setHistorial] = useState([]);
 
+    function beautifyFieldName(str) {
+  if (!str) return '';
+  // Reemplaza guión bajo y salto de línea por espacio
+  let cleaned = str.replace(/[_\n]+/g, ' ');
+  // Capitaliza la primera letra de cada palabra
+  cleaned = cleaned
+    .split(' ')
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(' ');
+  return cleaned;
+}
+
     useEffect(() => {
         console.log("🔄 UI Actualizada - Clientes:", filteredClientes);
         console.log("🔄 UI Actualizada - Móviles:", filteredMoviles);
@@ -321,100 +333,101 @@ const Buscador = () => {
             )}
 
             {/* 🔹 Formulario editable si está en modo edición */}
+        <div className="detalle-formulario">
             {Object.entries(popupData)
-    .filter(([key]) => key !== "_id")
-    .map(([key, value]) => {
-        let displayValue = value;
+  .filter(([key]) => key !== "_id" && key !== "__v")
+  .map(([key, value]) => {
+    let displayValue = value;
+    if (key === "ICCID") {
+      displayValue = typeof value === "object" && value !== null
+        ? (value.low || value.high || "No disponible")
+        : value;
+    }
+    if (key === "Equipo Princ") {
+      displayValue = typeof value === "object" && value !== null
+        ? (value[""] || value["ID"] || "No disponible")
+        : value;
+    }
 
-        if (key === "ICCID") {
-            displayValue = typeof value === "object" && value !== null 
-                ? (value.low || value.high || "No disponible") 
-                : value;
-        } 
-        
-        if (key === "Equipo Princ") {
-            displayValue = typeof value === "object" && value !== null 
-                ? (value[""] || value["ID"] || "No disponible") 
-                : value;
-        }
-
-        return (
-            <div key={key} style={{ marginBottom: "10px" }}>
-                <strong>{key}:</strong>
-                
-                {isEditing ? (
-                    key === "ICCID" || key === "Equipo Princ" ? (
-                        <input
-                            type="text"
-                            value={editedData[key] ?? displayValue}
-                            onChange={(e) => setEditedData({ ...editedData, [key]: e.target.value })}
-                            style={{ width: "100%" }}
-                        />
-                    ) : typeof value === "object" && value !== null ? (
-                        key === "Acc" || key === "Id" ? (
-                            // ✅ Checkboxes editables en modo edición
-                            <div className="accesorios-container" style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
-                                {Object.entries(value).map(([accKey, accValue]) => (
-                                    <label key={accKey} className="accesorio-item" style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                                        <input
-                                            type="checkbox"
-                                            checked={!!editedData[key]?.[accKey]}
-                                            onChange={(e) =>
-                                                setEditedData({
-                                                    ...editedData,
-                                                    [key]: { ...editedData[key], [accKey]: e.target.checked }
-                                                })
-                                            }
-                                        />
-                                        {accKey}
-                                    </label>
-                                ))}
-                            </div>
-                        ) : (
-                            <textarea
-                                value={JSON.stringify(editedData[key] || value, null, 2)}
-                                onChange={(e) => setEditedData({ ...editedData, [key]: JSON.parse(e.target.value) })}
-                                rows={3}
-                                style={{ width: "100%" }}
-                            />
-                        )
-                    ) : typeof value === "boolean" ? (
-                        <input
-                            type="checkbox"
-                            checked={editedData[key] ?? value}
-                            onChange={(e) => setEditedData({ ...editedData, [key]: e.target.checked })}
-                        />
-                    ) : (
-                        <input
-                            type="text"
-                            value={editedData[key] ?? displayValue}
-                            onChange={(e) => setEditedData({ ...editedData, [key]: e.target.value })}
-                            style={{ width: "100%" }}
-                        />
-                    )
-                ) : (
-                    typeof value === "object" && value !== null ? (
-                        key === "Acc" || key === "Id" ? (
-                            <div className="accesorios-container" style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
-                                {Object.entries(value).map(([accKey, accValue]) => (
-                                    <label key={accKey} className="accesorio-item" style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                                        <input type="checkbox" checked={!!accValue} readOnly />
-                                        {accKey}
-                                    </label>
-                                ))}
-                            </div>
-                        ) : (
-                            <span>{displayValue}</span>
-                        )
-                    ) : typeof value === "boolean" ? (
-                        <input type="checkbox" checked={value} readOnly />
-                    ) : (
-                        <span>{displayValue.toString()}</span>
-                    )
-                )}
-            </div>
-        );
-    })}
+    // ----- FORMULARIO ORDENADO -----
+    return (
+      <div className="detalle-fila" key={key} style={{ marginBottom: 14, display: 'flex', flexDirection: 'column' }}>
+        <label className="detalle-label" style={{ fontWeight: 600, marginBottom: 2, color: '#225', fontSize: 15 }}>
+          {beautifyFieldName(key)}
+        </label>
+        {isEditing ? (
+          key === "ICCID" || key === "Equipo Princ" ? (
+            <input
+              type="text"
+              value={editedData[key] ?? displayValue}
+              onChange={(e) => setEditedData({ ...editedData, [key]: e.target.value })}
+              style={{ width: "100%", marginBottom: 2 }}
+            />
+          ) : typeof value === "object" && value !== null ? (
+            key === "Acc" || key === "Id" ? (
+              <div className="accesorios-container" style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+                {Object.entries(value).map(([accKey, accValue]) => (
+                  <label key={accKey} className="accesorio-item" style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                    <input
+                      type="checkbox"
+                      checked={!!editedData[key]?.[accKey]}
+                      onChange={(e) =>
+                        setEditedData({
+                          ...editedData,
+                          [key]: { ...editedData[key], [accKey]: e.target.checked }
+                        })
+                      }
+                    />
+                    {beautifyFieldName(accKey)}
+                  </label>
+                ))}
+              </div>
+            ) : (
+              <textarea
+                value={JSON.stringify(editedData[key] || value, null, 2)}
+                onChange={(e) => setEditedData({ ...editedData, [key]: JSON.parse(e.target.value) })}
+                rows={3}
+                style={{ width: "100%" }}
+              />
+            )
+          ) : typeof value === "boolean" ? (
+            <input
+              type="checkbox"
+              checked={editedData[key] ?? value}
+              onChange={(e) => setEditedData({ ...editedData, [key]: e.target.checked })}
+            />
+          ) : (
+            <input
+              type="text"
+              value={editedData[key] ?? displayValue}
+              onChange={(e) => setEditedData({ ...editedData, [key]: e.target.value })}
+              style={{ width: "100%" }}
+            />
+          )
+        ) : (
+          typeof value === "object" && value !== null ? (
+            key === "Acc" || key === "Id" ? (
+              <div className="accesorios-container" style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+                {Object.entries(value).map(([accKey, accValue]) => (
+                  <label key={accKey} className="accesorio-item" style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                    <input type="checkbox" checked={!!accValue} readOnly />
+                    {beautifyFieldName(accKey)}
+                  </label>
+                ))}
+              </div>
+            ) : (
+              <span style={{ color: "#444" }}>{displayValue}</span>
+            )
+          ) : typeof value === "boolean" ? (
+            <span>{value ? "Sí" : "No"}</span>
+          ) : (
+            <span style={{ color: "#444" }}>{displayValue?.toString()}</span>
+          )
+        )}
+      </div>
+    );
+  })}
+  </div>
     {historial.length > 0 && (
   <div className="historial-section" style={{ marginTop: '30px' }}>
     <h3 style={{ color: '#007BFF' }}>📚 Historial de Asignaciones</h3>

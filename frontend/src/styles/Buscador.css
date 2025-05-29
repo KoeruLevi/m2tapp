@@ -127,3 +127,37 @@
         max-height: 400px;
     }
 }
+
+.detalle-formulario {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 18px;
+    max-width: 480px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.detalle-fila {
+    display: flex;
+    flex-direction: column;
+    background: #f8fafd;
+    border-radius: 6px;
+    padding: 10px 18px 8px 18px;
+    box-shadow: 0 1px 4px 0 rgba(90,120,140,0.06);
+}
+
+.detalle-label {
+    font-weight: 600;
+    margin-bottom: 2px;
+    color: #045;
+    font-size: 16px;
+    letter-spacing: 0.01em;
+}
+
+.detalle-valor {
+    color: #222;
+    font-size: 15px;
+    word-break: break-all;
+    padding-top: 2px;
+}
