@@ -66,3 +66,34 @@ button {
 button:hover {
     background-color: #0056b3;
 }
+
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 99;
+}
+.modal-content {
+    background: #fff;
+    border-radius: 8px;
+    padding: 30px 50px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.25);
+    text-align: center;
+}
+.modal-content h2 {
+    margin-bottom: 12px;
+    color: #0aaf0d;
+}
+.modal-content button {
+    margin-top: 16px;
+    padding: 8px 24px;
+    font-size: 16px;
+    border-radius: 5px;
+    background: #007bff;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+}

@@ -7,6 +7,7 @@ const NuevoDocumento = ({ tipo }) => {
     const [formData, setFormData] = useState({});
     const [mensaje, setMensaje] = useState('');
     const [loading, setLoading] = useState(false);
+    const [showModal, setShowModal] = useState(false);
 
     const handleInputChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -27,7 +28,9 @@ const NuevoDocumento = ({ tipo }) => {
         try {
             const endpoint = `https://m2t-backend.onrender.com/api/data/${tipo.toLowerCase()}`;
             const response = await axios.post(endpoint, formData);
-            setMensaje(`✅ ${tipo} creado: ${JSON.stringify(response.data)}`);
+            setShowModal(true);
+            setMensaje(''); // Limpiar mensajes previos
+            setFormData({}); // Limpiar el formulario
         } catch (error) {
             console.error('Error al crear documento:', error);
             setMensaje(
@@ -297,7 +300,16 @@ const NuevoDocumento = ({ tipo }) => {
                     )}
                 </button>
             </form>
-            {mensaje && <p className="mensaje">{mensaje}</p>}
+            {mensaje && !showModal && <p className="mensaje">{mensaje}</p>}        
+            {showModal && (
+    <div className="modal-overlay">
+        <div className="modal-content">
+            <h2>✅ Creación exitosa</h2>
+            <p>El {tipo.toLowerCase()} fue creado correctamente.</p>
+            <button onClick={() => setShowModal(false)}>Cerrar</button>
+        </div>
+    </div>
+)}
         </div>
     );
 };
