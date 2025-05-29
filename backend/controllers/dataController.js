@@ -46,21 +46,27 @@ exports.searchData = async (req, res) => {
         let rutFilters = [];
         if (rutLimpio.length >= 7 && rutLimpio.length <= 10) {
             rutFilters.push({
-                $expr: {
-                    $eq: [
-                        {
-                            $toUpper: {
-                                $replaceAll: {
-                                    input: {
-                                        $replaceAll: { input: "$RUT", find: ".", replacement: "" }
-                                    },
-                                    find: "-", replacement: ""
-                                }
+            $expr: {
+                $eq: [
+                    {
+                        $toUpper: {
+                            $replaceAll: {
+                                input: {
+                                    $replaceAll: {
+                                        input: { $toString: "$RUT" }, // <- CONVIERTE A STRING!
+                                        find: ".",
+                                        replacement: ""
+                                    }
+                                },
+                                find: "-",
+                                replacement: ""
                             }
-                        },
-                        rutLimpio
-                    ]
-                }
+                        }
+                    },
+                    rutLimpio
+                ]
+            }
+
             });
         }
 
