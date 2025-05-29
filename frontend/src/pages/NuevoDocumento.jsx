@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import '../styles/NuevoDocumento.css';
+import { formatearRut } from '../utils/rut';
 
 const NuevoDocumento = ({ tipo }) => {
     const [formData, setFormData] = useState({});
@@ -9,7 +10,15 @@ const NuevoDocumento = ({ tipo }) => {
 
     const handleInputChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
+        let { name, value } = e.target;
+        // Formatear RUT si corresponde
+        if (name === 'RUT') {
+            value = formatearRut(value);
+        }
+        setFormData({ ...formData, [name]: value });
     };
+
+    
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -28,6 +37,7 @@ const NuevoDocumento = ({ tipo }) => {
             setLoading(false);
         }
     };
+
 
     return (
         <div className="nuevo-documento-container">

@@ -416,8 +416,8 @@ const Buscador = () => {
         );
     })}
     {historial.length > 0 && (
-  <div className="historial-section">
-    <h3>📚 Historial de Asignaciones</h3>
+  <div className="historial-section" style={{ marginTop: '30px' }}>
+    <h3 style={{ color: '#007BFF' }}>📚 Historial de Asignaciones</h3>
     {historial.map((item, index) => (
       <div
         key={index}
