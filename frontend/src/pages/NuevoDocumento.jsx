@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import '../styles/NuevoDocumento.css';
-import { formatearRut } from '../utils/rut';
+import { formatearRut } from '../utils/rut.js';
 
 const NuevoDocumento = ({ tipo }) => {
     const [formData, setFormData] = useState({});
