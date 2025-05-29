@@ -174,7 +174,7 @@ const Buscador = () => {
     };
 
     // 📌 DOBLE CLIC PARA ABRIR DETALLE DEL ELEMENTO
-    const handleCardDoubleClick = (type, data) => {
+    const handleCardDoubleClick = async (type, data) => {
         console.log(`🔎 Mostrando detalles de ${type}:`, data);
         setPopupType(type);
         setPopupData(data);
