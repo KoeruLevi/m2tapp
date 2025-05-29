@@ -19,6 +19,11 @@ function formatearRut(rutInput) {
     return `${rutFormateado}-${dv}`;
 }
 
+function limpiarRut(rut) {
+    if (!rut) return '';
+    return rut.replace(/[^0-9kK]/g, '').toUpperCase();
+}
+
 exports.searchData = async (req, res) => {
     const { cliente, movil, equipo, simcard } = req.query;
 
@@ -30,26 +35,44 @@ exports.searchData = async (req, res) => {
         let moviles = [];
         let equipos = [];
         let simcards = [];
-        let rutFilters = [];
         
+        const clienteInput = cliente?.trim() || "";
         const clienteFilter = cliente ? new RegExp(cliente, 'i') : null;
         const movilFilter = movil ? new RegExp(movil, 'i') : null;
         const equipoFilter = equipo ? equipo : null; 
         const simcardFilter = simcard ? new RegExp(simcard, 'i') : null;
-        const rutLimpio = req.query.rutLimpio;
+        const rutLimpio = limpiarRut(clienteInput);
 
-        if (rutLimpio) {
-        // Buscar los rut "limpios" en la base (quita puntos y guiones a cada RUT en BD)
-        rutFilters.push({ 
-        $expr: {
-            $regexMatch: {
-            input: { $replaceAll: { input: { $replaceAll: { input: "$RUT", find: ".", replacement: "" } }, find: "-", replacement: "" } },
-            regex: rutLimpio,
-            options: "i"
-            }
+        let rutFilters = [];
+        if (rutLimpio.length >= 7 && rutLimpio.length <= 10) {
+            rutFilters.push({
+                $expr: {
+                    $eq: [
+                        {
+                            $toUpper: {
+                                $replaceAll: {
+                                    input: {
+                                        $replaceAll: { input: "$RUT", find: ".", replacement: "" }
+                                    },
+                                    find: "-", replacement: ""
+                                }
+                            }
+                        },
+                        rutLimpio
+                    ]
+                }
+            });
         }
-        });
-    }
+
+         if (clienteFilter || rutFilters.length > 0) {
+            clientes = await Cliente.find({
+                $or: [
+                    ...(clienteFilter ? [{ Cliente: clienteFilter }] : []),
+                    ...(clienteFilter ? [{ 'Razon Social': clienteFilter }] : []),
+                    ...rutFilters
+                ]
+            }).lean();
+        }
 
         // 🔹 Filtrar clientes
         if (clienteFilter) {
