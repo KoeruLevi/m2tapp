@@ -19,11 +19,6 @@ function formatearRut(rutInput) {
     return `${rutFormateado}-${dv}`;
 }
 
-function limpiarRut(rut) {
-    if (!rut) return '';
-    return rut.replace(/[^0-9kK]/g, '').toUpperCase();
-}
-
 exports.searchData = async (req, res) => {
     const { cliente, movil, equipo, simcard } = req.query;
 
@@ -36,45 +31,26 @@ exports.searchData = async (req, res) => {
         let equipos = [];
         let simcards = [];
 
+        let rutFilters = [];
+        
         const clienteFilter = cliente ? new RegExp(cliente, 'i') : null;
         const movilFilter = movil ? new RegExp(movil, 'i') : null;
         const equipoFilter = equipo ? equipo : null; 
         const simcardFilter = simcard ? new RegExp(simcard, 'i') : null;
-<<<<<<< HEAD
-=======
-        const rutLimpio = limpiarRut(clienteInput);
+        const rutLimpio = req.query.rutLimpio;
 
-        let rutFilters = [];
-        if (rutLimpio.length >= 7 && rutLimpio.length <= 10) {
-            rutFilters.push({
-                $expr: {
-                    $eq: [
-                        {
-                            $toUpper: {
-                                $replaceAll: {
-                                    input: {
-                                        $replaceAll: { input: "$RUT", find: ".", replacement: "" }
-                                    },
-                                    find: "-", replacement: ""
-                                }
-                            }
-                        },
-                        rutLimpio
-                    ]
-                }
-            });
+        if (rutLimpio) {
+        // Buscar los rut "limpios" en la base (quita puntos y guiones a cada RUT en BD)
+        rutFilters.push({ 
+        $expr: {
+            $regexMatch: {
+            input: { $replaceAll: { input: { $replaceAll: { input: "$RUT", find: ".", replacement: "" } }, find: "-", replacement: "" } },
+            regex: rutLimpio,
+            options: "i"
+            }
         }
-
-         if (clienteFilter || rutFilters.length > 0) {
-            clientes = await Cliente.find({
-                $or: [
-                    ...(clienteFilter ? [{ Cliente: clienteFilter }] : []),
-                    ...(clienteFilter ? [{ 'Razon Social': clienteFilter }] : []),
-                    ...rutFilters
-                ]
-            }).lean();
-        }
->>>>>>> parent of 868801a (Update dataController.js)
+        });
+    }
 
         // 🔹 Filtrar clientes
         if (clienteFilter) {
