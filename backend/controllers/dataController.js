@@ -3,6 +3,22 @@ const EquipoAVL = require('../models/EquipoAVL');
 const Movil = require('../models/Movil');
 const Simcard = require('../models/Simcard'); // Importar modelo Simcard
 
+function formatearRut(rutInput) {
+    if (!rutInput) return '';
+    let cleanRut = rutInput.replace(/[^0-9kK]/g, '').toUpperCase();
+    let cuerpo = cleanRut.slice(0, -1);
+    let dv = cleanRut.slice(-1);
+    if (cuerpo.length < 7) return cleanRut;
+    let rutFormateado = '';
+    let i = 0;
+    for (let j = cuerpo.length - 1; j >= 0; j--) {
+        rutFormateado = cuerpo[j] + rutFormateado;
+        i++;
+        if (i % 3 === 0 && j !== 0) rutFormateado = '.' + rutFormateado;
+    }
+    return `${rutFormateado}-${dv}`;
+}
+
 exports.searchData = async (req, res) => {
     const { cliente, movil, equipo, simcard } = req.query;
 
@@ -310,11 +326,11 @@ exports.getSuggestions = async (req, res) => {
 // Crear Cliente
 exports.createCliente = async (req, res) => {
     try {
+        req.body.RUT = formatearRut(req.body.RUT); // Formatear antes de guardar
         const existing = await Cliente.findOne({ RUT: req.body.RUT });
         if (existing) {
             return res.status(400).json({ message: 'Cliente con este RUT ya existe.' });
         }
-
         const cliente = new Cliente(req.body);
         const savedCliente = await cliente.save();
         res.status(201).json(savedCliente);

@@ -62,7 +62,9 @@ const NuevoDocumento = ({ tipo }) => {
                             type="text"
                             name="RUT"
                             placeholder="RUT"
+                            value={formData.RUT || ''}
                             onChange={handleInputChange}
+                            onBlur={(e) => setFormData({ ...formData, RUT: formatearRut(e.target.value) })}
                             required
                         />
                         <input
