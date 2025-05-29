@@ -19,3 +19,8 @@ export function formatearRut(rutInput) {
     }
     return `${rutFormateado}-${dv}`;
 }
+
+export function limpiarRut(rut) {
+    if (!rut) return '';
+    return rut.replace(/[^0-9kK]/g, '').toUpperCase();
+}

@@ -30,11 +30,26 @@ exports.searchData = async (req, res) => {
         let moviles = [];
         let equipos = [];
         let simcards = [];
-
+        let rutFilters = [];
+        
         const clienteFilter = cliente ? new RegExp(cliente, 'i') : null;
         const movilFilter = movil ? new RegExp(movil, 'i') : null;
         const equipoFilter = equipo ? equipo : null; 
         const simcardFilter = simcard ? new RegExp(simcard, 'i') : null;
+        const rutLimpio = req.query.rutLimpio;
+
+        if (rutLimpio) {
+        // Buscar los rut "limpios" en la base (quita puntos y guiones a cada RUT en BD)
+        rutFilters.push({ 
+        $expr: {
+            $regexMatch: {
+            input: { $replaceAll: { input: { $replaceAll: { input: "$RUT", find: ".", replacement: "" } }, find: "-", replacement: "" } },
+            regex: rutLimpio,
+            options: "i"
+            }
+        }
+        });
+    }
 
         // 🔹 Filtrar clientes
         if (clienteFilter) {
@@ -46,6 +61,8 @@ exports.searchData = async (req, res) => {
                 ],
             }).lean();
         }
+
+        let rutRegex = rutLimpio ? new RegExp(rutLimpio, 'i') : null;
 
         // 🔹 Filtrar móviles relacionados a clientes o con el filtro de móvil
         if (movilFilter || clienteFilter) {

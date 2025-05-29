@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "../styles/Buscador.css";
 import Header from "../components/Header";
+import { limpiarRut } from '../utils/rut';
 
 const Buscador = () => {
     const [query, setQuery] = useState({ cliente: '', movil: '', equipo: '', simcard: '' });
@@ -31,9 +32,11 @@ const Buscador = () => {
         console.log("🔍 Búsqueda iniciada con:", query);
         setLoading(true);
         try {
-            const response = await axios.get(`https://m2t-backend.onrender.com/api/data/search`, { params: query });
+            let cliente = query.cliente;
+            let rutLimpio = limpiarRut(cliente);
+            const response = await axios.get(`https://m2t-backend.onrender.com/api/data/search`, { params: query, rutLimpio });
             console.log("✅ Respuesta de la API:", response.data);
-    
+            
             let clientes = response.data.Cliente || [];
             let moviles = response.data.Movil || [];
             let equipos = response.data.EquipoAVL || [];
