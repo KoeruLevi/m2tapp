@@ -30,6 +30,29 @@ const Buscador = () => {
         return cleaned;
     }
 
+    function beautifyValue(key, value) {
+  if (['createdat', 'updatedat'].includes(key.toLowerCase())) {
+    try {
+      // Asegúrate que value sea un string o Date válido
+      const date = new Date(value);
+      return date.toLocaleString('es-CL', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+        timeZone: 'America/Santiago', // Forza horario Chile
+      });
+    } catch {
+      return value;
+    }
+  }
+  if (typeof value === "boolean") return value ? "Sí" : "No";
+  return value?.toString();
+}
+
     useEffect(() => {
         console.log("🔄 UI Actualizada - Clientes:", filteredClientes);
         console.log("🔄 UI Actualizada - Móviles:", filteredMoviles);
@@ -354,6 +377,7 @@ const Buscador = () => {
       <div className="detalle-fila" key={key} style={{ marginBottom: 14, display: 'flex', flexDirection: 'column' }}>
         <label className="detalle-label" style={{ fontWeight: 600, marginBottom: 2, color: '#225', fontSize: 15 }}>
           {beautifyFieldName(key)}
+          {beautifyValue(key, value)}
         </label>
         {isEditing ? (
           key === "ICCID" || key === "Equipo Princ" ? (
