@@ -19,16 +19,16 @@ const Buscador = () => {
     const [historial, setHistorial] = useState([]);
 
     function beautifyFieldName(str) {
-  if (!str) return '';
-  // Reemplaza guión bajo y salto de línea por espacio
-  let cleaned = str.replace(/[_\n]+/g, ' ');
-  // Capitaliza la primera letra de cada palabra
-  cleaned = cleaned
-    .split(' ')
-    .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-    .join(' ');
-  return cleaned;
-}
+        if (!str) return '';
+        if (str.toLowerCase() === 'createdat') return 'Creación';
+        if (str.toLowerCase() === 'updatedat') return 'Actualización';
+        let cleaned = str.replace(/[_\n]+/g, ' ');
+        cleaned = cleaned
+          .split(' ')
+          .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+          .join(' ');
+        return cleaned;
+    }
 
     useEffect(() => {
         console.log("🔄 UI Actualizada - Clientes:", filteredClientes);
