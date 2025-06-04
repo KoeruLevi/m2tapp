@@ -375,7 +375,6 @@ const Buscador = () => {
     // ----- FORMULARIO ORDENADO -----
     return (
       <div className="detalle-fila" key={key} style={{ marginBottom: 14, display: 'flex', flexDirection: 'column' }}>
-        {beautifyValue(key, value)}
         <label className="detalle-label" style={{ fontWeight: 600, marginBottom: 2, color: '#225', fontSize: 15 }}>
           {beautifyFieldName(key)}
         </label>
@@ -445,7 +444,7 @@ const Buscador = () => {
           ) : typeof value === "boolean" ? (
             <span>{value ? "Sí" : "No"}</span>
           ) : (
-            <span style={{ color: "#444" }}>{displayValue?.toString()}</span>
+            <span style={{ color: "#444" }}>{beautifyValue(key, displayValue)}</span>
           )
         )}
       </div>
