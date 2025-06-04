@@ -360,7 +360,6 @@ const Buscador = () => {
             {Object.entries(popupData)
   .filter(([key]) => key !== "_id" && key !== "__v")
   .map(([key, value]) => {
-    {beautifyValue(key, value)}
     let displayValue = value;
     if (key === "ICCID") {
       displayValue = typeof value === "object" && value !== null
@@ -376,6 +375,7 @@ const Buscador = () => {
     // ----- FORMULARIO ORDENADO -----
     return (
       <div className="detalle-fila" key={key} style={{ marginBottom: 14, display: 'flex', flexDirection: 'column' }}>
+        {beautifyValue(key, value)}
         <label className="detalle-label" style={{ fontWeight: 600, marginBottom: 2, color: '#225', fontSize: 15 }}>
           {beautifyFieldName(key)}
         </label>
