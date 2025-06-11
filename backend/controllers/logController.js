@@ -4,9 +4,6 @@ const Usuario = require('../models/Usuario');
 
 exports.login = async (req, res) => {
     const { email, password } = req.body;
-
-    console.log('Email:', email, 'Password recibida:', password);
-    console.log('Password en BD:', user.password);
     if (!email || !password) {
         return res.status(400).json({ message: 'Todos los campos son obligatorios' });
     }
@@ -29,6 +26,9 @@ exports.login = async (req, res) => {
         res.status(500).json({ message: 'Error del servidor', error: error.message });
     }
 };
+
+console.log('Email:', email, 'Password recibida:', password);
+    console.log('Password en BD:', user.password);
 
 exports.getUsers = async (req, res) => {
     try {
