@@ -25,10 +25,11 @@ exports.login = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: 'Error del servidor', error: error.message });
     }
+    console.log('Email:', email, 'Password recibida:', password);
+    console.log('Password en BD:', user.password);
+
 };
 
-console.log('Email:', email, 'Password recibida:', password);
-    console.log('Password en BD:', user.password);
 
 exports.getUsers = async (req, res) => {
     try {
