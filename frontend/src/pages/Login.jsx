@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import '../styles/Login.css'; // Ruta correcta al archivo CSS
+import '../styles/Login.css'; // Ruta al CSS
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -8,22 +8,22 @@ const Login = () => {
     const [error, setError] = useState(null);
 
     const handleSubmit = async (e) => {
-        e.preventDefault(); // Evita el recargo de la página
-        setError(null); // Reinicia el estado de errores
+        e.preventDefault();
+        setError(null);
 
         try {
-            const response = await axios.post('https://m2t-backend.onrender.com/api/auth/login', {
+            // Asegúrate de que la URL coincida con la de tu backend
+            const response = await axios.post('https://m2t-backend.onrender.com/api/login', {
                 email,
                 password,
             });
-            console.log('Respuesta del backend:', response.data);
-
-            // Guarda el token en el localStorage o realiza acciones según la lógica
+            // Guarda el token (y usuario si lo necesitas)
             localStorage.setItem('token', response.data.token);
-            alert('Login exitoso, redirigiendo al dashboard...');
-            window.location.href = '/dashboard'; // Redirige al dashboard
+            localStorage.setItem('user', JSON.stringify(response.data.user)); // opcional
+
+            // Redirige (si usas React Router v6+, usa useNavigate)
+            window.location.href = '/dashboard';
         } catch (error) {
-            console.error('Error en el login:', error.response || error.message);
             setError(
                 error.response?.data?.message || 'Ocurrió un error al iniciar sesión'
             );
@@ -40,12 +40,14 @@ const Login = () => {
                     placeholder="Correo Electrónico"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    required
                 />
                 <input
                     type="password"
                     placeholder="Contraseña"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    required
                 />
                 <button type="submit">Ingresar</button>
             </form>

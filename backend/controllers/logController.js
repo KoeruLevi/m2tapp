@@ -4,25 +4,24 @@ const Usuario = require('../models/Usuario');
 
 exports.login = async (req, res) => {
     const { email, password } = req.body;
-    console.log('Datos recibidos:', { email, password });
-
     if (!email || !password) {
         return res.status(400).json({ message: 'Todos los campos son obligatorios' });
     }
-
     try {
         const user = await Usuario.findOne({ email });
         if (!user) {
             return res.status(404).json({ message: 'Usuario no encontrado' });
         }
-
-        // Comparar contraseñas sin encriptación
-        if (password !== user.password) {
+        // Comparar contraseñas con bcrypt
+        const validPassword = await bcrypt.compare(password, user.password);
+        if (!validPassword) {
             return res.status(400).json({ message: 'Contraseña incorrecta' });
         }
-
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1d' });
-        res.json({ token, user });
+        // Genera JWT
+        const token = jwt.sign({ id: user._id, rol: user.rol }, process.env.JWT_SECRET, { expiresIn: '1d' });
+        // Por seguridad, no devuelvas la contraseña
+        const { password: pass, ...userSafe } = user._doc;
+        res.json({ token, user: userSafe });
     } catch (error) {
         res.status(500).json({ message: 'Error del servidor', error: error.message });
     }
@@ -41,13 +40,14 @@ exports.getUsers = async (req, res) => {
 
 exports.register = async (req, res) => {
     const { nombre, email, password, rol } = req.body;
-
     try {
-        // Crear el nuevo usuario (sin encriptar la contraseña)
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
         const newUser = new Usuario({
             nombre,
             email,
-            password, // Contraseña en texto plano
+            password: hashedPassword,
             rol,
         });
 
