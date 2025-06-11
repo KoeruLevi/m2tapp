@@ -22,11 +22,12 @@ exports.login = async (req, res) => {
         // Por seguridad, no devuelvas la contraseña
         const { password: pass, ...userSafe } = user._doc;
         res.json({ token, user: userSafe });
+        console.log('Email:', email, 'Password recibida:', password);
+        console.log('Password en BD:', user.password);
     } catch (error) {
         res.status(500).json({ message: 'Error del servidor', error: error.message });
     }
-    console.log('Email:', email, 'Password recibida:', password);
-    console.log('Password en BD:', user.password);
+    
 
 };
 
