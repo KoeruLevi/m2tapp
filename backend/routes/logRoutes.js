@@ -1,7 +1,7 @@
 const express = require('express');
 const { login, register, getUsers } = require('../controllers/logController');
 const router = express.Router();
-const auth = require('../middlewares/auth');
+const auth = require('../middlewares/logMiddleware.js');
 
 router.get('/dashboard', auth, (req, res) => {
     res.json({ message: 'Acceso permitido', user: req.user });
