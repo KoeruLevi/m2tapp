@@ -4,16 +4,24 @@ const Usuario = require('../models/Usuario');
 
 exports.login = async (req, res) => {
     const { email, password } = req.body;
+    console.log('[LOGIN] Email recibido:', email);
+    console.log('[LOGIN] Password recibido:', password);
+
     if (!email || !password) {
         return res.status(400).json({ message: 'Todos los campos son obligatorios' });
     }
     try {
         const user = await Usuario.findOne({ email });
         if (!user) {
+            console.log('[LOGIN] Usuario no encontrado');
             return res.status(404).json({ message: 'Usuario no encontrado' });
         }
+        console.log('[LOGIN] Password en BD:', user.password);
+
         // Comparar contraseñas con bcrypt
         const validPassword = await bcrypt.compare(password, user.password);
+        console.log('[LOGIN] ¿Password coincide?', validPassword);
+
         if (!validPassword) {
             return res.status(400).json({ message: 'Contraseña incorrecta' });
         }
@@ -22,13 +30,10 @@ exports.login = async (req, res) => {
         // Por seguridad, no devuelvas la contraseña
         const { password: pass, ...userSafe } = user._doc;
         res.json({ token, user: userSafe });
-        console.log('Email:', email, 'Password recibida:', password);
-        console.log('Password en BD:', user.password);
     } catch (error) {
+        console.log('[LOGIN] Error:', error.message);
         res.status(500).json({ message: 'Error del servidor', error: error.message });
     }
-    
-
 };
 
 
