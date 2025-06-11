@@ -9,7 +9,7 @@ const Dashboard = () => {
     useEffect(() => {
         const token = localStorage.getItem('token');
         if (!token) {
-            navigate('/');
+            navigate('/login');
         }
     }, [navigate]);
 

@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard';
 import Buscador from './pages/Buscador';
 import NuevoDocumento from './pages/NuevoDocumento';
 import Header from './components/Header';
+import Landing from './components/Landing';
 import './App.css';
 
 const App = () => {
@@ -14,7 +15,8 @@ const App = () => {
                 <Header /> {/* Se mantiene el Header en la parte superior */}
                 <main className="page-container">
                     <Routes>
-                        <Route path="/" element={<Login />} />
+                        <Route path="/" element={<Landing />} />
+                        <Route path="/login" element={<Login />} />
                         <Route path="/dashboard" element={<Dashboard />} />
                         <Route path="/buscador" element={<Buscador />} />
                         <Route path="/nuevo-cliente" element={<NuevoDocumento tipo="Cliente" />} />

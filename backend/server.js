@@ -13,7 +13,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 const corsOptions = {
-    origin: ['https://m2tapp.vercel.app'], // 🟢 tu frontend en Vercel
+    origin: ['https://m2tapp.vercel.app'], 
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true
   };
