@@ -13,7 +13,7 @@ const Login = () => {
 
         try {
             // Asegúrate de que la URL coincida con la de tu backend
-            const response = await axios.post('https://m2t-backend.onrender.com/api/login', {
+            const response = await axios.post('https://m2t-backend.onrender.com/login', {
                 email,
                 password,
             });
