@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
 
 const UsuarioSchema = new mongoose.Schema({
-    _id: { type: String, required: true },
     nombre: { type: String, required: true },
     rol: { type: String, required: true }, // Ejemplo: 'master', 'admin', 'user'
     email: { type: String, required: true, unique: true },
