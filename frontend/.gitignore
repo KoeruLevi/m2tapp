@@ -24,3 +24,4 @@ dist-ssr
 *.sw?
 Dockerfile
 docker-compose.yml
+package-lock.json
