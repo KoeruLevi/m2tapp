@@ -241,10 +241,18 @@ const Buscador = () => {
                 }
             };
     
-            const response = await axios.put(
-                `https://m2t-backend.onrender.com/api/data/update`,
-                payload
-            );
+            const token = localStorage.getItem('token');
+
+        // 💡 Envía el token en el header Authorization:
+        const response = await axios.put(
+            `https://m2t-backend.onrender.com/api/data/update`,
+            payload,
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            }
+        );
     
             console.log("✅ Datos actualizados con éxito:", response.data);
     
