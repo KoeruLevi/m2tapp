@@ -6,10 +6,12 @@ import Buscador from './pages/Buscador';
 import NuevoDocumento from './pages/NuevoDocumento';
 import Header from './components/Header';
 import Landing from './pages/Landing';
+import { UserProvider } from './context/UserContext';
 import './App.css';
 
 const App = () => {
     return (
+        <UserProvider>
         <Router>
             <div className="app-container">
                 <Header /> {/* Se mantiene el Header en la parte superior */}
@@ -27,6 +29,7 @@ const App = () => {
                 </main>
             </div>
         </Router>
+        </UserProvider>
     );
 };
 

@@ -1,12 +1,14 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import '../styles/Header.css';
+import { useUser } from '../context/UserContext';
 
 const Header = () => {
     const navigate = useNavigate();
     const location = useLocation();
+    const { user, logoutUser } = useUser();
 
-    // No mostrar el header en la ruta de login
+    
     if (location.pathname === '/') return null;
 
     const goToDashboard = () => {
@@ -23,6 +25,13 @@ const Header = () => {
                     className="header-logo"
                 />
                 <h1 className="header-title">Soporte M2T</h1>
+                {user && (
+                  <div className="user-profile">
+                    <span>👤 {user.nombre || user.email}</span>
+                    <span style={{marginLeft: 12, fontSize: 13, color: "#888"}}>{user.rol}</span>
+                    <button className="logout-btn" onClick={() => { logoutUser(); navigate('/login'); }}>Cerrar sesión</button>
+                  </div>
+                )}
             </div>
             <button className="home-button" onClick={goToDashboard}>
                 🏠 Home
