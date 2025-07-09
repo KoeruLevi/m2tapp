@@ -6,6 +6,7 @@ const EquipoAVL = require('../models/EquipoAVL');
 const Movil = require('../models/Movil');
 const Simcard = require('../models/Simcard');
 const HistorialCambio = require('../models/HistorialCambio');
+const Usuario = require('../models/Usuario');
 
 router.get('/search', dataController.searchData);
 router.get('/suggestions', dataController.getSuggestions);
