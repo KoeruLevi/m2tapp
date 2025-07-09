@@ -7,6 +7,7 @@ import NuevoDocumento from './pages/NuevoDocumento';
 import Header from './components/Header';
 import Landing from './pages/Landing';
 import { UserProvider } from './context/UserContext';
+import HistorialCambios from './pages/HistorialCambios';
 import './App.css';
 
 const App = () => {
@@ -25,6 +26,7 @@ const App = () => {
                         <Route path="/nuevo-movil" element={<NuevoDocumento tipo="Movil" />} />
                         <Route path="/nuevo-equipo" element={<NuevoDocumento tipo="EquipoAVL" />} />
                         <Route path="/nueva-simcard" element={<NuevoDocumento tipo="Simcard" />} />
+                        <Route path="/historial-cambios" element={<HistorialCambios />} />
                     </Routes>
                 </main>
             </div>
