@@ -3,6 +3,8 @@ import { useUser } from '../context/UserContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FiSettings } from 'react-icons/fi';
 import '../styles/Header.css';
+import FormularioCrearUsuario from './FormularioCrearUsuario';
+import FormularioEditarUsuario from './FormularioEditarUsuario';
 
 const Header = () => {
     const navigate = useNavigate();
@@ -10,6 +12,11 @@ const Header = () => {
     const { user, logoutUser } = useUser();
     const [showMenu, setShowMenu] = useState(false);
     const menuRef = useRef(null);
+    const [showCrearUsuario, setShowCrearUsuario] = useState(false);
+    const [showEditarUsuario, setShowEditarUsuario] = useState(false);
+
+    const abrirCrearUsuario = () => setShowCrearUsuario(true);
+    const abrirEditarUsuario = () => setShowEditarUsuario(true);
 
     useEffect(() => {
         function handleClickOutside(event) {
@@ -61,19 +68,50 @@ const Header = () => {
                         <FiSettings />
                     </button>
                     {showMenu && (
-                        <div className="user-menu-dropdown">
-                            <span>
-                                {user?.nombre} <br />
-                                <span style={{ fontSize: 12, color: '#888' }}>{user?.rol}</span>
-                            </span>
-                            <button
-                                className="user-menu-btn"
-                                onClick={handleLogout}
-                            >
-                                Cerrar sesión
-                            </button>
-                        </div>
-                    )}
+    <div className="user-menu-dropdown">
+        <span>
+            {user?.nombre} <br />
+            <span style={{ fontSize: 12, color: '#888' }}>{user?.rol}</span>
+        </span>
+        <button
+            className="user-menu-btn"
+            onClick={abrirCrearUsuario}
+        >
+            Crear usuario
+        </button>
+        <button
+            className="user-menu-btn"
+            onClick={abrirEditarUsuario}
+        >
+            Editar mis datos
+        </button>
+        <button
+            className="user-menu-btn"
+            onClick={handleLogout}
+        >
+            Cerrar sesión
+        </button>
+    </div>
+)}
+{showCrearUsuario && (
+    <div className="modal-overlay">
+        <div className="modal-content">
+            <h2>Crear usuario</h2>
+            <FormularioCrearUsuario onClose={() => setShowCrearUsuario(false)} />
+        </div>
+    </div>
+)}
+{showEditarUsuario && (
+    <div className="modal-overlay">
+        <div className="modal-content">
+            <h2>Editar mis datos</h2>
+            <FormularioEditarUsuario 
+                usuario={user} 
+                onClose={() => setShowEditarUsuario(false)}
+            />
+        </div>
+    </div>
+)}
                 </div>
             </div>
         </header>
