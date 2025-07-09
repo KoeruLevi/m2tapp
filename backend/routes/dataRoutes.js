@@ -25,6 +25,24 @@ router.get('/historial-cambios', async (req, res) => {
     }
 });
 
+router.get('/export-todo', async (req, res) => {
+    try {
+        const clientes = await Cliente.find().lean();
+        const moviles = await Movil.find().lean();
+        const equipos = await EquipoAVL.find().lean();
+        const simcards = await Simcard.find().lean();
+
+        res.json({
+            clientes,
+            moviles,
+            equipos,
+            simcards
+        });
+    } catch (err) {
+        res.status(500).json({ message: 'Error al exportar datos', error: err.message });
+    }
+});
+
 router.put('/update', async (req, res) => {
     const { type, data } = req.body;
     if (!type || !data) {
