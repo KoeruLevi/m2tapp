@@ -1,19 +1,36 @@
-import React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import '../styles/Header.css';
+import React, { useState, useRef, useEffect } from 'react';
 import { useUser } from '../context/UserContext';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { FiSettings } from 'react-icons/fi';
+import '../styles/Header.css';
 
 const Header = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { user, logoutUser } = useUser();
+    const [showMenu, setShowMenu] = useState(false);
+    const menuRef = useRef(null);
 
-    
+    useEffect(() => {
+        function handleClickOutside(event) {
+            if (menuRef.current && !menuRef.current.contains(event.target)) {
+                setShowMenu(false);
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    // ⬇️ Hooks SIEMPRE antes del return o condicionales
     if (location.pathname === '/') return null;
 
     const goToDashboard = () => {
-        console.log("🔄 Navegando al Dashboard...");
         navigate('/dashboard');
+    };
+
+    const handleLogout = () => {
+        logoutUser();
+        navigate('/login');
     };
 
     return (
@@ -25,17 +42,35 @@ const Header = () => {
                     className="header-logo"
                 />
                 <h1 className="header-title">Soporte M2T</h1>
-                {user && (
-                  <div className="user-profile">
-                    <span>👤 {user.nombre || user.email}</span>
-                    <span style={{marginLeft: 12, fontSize: 13, color: "#888"}}>{user.rol}</span>
-                    <button className="logout-btn" onClick={() => { logoutUser(); navigate('/login'); }}>Cerrar sesión</button>
-                  </div>
-                )}
             </div>
-            <button className="home-button" onClick={goToDashboard}>
-                🏠 Home
-            </button>
+            <div className="header-actions">
+                <button className="home-button" onClick={goToDashboard}>
+                    🏠 Home
+                </button>
+                <div style={{ position: 'relative' }} ref={menuRef}>
+                    <button
+                        className="settings-btn"
+                        aria-label="Opciones de usuario"
+                        onClick={() => setShowMenu((v) => !v)}
+                    >
+                        <FiSettings />
+                    </button>
+                    {showMenu && (
+                        <div className="user-menu-dropdown">
+                            <span>
+                                {user?.nombre} <br />
+                                <span style={{ fontSize: 12, color: '#888' }}>{user?.rol}</span>
+                            </span>
+                            <button
+                                className="user-menu-btn"
+                                onClick={handleLogout}
+                            >
+                                Cerrar sesión
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </div>
         </header>
     );
 };
