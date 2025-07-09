@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "../styles/Buscador.css";
 import Header from "../components/Header";
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
 const Buscador = () => {
     const [query, setQuery] = useState({ cliente: '', movil: '', equipo: '', simcard: '' });
@@ -17,6 +19,32 @@ const Buscador = () => {
     const [editedData, setEditedData] = useState({});
     const [loading, setLoading] = useState(false);
     const [historial, setHistorial] = useState([]);
+    const exportToExcel = () => {
+    // Combina todos los resultados que quieres exportar
+    // (Ejemplo: todos los clientes, móviles, equipos, simcards juntos)
+    // O elige sólo una de las entidades, como prefieras
+    const allData = [
+        ...filteredClientes.map(d => ({ Tipo: 'Cliente', ...d })),
+        ...filteredMoviles.map(d => ({ Tipo: 'Movil', ...d })),
+        ...filteredEquipos.map(d => ({ Tipo: 'EquipoAVL', ...d })),
+        ...filteredSimcards.map(d => ({ Tipo: 'Simcard', ...d })),
+    ];
+
+    if (allData.length === 0) {
+        alert("No hay datos para exportar.");
+        return;
+    }
+
+    // Crea una hoja de Excel a partir de los datos
+    const worksheet = XLSX.utils.json_to_sheet(allData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "DatosExportados");
+
+    // Convierte el workbook a un blob y lo descarga
+    const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+    const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
+    saveAs(blob, "busqueda-m2t.xlsx");
+};
 
     function beautifyFieldName(str) {
         if (!str) return '';
@@ -299,6 +327,10 @@ const Buscador = () => {
                 </button>
                 {loading && <p style={{ marginTop: '10px', fontWeight: 'bold', color: '#007bff' }}>Cargando resultados...</p>}
             </form>
+
+            <button className="export-excel-btn" onClick={exportToExcel}>
+                  📁 Exportar a Excel
+            </button>
 
             <div className="tabs-container">
     {["Cliente", "Movil", "EquipoAVL", "Simcard"].map((type) => (

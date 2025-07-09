@@ -161,3 +161,19 @@
     word-break: break-all;
     padding-top: 2px;
 }
+
+.export-excel-btn {
+    margin: 12px 0 16px 0;
+    background: #198754;
+    color: #fff;
+    padding: 9px 20px;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.2s;
+}
+.export-excel-btn:hover {
+    background: #157347;
+}
