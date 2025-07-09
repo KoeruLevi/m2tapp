@@ -44,6 +44,11 @@ const Header = () => {
                 <h1 className="header-title">Soporte M2T</h1>
             </div>
             <div className="header-actions">
+                {user && (
+                    <span className="header-username">
+                        👤 {user.nombre}
+                    </span>
+                )}
                 <button className="home-button" onClick={goToDashboard}>
                     🏠 Home
                 </button>
