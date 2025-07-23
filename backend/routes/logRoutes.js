@@ -12,6 +12,6 @@ router.get('/dashboard', auth, (req, res) => {
 router.get('/users', getUsers);
 router.post('/login', login);
 router.post('/register', register);
-router.put('/update', auth, updateUsuario);
+router.put('/updateUser', auth, updateUsuario);
 
 module.exports = router;

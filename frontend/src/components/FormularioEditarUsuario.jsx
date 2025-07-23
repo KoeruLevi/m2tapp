@@ -11,7 +11,7 @@ const FormularioEditarUsuario = ({ usuario, onClose }) => {
         e.preventDefault();
         try {
             const token = localStorage.getItem('token');
-            await axios.put("https://m2t-backend.onrender.com/api/auth/update", form, {
+            await axios.put("https://m2t-backend.onrender.com/api/auth/updateUser", form, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setMensaje("✅ Usuario actualizado.");
