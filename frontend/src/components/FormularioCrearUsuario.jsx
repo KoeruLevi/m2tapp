@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
+import "../styles/FormularioCrearUsuario.css";
 
 const FormularioCrearUsuario = ({ onClose }) => {
     const [form, setForm] = useState({ nombre: "", email: "", password: "", rol: "" });
@@ -80,7 +81,13 @@ const FormularioCrearUsuario = ({ onClose }) => {
             </select>
             <button type="submit">Crear usuario</button>
             <button type="button" onClick={onClose}>Cerrar</button>
-            {mensaje && <div style={{ marginTop: 8 }}>{mensaje}</div>}
+            {mensaje && (
+                <div className={`mensaje-feedback ${
+                    mensaje.includes("✅") ? "exito" : mensaje.includes("❌") ? "error" : ""
+                }`}>
+                    {mensaje}
+                </div>
+            )}
         </form>
     );
 };

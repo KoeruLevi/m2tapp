@@ -1,41 +1,55 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import PropTypes from "prop-types";
+import { useUser } from "../context/UserContext";
 
 const FormularioEditarUsuario = ({ usuario, onClose }) => {
-    // 1. Loguear el usuario recibido
-    useEffect(() => {
-        console.log("🟠 Prop usuario recibido en FormularioEditarUsuario:", usuario);
-    }, [usuario]);
-
+    const { setUser } = useUser ? useUser() : { setUser: () => {} };
     const [form, setForm] = useState({ 
         nombre: usuario.nombre, 
         email: usuario.email, 
-        password: "", 
         rol: usuario.rol 
     });
     const [mensaje, setMensaje] = useState("");
+    const [showPasswordFields, setShowPasswordFields] = useState(false);
+    const [password, setPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-    // 2. Loguear cada vez que cambia el form
     useEffect(() => {
-        console.log("🟢 Estado 'form' actualizado:", form);
-    }, [form]);
+        setForm({
+            nombre: usuario.nombre, 
+            email: usuario.email, 
+            rol: usuario.rol
+        });
+        setPassword("");
+        setConfirmPassword("");
+    }, [usuario]);
 
     const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
 
     const handleSubmit = async e => {
         e.preventDefault();
+
+        if (showPasswordFields && password !== confirmPassword) {
+            setMensaje("❌ Las contraseñas no coinciden.");
+            return;
+        }
+
         try {
             const token = localStorage.getItem('token');
-            // 3. Loguear el token y los datos que van al backend
-            console.log("🔵 Token usado:", token);
-            console.log("🟣 Datos enviados al backend:", form);
+            const dataToSend = { ...form };
+            if (showPasswordFields && password) dataToSend.password = password;
 
-            const response = await axios.put("https://m2t-backend.onrender.com/api/auth/updateUser", form, {
+            const response = await axios.put("https://m2t-backend.onrender.com/api/auth/updateUser", dataToSend, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            // 4. Loguear la respuesta del backend
-            console.log("🟤 Respuesta del backend:", response.data);
+            if (setUser && response.data && response.data.user) {
+                setUser(response.data.user);
+            } else if (setUser) {
+                setUser({ ...usuario, ...form });
+            }
 
             setMensaje("✅ Edición exitosa");
             setTimeout(() => {
@@ -44,8 +58,6 @@ const FormularioEditarUsuario = ({ usuario, onClose }) => {
             }, 1500);
         } catch (err) {
             setMensaje("❌ Error: " + (err.response?.data?.message || err.message));
-            // 5. Loguear el error
-            console.log("🔴 Error backend:", err.response?.data, err);
         }
     };
 
@@ -53,7 +65,58 @@ const FormularioEditarUsuario = ({ usuario, onClose }) => {
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             <input name="nombre" placeholder="Nombre" value={form.nombre} onChange={handleChange} required />
             <input name="email" placeholder="Correo" value={form.email} onChange={handleChange} type="email" required />
-            <input name="password" placeholder="Nueva Contraseña (opcional)" value={form.password} onChange={handleChange} type="password" />
+
+            <button 
+                type="button" 
+                onClick={() => setShowPasswordFields(v => !v)}
+                style={{ marginBottom: 8 }}
+            >
+                {showPasswordFields ? "Cancelar cambio de contraseña" : "Cambiar contraseña"}
+            </button>
+
+            {showPasswordFields && (
+                <>
+                    <div style={{ display: "flex", gap: 4 }}>
+                        <input
+                            name="password"
+                            placeholder="Nueva contraseña"
+                            value={password}
+                            onChange={e => setPassword(e.target.value)}
+                            type={showPassword ? "text" : "password"}
+                            autoComplete="new-password"
+                            style={{ flex: 1 }}
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword(v => !v)}
+                            tabIndex={-1}
+                            style={{ width: 50 }}
+                        >
+                            {showPassword ? "Ocultar" : "Ver"}
+                        </button>
+                    </div>
+                    <div style={{ display: "flex", gap: 4 }}>
+                        <input
+                            name="confirmPassword"
+                            placeholder="Confirmar nueva contraseña"
+                            value={confirmPassword}
+                            onChange={e => setConfirmPassword(e.target.value)}
+                            type={showConfirmPassword ? "text" : "password"}
+                            autoComplete="new-password"
+                            style={{ flex: 1 }}
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowConfirmPassword(v => !v)}
+                            tabIndex={-1}
+                            style={{ width: 50 }}
+                        >
+                            {showConfirmPassword ? "Ocultar" : "Ver"}
+                        </button>
+                    </div>
+                </>
+            )}
+
             <select name="rol" value={form.rol} onChange={handleChange} required>
                 <option value="admin">Admin</option>
                 <option value="operador">Operador</option>
@@ -61,14 +124,21 @@ const FormularioEditarUsuario = ({ usuario, onClose }) => {
             </select>
             <button type="submit">Guardar cambios</button>
             <button type="button" onClick={onClose}>Cerrar</button>
-            {mensaje && <div style={{ marginTop: 8 }}>{mensaje}</div>}
+            {mensaje && <div style={{
+                marginTop: 8,
+                background: "#fff",
+                borderRadius: 4,
+                padding: 8,
+                color: mensaje.includes("✅") ? "green" : mensaje.includes("❌") ? "red" : "#333",
+                fontWeight: 500
+            }}>{mensaje}</div>}
         </form>
     );
 };
 
 FormularioEditarUsuario.propTypes = {
-  usuario: PropTypes.object.isRequired,
-  onClose: PropTypes.func.isRequired
+    usuario: PropTypes.object.isRequired,
+    onClose: PropTypes.func.isRequired
 };
 
 export default FormularioEditarUsuario;
