@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import '../styles/HistorialCambios.css';
 
-// Traducción y formato de campos
+
 const CAMPO_TRADUCCIONES = {
     RUT: "RUT",
     "CONTACTO_1": "Contacto 1",
@@ -10,12 +10,10 @@ const CAMPO_TRADUCCIONES = {
     "RAZON SOCIAL": "Razón Social",
     "MAIL CONTACTO_1": "Mail Contacto 1",
     "Domicilio": "Domicilio",
-    // Agrega aquí más campos si necesitas personalizar el nombre
 };
 
 function beautifyFieldName(campo) {
     if (CAMPO_TRADUCCIONES[campo]) return CAMPO_TRADUCCIONES[campo];
-    // Capitaliza y reemplaza guiones bajos por espacios
     return campo.charAt(0).toUpperCase() + campo.slice(1).toLowerCase().replace(/_/g, " ");
 }
 

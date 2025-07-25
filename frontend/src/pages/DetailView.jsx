@@ -57,7 +57,7 @@ const DetailView = ({ data, onClose }) => {
         </div>
     );
 };
-// Definimos las PropTypes para validar las propiedades que se pasan al componente.
+
 DetailView.propTypes = {
     data: PropTypes.shape({
         Cliente: PropTypes.string,

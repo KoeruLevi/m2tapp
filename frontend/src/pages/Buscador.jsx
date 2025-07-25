@@ -15,14 +15,12 @@ const Buscador = () => {
     const [selectedFilters, setSelectedFilters] = useState({ Cliente: null, Movil: null, EquipoAVL: null, Simcard: null });
     const [popupData, setPopupData] = useState(null);
     const [popupType, setPopupType] = useState('');
-    const [isEditing, setIsEditing] = useState(false); // Estado para activar modo edición
+    const [isEditing, setIsEditing] = useState(false);
     const [editedData, setEditedData] = useState({});
     const [loading, setLoading] = useState(false);
     const [historial, setHistorial] = useState([]);
     const exportToExcel = () => {
-    // Combina todos los resultados que quieres exportar
-    // (Ejemplo: todos los clientes, móviles, equipos, simcards juntos)
-    // O elige sólo una de las entidades, como prefieras
+
     const allData = [
         ...filteredClientes.map(d => ({ Tipo: 'Cliente', ...d })),
         ...filteredMoviles.map(d => ({ Tipo: 'Movil', ...d })),
@@ -35,12 +33,10 @@ const Buscador = () => {
         return;
     }
 
-    // Crea una hoja de Excel a partir de los datos
     const worksheet = XLSX.utils.json_to_sheet(allData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "DatosExportados");
 
-    // Convierte el workbook a un blob y lo descarga
     const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
     const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
     saveAs(blob, "busqueda-m2t.xlsx");
@@ -61,7 +57,6 @@ const Buscador = () => {
     function beautifyValue(key, value) {
   if (['createdat', 'updatedat'].includes(key.toLowerCase())) {
     try {
-      // Asegúrate que value sea un string o Date válido
       const date = new Date(value);
       return date.toLocaleString('es-CL', {
         day: '2-digit',
@@ -71,7 +66,7 @@ const Buscador = () => {
         minute: '2-digit',
         second: '2-digit',
         hour12: false,
-        timeZone: 'America/Santiago', // Forza horario Chile
+        timeZone: 'America/Santiago',
       });
     } catch {
       return value;
@@ -88,7 +83,6 @@ const Buscador = () => {
         console.log("🔄 UI Actualizada - Simcards:", filteredSimcards);
     }, [filteredClientes, filteredMoviles, filteredEquipos, filteredSimcards]);
 
-    // 📌 FUNCIONALIDAD PARA BUSCAR DATOS
     const handleSearch = async (e) => {
         e.preventDefault();
         console.log("🔍 Búsqueda iniciada con:", query);
@@ -108,7 +102,6 @@ const Buscador = () => {
             console.log("   - Equipos:", equipos.length);
             console.log("   - Simcards:", simcards.length);
     
-            // 🔹 Eliminar duplicados en los móviles basados en el _id
             const uniqueMoviles = moviles.filter((movil, index, self) =>
                 index === self.findIndex((m) => m._id === movil._id)
             );
@@ -121,7 +114,7 @@ const Buscador = () => {
     
             setResults(response.data);
             setFilteredClientes(clientes);
-            setFilteredMoviles(uniqueMoviles); // Usamos la versión sin duplicados
+            setFilteredMoviles(uniqueMoviles);
             setFilteredEquipos(equipos);
             setFilteredSimcards(simcards);
             setFilteredClientes(uniqueClientes);
@@ -133,22 +126,18 @@ const Buscador = () => {
         }
     };
 
-    // 📌 FUNCIÓN PARA APLICAR FILTROS Y RESTAURAR DATOS AL DESELECCIONAR
     const handleFilterClick = (type, data) => {
         console.log(`🔵 Clic en ${type}:`, data);
 
         let updatedFilters = { ...selectedFilters };
-
-        // Si el elemento ya estaba seleccionado, lo eliminamos del filtro
         if (selectedFilters[type] && selectedFilters[type]._id === data._id) {
             console.log(`❌ Deseleccionando ${type}`);
-            delete updatedFilters[type]; // Eliminar solo este filtro
+            delete updatedFilters[type];
             setSelectedFilters(updatedFilters);
             applyActiveFilters(updatedFilters);
             return;
         }
 
-        // Agregar el nuevo filtro
         updatedFilters[type] = data;
         setSelectedFilters(updatedFilters);
 
@@ -189,7 +178,7 @@ const Buscador = () => {
                     newFilteredEquipos = newFilteredEquipos.filter(equipo => equipo.ID === equipoId);
                     newFilteredSimcards = newFilteredSimcards.filter(simcard => simcard.ID === equipoId);
     
-                    newFilteredMoviles = [filter]; // Mantener solo el móvil seleccionado
+                    newFilteredMoviles = [filter];
                     break;
                 }
     
@@ -203,7 +192,7 @@ const Buscador = () => {
                     );
     
                     newFilteredSimcards = newFilteredSimcards.filter(simcard => simcard.ID === filter.ID);
-                    newFilteredEquipos = [filter]; // Mantener solo el equipo seleccionado
+                    newFilteredEquipos = [filter];
                     break;
                 }
     
@@ -217,13 +206,12 @@ const Buscador = () => {
                         newFilteredMoviles.some(movil => movil.Cliente === cliente.Cliente)
                     );
     
-                    newFilteredSimcards = [filter]; // Mantener solo la simcard seleccionada
+                    newFilteredSimcards = [filter];
                     break;
                 }
             }
         });
     
-        // ✅ Eliminar duplicados después de aplicar filtros
         const uniqueMoviles = newFilteredMoviles.filter((movil, index, self) =>
             index === self.findIndex((m) => m._id === movil._id)
         );
@@ -236,7 +224,6 @@ const Buscador = () => {
         console.log("✅ Móviles después de eliminar duplicados:", uniqueMoviles.length);
     };
 
-    // 📌 DOBLE CLIC PARA ABRIR DETALLE DEL ELEMENTO
     const handleCardDoubleClick = async (type, data) => {
         console.log(`🔎 Mostrando detalles de ${type}:`, data);
         setPopupType(type);
@@ -253,7 +240,6 @@ const Buscador = () => {
         }
     };
 
-    // 📌 FUNCIÓN PARA CERRAR EL POPUP
     const closePopup = () => {
         setPopupData(null);
         setPopupType('');
@@ -262,16 +248,15 @@ const Buscador = () => {
     const handleSaveChanges = async () => {
         try {
             const payload = {
-                type: popupType,  // Asegurar que el backend sabe qué tipo de documento actualizar
+                type: popupType,
                 data: {
-                    ...popupData,  // Mantener los datos originales
-                    ...editedData, // Reemplazar con los cambios realizados
+                    ...popupData,
+                    ...editedData, 
                 }
             };
     
             const token = localStorage.getItem('token');
 
-        // 💡 Envía el token en el header Authorization:
         const response = await axios.put(
             `https://m2t-backend.onrender.com/api/data/update`,
             payload,
@@ -283,8 +268,7 @@ const Buscador = () => {
         );
     
             console.log("✅ Datos actualizados con éxito:", response.data);
-    
-            // Actualizar UI con los nuevos datos
+
             setPopupData((prev) => ({ ...prev, ...editedData }));
             setIsEditing(false);
             alert("✅ Cambios guardados exitosamente.");

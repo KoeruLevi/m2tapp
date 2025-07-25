@@ -42,7 +42,6 @@ const Dashboard = () => {
 
         const wb = XLSX.utils.book_new();
 
-        // Opcional: Si no quieres los campos internos, limpia cada registro aquí.
         const clean = (arr) => arr.map(obj => {
             const { _id, __v, createdAt, updatedAt, ...rest } = obj;
             return rest;

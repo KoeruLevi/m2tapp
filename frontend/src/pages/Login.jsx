@@ -12,16 +12,13 @@ const Login = () => {
         setError(null);
 
         try {
-            // Asegúrate de que la URL coincida con la de tu backend
             const response = await axios.post('https://m2t-backend.onrender.com/api/auth/login', {
                 email,
                 password,
             });
-            // Guarda el token (y usuario si lo necesitas)
             localStorage.setItem('token', response.data.token);
-            localStorage.setItem('user', JSON.stringify(response.data.user)); // opcional
+            localStorage.setItem('user', JSON.stringify(response.data.user));
 
-            // Redirige (si usas React Router v6+, usa useNavigate)
             window.location.href = '/dashboard';
         } catch (error) {
             setError(
