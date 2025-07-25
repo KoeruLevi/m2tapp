@@ -5,6 +5,7 @@ import { useUser } from "../context/UserContext";
 
 const FormularioEditarUsuario = ({ usuario, onClose }) => {
     const { setUser } = useUser ? useUser() : { setUser: () => {} };
+    const { loginUser } = useUser();
     const [form, setForm] = useState({ 
         nombre: usuario.nombre, 
         email: usuario.email, 
@@ -53,7 +54,7 @@ const FormularioEditarUsuario = ({ usuario, onClose }) => {
 
             setMensaje("✅ Edición exitosa");
             const nuevoUsuario = { ...usuario, ...form };
-            setUser(nuevoUsuario);
+            loginUser(nuevoUsuario);
 
             setTimeout(() => {
                 setMensaje("");
