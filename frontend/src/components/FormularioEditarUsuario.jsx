@@ -52,12 +52,16 @@ const FormularioEditarUsuario = ({ usuario, onClose }) => {
             }
 
             setMensaje("✅ Edición exitosa");
+            const nuevoUsuario = { ...usuario, ...form };
+            setUser(nuevoUsuario);
+
             setTimeout(() => {
                 setMensaje("");
                 onClose();
             }, 1500);
         } catch (err) {
             setMensaje("❌ Error: " + (err.response?.data?.message || err.message));
+            console.log("🔴 Error backend:", err.response?.data, err);
         }
     };
 
