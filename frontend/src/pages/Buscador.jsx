@@ -41,6 +41,19 @@ const Buscador = () => {
     const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
     saveAs(blob, "busqueda-m2t.xlsx");
 };
+    function formatRut(rutRaw) {
+    let rut = rutRaw.replace(/[^0-9kK]/g, '').toUpperCase();
+    if (!rut) return '';
+    let dv = rut.slice(-1);
+    rut = rut.slice(0, -1);
+    let formatted = '';
+    while (rut.length > 3) {
+        formatted = '.' + rut.slice(-3) + formatted;
+        rut = rut.slice(0, rut.length - 3);
+    }
+    formatted = rut + formatted;
+    return formatted + '-' + dv;
+}
 
     function beautifyFieldName(str) {
         if (!str) return '';
@@ -372,14 +385,12 @@ const Buscador = () => {
             <button className="close-btn" onClick={closePopup}>X</button>
             <h2>Detalles de {popupType}</h2>
 
-            {/* 🔹 Botón para cambiar a modo edición */}
             {!isEditing ? (
                 <button className="edit-btn" onClick={() => setIsEditing(true)}>Editar</button>
             ) : (
                 <button className="save-btn" onClick={handleSaveChanges}>Guardar</button>
             )}
 
-            {/* 🔹 Formulario editable si está en modo edición */}
         <div className="detalle-formulario">
             {Object.entries(popupData)
   .filter(([key]) => key !== "_id" && key !== "__v")
@@ -396,14 +407,28 @@ const Buscador = () => {
         : value;
     }
 
-    // ----- FORMULARIO ORDENADO -----
     return (
       <div className="detalle-fila" key={key} style={{ marginBottom: 14, display: 'flex', flexDirection: 'column' }}>
         <label className="detalle-label" style={{ fontWeight: 600, marginBottom: 2, color: '#225', fontSize: 15 }}>
           {beautifyFieldName(key)}
-        </label>
-        {isEditing ? (
-          key === "ICCID" || key === "Equipo Princ" ? (
+          </label>
+          {isEditing ? (
+          
+          key === "RUT" ? (
+  
+          <input
+            type="text"
+            value={editedData[key] ?? displayValue}
+            onChange={e => {
+              const raw = e.target.value;
+            const formatted = formatRut(raw);
+            setEditedData({ ...editedData, [key]: formatted });
+            }}
+            style={{ width: "100%" }}
+            maxLength={12}
+            placeholder="Ej: 12.345.678-9"
+            />
+          ) :  key === "ICCID" || key === "Equipo Princ" ? (
             <input
               type="text"
               value={editedData[key] ?? displayValue}
