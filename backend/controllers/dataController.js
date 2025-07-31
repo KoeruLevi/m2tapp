@@ -135,36 +135,42 @@ exports.searchData = async (req, res) => {
             equipos = await EquipoAVL.find(equipoQuery).lean();
         }
             
-            if (simcardFilter || equipos.length > 0) {
-                const simcardQuery = {};
+            let simcardQuery = {};
 
-            if (simcardFilter) {
-                simcardQuery.$or = [
-                    { operador: simcardFilter },
-                    { portador: simcardFilter }
-                ];
-                if (!isNaN(Number(simcard))) {
-                    simcardQuery.$or.push({ ICCID: simcard });
-                    simcardQuery.$or.push({ fono: Number(simcard) });
-                }
-                console.log('Simcard Query:', simcardQuery);
-            }
+if (simcardFilter) {
+    simcardQuery.$or = [
+        { operador: simcardFilter },
+        { portador: simcardFilter }
+    ];
+    if (!isNaN(Number(simcard))) {
+        simcardQuery.$or.push({ ICCID: simcard });
+        simcardQuery.$or.push({ fono: Number(simcard) });
+    }
+    console.log('Simcard Query (con simcardFilter):', simcardQuery);
+}
 
-            if (equipos.length > 0) {
-                const equipoIds = equipos.map((e) => e.ID);
-                simcardQuery.ID = { $in: equipoIds };
-            }
+if (equipos.length > 0) {
+    const equipoIds = equipos.map((e) => e.ID);
+    simcardQuery.ID = { $in: equipoIds };
+    console.log('Simcard Query (con equipos):', simcardQuery);
+}
 
-            console.log('Simcard Query:', simcardQuery);
-            const simcardsPreview = await Simcard.find({}).limit(10).lean();
-            console.log('Primeras simcards en la base:', simcardsPreview.map(sc => ({
-                ICCID: sc.ICCID, operador: sc.operador, portador: sc.portador
-            })));
-            const testSim = simcardsPreview.filter(s => typeof s.portador === "string" && /movistar/i.test(s.portador));
-            console.log('Simcards con portador ~ movistar:', testSim);
-            console.log('Simcard Query:', JSON.stringify(simcardQuery));
-            simcards = await Simcard.find(simcardQuery).lean();
-            }
+// SOLO ejecuta la búsqueda si realmente hay filtros
+if (
+    (simcardQuery.$or && simcardQuery.$or.length > 0) ||
+    simcardQuery.ID
+) {
+    // Debug extra: muestra los 10 primeros
+    const simcardsPreview = await Simcard.find({}).limit(10).lean();
+    console.log('Primeras simcards en la base:', simcardsPreview.map(sc => ({
+        ICCID: sc.ICCID, operador: sc.operador, portador: sc.portador
+    })));
+    const testSim = simcardsPreview.filter(s => typeof s.portador === "string" && /movistar/i.test(s.portador));
+    console.log('Simcards con portador ~ movistar:', testSim);
+
+    console.log('Simcard Query FINAL:', JSON.stringify(simcardQuery));
+    simcards = await Simcard.find(simcardQuery).lean();
+}
 
         if (!moviles.length && equipos.length > 0) {
             const equipoIds = equipos.map(e => e.ID);
