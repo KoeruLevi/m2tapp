@@ -10,6 +10,6 @@ services:
       - "80:80"
     environment:
       - PORT=80
-      - MONGO_URI=tu_mongo_uri
-      - JWT_SECRET=loquetuquieras
+      - MONGO_URI=mongodb+srv://admin1:WKCgTlfBUJUDRrCU@cluster0.ypxl6.mongodb.net/m2tapp?retryWrites=true&w=majority&appName=Cluster0
+      - JWT_SECRET=your_jwt_secret
     restart: unless-stopped
