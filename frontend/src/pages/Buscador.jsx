@@ -296,16 +296,14 @@ const Buscador = () => {
     
         return () => {
             if (clickTimeout) {
-                // Si ya hubo un clic antes, lo cancelamos y abrimos detalles
                 clearTimeout(clickTimeout);
                 clickTimeout = null;
                 handleCardDoubleClick(type, item);
             } else {
-                // Si es el primer clic, esperamos un poco antes de decidir qué hacer
                 clickTimeout = setTimeout(() => {
                     handleFilterClick(type, item);
                     clickTimeout = null;
-                }, 250); // 250ms es el tiempo que espera antes de marcar/desmarcar
+                }, 250);
             }
         };
     };
@@ -346,7 +344,6 @@ const Buscador = () => {
                             : ''}`}
                         onClick={handleItemClick(type, item)}
                     >
-                        {/* ✅ Mostrar parámetros específicos según el tipo de entidad */}
                         {type === "Movil" ? (
                             <>
                                 <p><strong>Cliente:</strong> {item.Cliente}</p>
@@ -364,7 +361,6 @@ const Buscador = () => {
                                 <p><strong>Operador:</strong> {item.operador}</p>
                             </>
                         ) : (
-                            /* Cliente */
                             Object.entries(item)
                                 .filter(([key]) => key !== "_id")
                                 .slice(0, 2)

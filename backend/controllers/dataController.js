@@ -1,7 +1,7 @@
 const Cliente = require('../models/Cliente');
 const EquipoAVL = require('../models/EquipoAVL');
 const Movil = require('../models/Movil');
-const Simcard = require('../models/Simcard'); // Importar modelo Simcard
+const Simcard = require('../models/Simcard');
 
 function formatearRut(rutInput) {
     if (!rutInput) return '';
@@ -36,7 +36,6 @@ exports.searchData = async (req, res) => {
         const equipoFilter = equipo ? equipo : null; 
         const simcardFilter = simcard ? new RegExp(simcard, 'i') : null;
 
-        // 🔹 Filtrar clientes
         if (clienteFilter) {
             clientes = await Cliente.find({
                 $or: [
@@ -47,7 +46,6 @@ exports.searchData = async (req, res) => {
             }).lean();
         }
 
-        // 🔹 Filtrar móviles relacionados a clientes o con el filtro de móvil
         if (movilFilter || clienteFilter) {
             const movilQuery = {
                 ...(movilFilter && {
@@ -62,14 +60,12 @@ exports.searchData = async (req, res) => {
 
             moviles = await Movil.find(movilQuery).lean();
 
-            // Relacionar clientes desde móviles si no hay filtro de cliente
             if (!clienteFilter && moviles.length > 0) {
                 const clienteNames = [...new Set(moviles.map((m) => m.Cliente))];
                 clientes = await Cliente.find({ Cliente: { $in: clienteNames } }).lean();
             }
         }
 
-        // 🔹 Filtrar equipos relacionados a móviles o con el filtro de equipo
         if (movilFilter || clienteFilter) {
             const movilQuery = {
                 ...(movilFilter && {
@@ -84,25 +80,23 @@ exports.searchData = async (req, res) => {
 
             moviles = await Movil.find(movilQuery).lean();
 
-            // Si no hay clientes pero sí móviles, obtener clientes relacionados a los móviles
             if (!clienteFilter && moviles.length > 0) {
                 const clienteNames = [...new Set(moviles.map((m) => m.Cliente))];
                 clientes = await Cliente.find({ Cliente: { $in: clienteNames } }).lean();
             }
         }
 
-        // 🔹 Filtrar Equipos AVL relacionados a los móviles encontrados
         if (moviles.length > 0) {
             const equipoIds = moviles
                 .map(movil => {
                     const equipoPrinc = movil["Equipo Princ"];
-                    if (typeof equipoPrinc === "number") return equipoPrinc; // ✅ Si es número, está bien
+                    if (typeof equipoPrinc === "number") return equipoPrinc;
                     if (typeof equipoPrinc === "object" && equipoPrinc !== null) {
-                        return equipoPrinc[""] || equipoPrinc.ID || null; // ✅ Verificar estructura interna
+                        return equipoPrinc[""] || equipoPrinc.ID || null;
                     }
-                    return null; // ❌ Si no es válido, ignorarlo
+                    return null;
                 })
-                .filter(id => id && !isNaN(id)); // Filtrar solo números válidos
+                .filter(id => id && !isNaN(id));
         
             if (equipoIds.length > 0) {
                 equipos = await EquipoAVL.find({ ID: { $in: equipoIds } }).lean();
@@ -124,7 +118,6 @@ exports.searchData = async (req, res) => {
                 }
             }
         
-            // Asociar equipos desde móviles si existen
             const equipoIdsFromMoviles = moviles
                 .map((m) => m['Equipo Princ'])
                 .filter((e) => e && typeof e === 'object' && e[''])
@@ -141,7 +134,7 @@ exports.searchData = async (req, res) => {
         
             equipos = await EquipoAVL.find(equipoQuery).lean();
         }
-        // 🔹 Buscar Simcards directamente si hay filtro o si ya tenemos equipos
+
             if (simcardFilter || equipos.length > 0) {
                 const simcardQuery = {};
 
@@ -157,13 +150,10 @@ exports.searchData = async (req, res) => {
                 const equipoIds = equipos.map((e) => e.ID);
                 simcardQuery.ID = { $in: equipoIds };
             }
-
+            console.log('Simcard Query:', JSON.stringify(simcardQuery));
             simcards = await Simcard.find(simcardQuery).lean();
             }
 
-            
-
-            // 🔄 Buscar móviles relacionados a los equipos encontrados
         if (!moviles.length && equipos.length > 0) {
             const equipoIds = equipos.map(e => e.ID);
             const movilesRelacionados = await Movil.find({
@@ -173,43 +163,34 @@ exports.searchData = async (req, res) => {
             moviles = [...moviles, ...movilesRelacionados];
         }
 
-        // 🔄 Buscar clientes desde esos móviles si no hay clientes aún
         if (!clientes.length && moviles.length > 0) {
             const clienteNames = [...new Set(moviles.map(m => m.Cliente))];
             clientes = await Cliente.find({ Cliente: { $in: clienteNames } }).lean();
         }
 
-        // 🔹 Filtrar Simcards SOLO de los Equipos AVL encontrados
         if (equipos.length > 0) {
             const equipoIds = equipos.map(e => e.ID);
             simcards = await Simcard.find({ ID: { $in: equipoIds } }).lean();
         }
 
-        // 🔹 Aplicar filtro manual si se busca una Simcard específica
         if (simcardFilter) {
             simcards = simcards.filter(sc => simcardFilter.test(sc.ICCID));
         }
 
-        // 🔹 Evitar clientes duplicados
         clientes = clientes.filter((cliente, index, self) =>
             index === self.findIndex((c) => c._id.toString() === cliente._id.toString())
         );
 
-        // 🔹 Evitar Equipos AVL duplicados
         equipos = equipos.filter((equipo, index, self) =>
             index === self.findIndex((e) => e.ID === equipo.ID)
         );
 
-        // 🔹 Evitar Simcards duplicadas
         simcards = simcards.filter((simcard, index, self) =>
             index === self.findIndex((s) => s.ICCID === simcard.ICCID)
         );
 
-        // 🔎 Filtro final: combinar Cliente + EquipoAVL si ambos fueron ingresados
         if (clienteFilter && equipoFilter && !isNaN(equipoFilter)) {
             const equipoId = Number(equipoFilter);
-
-            // Filtrar móviles que tengan ese equipo
             moviles = moviles.filter(movil => {
                 const equipoPrinc = movil['Equipo Princ'];
                 if (typeof equipoPrinc === 'number') return equipoPrinc === equipoId;
@@ -219,7 +200,6 @@ exports.searchData = async (req, res) => {
                 return false;
             });
 
-            // Filtrar clientes si no hay móviles asociados ya
             if (moviles.length > 0) {
                 const clienteNames = [...new Set(moviles.map((m) => m.Cliente))];
                 clientes = clientes.filter((c) => clienteNames.includes(c.Cliente));
@@ -228,7 +208,6 @@ exports.searchData = async (req, res) => {
             }
         }
 
-        // 🔽 Filtrar EquiposAVL según los móviles filtrados
         if (moviles.length > 0) {
             const equipoIds = moviles
                 .map((movil) => {
@@ -248,7 +227,6 @@ exports.searchData = async (req, res) => {
             }
         }
 
-        // 🔽 Filtrar Simcards según los equipos filtrados
         if (equipos.length > 0) {
             const equipoIds = equipos.map((e) => e.ID);
             simcards = await Simcard.find({ ID: { $in: equipoIds } }).lean();
@@ -275,7 +253,6 @@ exports.searchData = async (req, res) => {
     }
 };
 
-// 🔹 Controlador para manejar sugerencias de búsqueda
 exports.getSuggestions = async (req, res) => {
     const { query } = req.query;
 
@@ -287,7 +264,6 @@ exports.getSuggestions = async (req, res) => {
         const regex = new RegExp(query, 'i');
         const suggestions = new Set();
 
-        // Buscar sugerencias en clientes
         const clientes = await Cliente.find({
             $or: [
                 { Cliente: regex },
@@ -297,7 +273,6 @@ exports.getSuggestions = async (req, res) => {
         });
         clientes.forEach(c => suggestions.add(c.Cliente).add(c["Razon Social"]).add(c.RUT));
 
-        // Buscar sugerencias en móviles
         const moviles = await Movil.find({
             $or: [
                 { Cliente: regex },
@@ -307,7 +282,6 @@ exports.getSuggestions = async (req, res) => {
         });
         moviles.forEach(m => suggestions.add(m.Cliente).add(m.Marca).add(m.Patente));
 
-        // Buscar sugerencias en equipos
         const equipos = await EquipoAVL.find({
             $or: [
                 { imei: regex },
@@ -323,10 +297,9 @@ exports.getSuggestions = async (req, res) => {
     }
 };
 
-// Crear Cliente
 exports.createCliente = async (req, res) => {
     try {
-        req.body.RUT = formatearRut(req.body.RUT); // Formatear antes de guardar
+        req.body.RUT = formatearRut(req.body.RUT);
         const existing = await Cliente.findOne({ RUT: req.body.RUT });
         if (existing) {
             return res.status(400).json({ message: 'Cliente con este RUT ya existe.' });
@@ -395,13 +368,10 @@ exports.getHistorial = async (req, res) => {
         let historial = [];
 
         if (type === 'Movil') {
-            // Historial de móviles con misma patente
             historial = await Movil.find({ Patente: id }).sort({ updatedAt: -1 }).lean();
         } else if (type === 'Cliente') {
-            // Historial de móviles asociados a ese cliente
             historial = await Movil.find({ Cliente: id }).sort({ updatedAt: -1 }).lean();
         } else if (type === 'EquipoAVL') {
-            // Móviles que alguna vez usaron ese equipo como principal
             historial = await Movil.find({ 
                 $or: [
                     { 'Equipo Princ': id },
@@ -410,7 +380,6 @@ exports.getHistorial = async (req, res) => {
                 ]
             }).sort({ updatedAt: -1 }).lean();
         } else if (type === 'Simcard') {
-            // Simcards con mismo ICCID o mismo ID de equipo
             historial = await Simcard.find({ ICCID: id }).sort({ updatedAt: -1 }).lean();
         }
 
