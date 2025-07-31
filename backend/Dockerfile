@@ -12,7 +12,7 @@ WORKDIR /app/frontend
 RUN npm install && npm run build
 
 WORKDIR /app
-RUN mv ./frontend/dist ./frontend_dist
+COPY frontend/dist ./frontend/dist
 
 
 EXPOSE 80
