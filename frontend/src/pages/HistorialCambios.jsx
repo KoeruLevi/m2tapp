@@ -17,6 +17,29 @@ function beautifyFieldName(campo) {
     return campo.charAt(0).toUpperCase() + campo.slice(1).toLowerCase().replace(/_/g, " ");
 }
 
+function mostrarValor(valor) {
+  if (valor === null || valor === undefined) return "-";
+  if (typeof valor === "object") {
+    if (Array.isArray(valor)) {
+      return valor.length === 0 ? "(array vacío)" : (
+        <pre style={{maxWidth: 180, overflow: "auto"}}>{JSON.stringify(valor, null, 1)}</pre>
+      );
+    }
+    if (Object.keys(valor).length === 0) return "(objeto vacío)";
+    // Si solo tiene una clave, muestra esa clave y valor
+    if (Object.keys(valor).length === 1) {
+      const k = Object.keys(valor)[0];
+      return <span><b>{k}:</b> {String(valor[k])}</span>;
+    }
+    // Si tiene más claves, muestra el JSON
+    return (
+      <pre style={{maxWidth: 180, overflow: "auto", whiteSpace: "pre-wrap"}}>
+        {JSON.stringify(valor, null, 1)}
+      </pre>
+    );
+  }
+  return valor.toString();
+}
 const NO_MOSTRAR = ["_id", "createdAt", "updatedAt", "__v"];
 
 const HistorialCambios = () => {
@@ -68,8 +91,8 @@ const HistorialCambios = () => {
                                             <td>{h.usuario?.nombre || h.usuario?.email || "Desconocido"}</td>
                                             <td>{h.entidad}</td>
                                             <td>{beautifyFieldName(c.campo)}</td>
-                                            <td>{String(c.valorAnterior ?? "")}</td>
-                                            <td>{String(c.valorNuevo ?? "")}</td>
+                                            <td>{mostrarValor(c.valorAnterior)}</td>
+                                            <td>{mostrarValor(c.valorNuevo)}</td>
                                         </tr>
                                     ))
                             )}
