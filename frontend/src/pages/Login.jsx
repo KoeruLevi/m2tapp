@@ -12,7 +12,7 @@ const Login = () => {
         setError(null);
 
         try {
-            const response = await axios.post('https://m2t-backend.onrender.com/api/auth/login', {
+            const response = await axios.post('/api/auth/login', {
                 email,
                 password,
             });

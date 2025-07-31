@@ -37,7 +37,7 @@ const Dashboard = () => {
 
     const exportarTodoExcel = async () => {
     try {
-        const resp = await axios.get('https://m2t-backend.onrender.com/api/data/export-todo');
+        const resp = await axios.get('/api/data/export-todo');
         const { clientes, moviles, equipos, simcards } = resp.data;
 
         const wb = XLSX.utils.book_new();

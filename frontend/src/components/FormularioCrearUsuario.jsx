@@ -18,7 +18,7 @@ const FormularioCrearUsuario = ({ onClose }) => {
             return;
         }
         try {
-            await axios.post("https://m2t-backend.onrender.com/api/auth/register", form);
+            await axios.post("/api/auth/register", form);
             setMensaje("✅ Usuario creado exitosamente.");
             setForm({ nombre: "", email: "", password: "", rol: "" });
             setConfirmPassword("");

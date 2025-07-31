@@ -50,7 +50,7 @@ const HistorialCambios = () => {
         async function fetchCambios() {
             setLoading(true);
             try {
-                const resp = await axios.get('https://m2t-backend.onrender.com/api/data/historial-cambios');
+                const resp = await axios.get('/api/data/historial-cambios');
                 setCambios(resp.data);
             } catch {
                 setCambios([]);

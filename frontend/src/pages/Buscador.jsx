@@ -101,7 +101,7 @@ const Buscador = () => {
         console.log("🔍 Búsqueda iniciada con:", query);
         setLoading(true);
         try {
-            const response = await axios.get(`https://m2t-backend.onrender.com/api/data/search`, { params: query });
+            const response = await axios.get(`/api/data/search`, { params: query });
             console.log("✅ Respuesta de la API:", response.data);
     
             let clientes = response.data.Cliente || [];
@@ -243,7 +243,7 @@ const Buscador = () => {
         setPopupData(data);
 
         try {
-            const response = await axios.get('https://m2t-backend.onrender.com/api/data/historial', {
+            const response = await axios.get('/api/data/historial', {
                 params: { type, id: type === 'EquipoAVL' ? data.ID : type === 'Cliente' ? data.Cliente : data.Patente || data.ICCID }
             });
             setHistorial(response.data);
@@ -271,7 +271,7 @@ const Buscador = () => {
             const token = localStorage.getItem('token');
 
         const response = await axios.put(
-            `https://m2t-backend.onrender.com/api/data/update`,
+            `/api/data/update`,
             payload,
             {
                 headers: {

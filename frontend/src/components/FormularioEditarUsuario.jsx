@@ -43,7 +43,7 @@ const FormularioEditarUsuario = ({ usuario, onClose }) => {
             const dataToSend = { ...form };
             if (showPasswordFields && password) dataToSend.password = password;
 
-            const response = await axios.put("https://m2t-backend.onrender.com/api/auth/updateUser", dataToSend, {
+            const response = await axios.put("/api/auth/updateUser", dataToSend, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (setUser && response.data && response.data.user) {

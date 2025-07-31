@@ -12,7 +12,6 @@ const NuevoDocumento = ({ tipo }) => {
     const handleInputChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
         let { name, value } = e.target;
-        // Formatear RUT si corresponde
         if (name === 'RUT') {
             value = formatearRut(value);
         }
@@ -26,11 +25,11 @@ const NuevoDocumento = ({ tipo }) => {
         setLoading(true);
         setMensaje('');
         try {
-            const endpoint = `https://m2t-backend.onrender.com/api/data/${tipo.toLowerCase()}`;
+            const endpoint = `/api/data/${tipo.toLowerCase()}`;
             const response = await axios.post(endpoint, formData);
             setShowModal(true);
-            setMensaje(''); // Limpiar mensajes previos
-            setFormData({}); // Limpiar el formulario
+            setMensaje('');
+            setFormData({});
         } catch (error) {
             console.error('Error al crear documento:', error);
             setMensaje(
