@@ -134,6 +134,9 @@ exports.searchData = async (req, res) => {
         
             equipos = await EquipoAVL.find(equipoQuery).lean();
         }
+            console.log('Simcard Query:', simcardQuery);
+            const simcardsPreview = await Simcard.find({}).limit(10).lean();
+            console.log('Primeras simcards en la base:', simcardsPreview.map(sc => ({ ICCID: sc.ICCID, operador: sc.operador, portador: sc.portador })));
 
             if (simcardFilter || equipos.length > 0) {
                 const simcardQuery = {};
@@ -141,13 +144,14 @@ exports.searchData = async (req, res) => {
             if (simcardFilter) {
                 const simcardNum = Number(simcard);
                 const isNum = !isNaN(simcardNum);
-            simcardQuery.$or = [
-                { ICCID: simcardFilter },
-                { operador: simcardFilter },
-                { portador: simcardFilter },
-                ...(isNum ? [{ fono: simcardNum }] : [])
-            ];
-                }
+                simcardQuery.$or = [
+                    { ICCID: simcardFilter },
+                    { operador: simcardFilter },
+                    { portador: simcardFilter },
+                    ...(isNum ? [{ fono: simcardNum }] : [])
+                ];
+                console.log('Simcard Query:', simcardQuery);
+            }
 
             if (equipos.length > 0) {
                 const equipoIds = equipos.map((e) => e.ID);
