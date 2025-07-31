@@ -139,11 +139,14 @@ exports.searchData = async (req, res) => {
                 const simcardQuery = {};
 
             if (simcardFilter) {
-                    simcardQuery.$or = [
-                        { ICCID: simcardFilter },
-                        { fono: simcardFilter },
-                        { operador: simcardFilter }
-                    ];
+                const simcardNum = Number(simcard);
+                const isNum = !isNaN(simcardNum);
+            simcardQuery.$or = [
+                { ICCID: simcardFilter },
+                { operador: simcardFilter },
+                { portador: simcardFilter },
+                ...(isNum ? [{ fono: simcardNum }] : [])
+            ];
                 }
 
             if (equipos.length > 0) {
