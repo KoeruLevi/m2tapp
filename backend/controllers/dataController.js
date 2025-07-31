@@ -139,14 +139,14 @@ exports.searchData = async (req, res) => {
                 const simcardQuery = {};
 
             if (simcardFilter) {
-                const simcardNum = Number(simcard);
-                const isNum = !isNaN(simcardNum);
                 simcardQuery.$or = [
-                    { ICCID: simcardFilter },
                     { operador: simcardFilter },
-                    { portador: simcardFilter },
-                    ...(isNum ? [{ fono: simcardNum }] : [])
+                    { portador: simcardFilter }
                 ];
+                if (!isNaN(Number(simcard))) {
+                    simcardQuery.$or.push({ ICCID: simcard });
+                    simcardQuery.$or.push({ fono: Number(simcard) });
+                }
                 console.log('Simcard Query:', simcardQuery);
             }
 
@@ -160,6 +160,8 @@ exports.searchData = async (req, res) => {
             console.log('Primeras simcards en la base:', simcardsPreview.map(sc => ({
                 ICCID: sc.ICCID, operador: sc.operador, portador: sc.portador
             })));
+            const testSim = simcardsPreview.filter(s => typeof s.portador === "string" && /movistar/i.test(s.portador));
+            console.log('Simcards con portador ~ movistar:', testSim);
             console.log('Simcard Query:', JSON.stringify(simcardQuery));
             simcards = await Simcard.find(simcardQuery).lean();
             }
