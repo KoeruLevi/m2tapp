@@ -1,0 +1,15 @@
+version: '3.9'
+
+services:
+  m2tapp:
+    build: 
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: m2tapp
+    ports:
+      - "80:80"
+    environment:
+      - PORT=80
+      - MONGO_URI=tu_mongo_uri
+      - JWT_SECRET=loquetuquieras
+    restart: unless-stopped
