@@ -1,8 +1,8 @@
 const mongoose = require('mongoose');
 
 const HistorialCambioSchema = new mongoose.Schema({
-    entidad: { type: String, required: true }, // 'Cliente', 'Movil', etc
-    entidadId: { type: mongoose.Schema.Types.ObjectId, required: true }, // _id del documento modificado
+    entidad: { type: String, required: true }, 
+    entidadId: { type: mongoose.Schema.Types.ObjectId, required: true }, 
     usuario: {
         id: { type: mongoose.Schema.Types.ObjectId, ref: 'Usuario' },
         nombre: String,
