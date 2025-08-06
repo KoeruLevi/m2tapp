@@ -229,13 +229,6 @@ if (
             }
         }
 
-        if (equipos.length > 0) {
-            const equipoIds = equipos.map((e) => e.ID);
-            simcards = await Simcard.find({ ID: { $in: equipoIds } }).lean();
-        } else {
-            simcards = [];
-        }
-
         console.log('\n=== RESULTADOS FINALES ===');
         console.log(`Clientes: ${clientes.length}, Móviles: ${moviles.length}, Equipos: ${equipos.length}, Simcards: ${simcards.length}`);
 
