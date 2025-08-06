@@ -104,160 +104,158 @@ const NuevoDocumento = ({ tipo }) => {
             )}
 
             {tipo === 'Movil' && (
-                <div className="form-grid">
-                    <div className="form-column">
-                        <input
-                            type="text"
-                            name="Patente"
-                            placeholder="Patente"
-                            value={formData["Patente"] || ""}
-                            onChange={handleInputChange}
-                            required
-                        />
-                        <input
-                            type="text"
-                            name="Cliente"
-                            placeholder="Cliente asociado"
-                            value={formData["Cliente"] || ""}
-                            onChange={handleInputChange}
-                            required
-                        />
-                        <input
-                            type="text"
-                            name="CONDICION \nMOVIL"
-                            placeholder="Condición del Móvil"
-                            value={formData["CONDICION \nMOVIL"] || ""}
-                            onChange={handleInputChange}
-                        />
-                        <label>
-                            Suspendido:
-                            <input
-                                type="checkbox"
-                                name="Suspendido"
-                                checked={!!formData["Suspendido"]}
-                                onChange={(e) => setFormData({ ...formData, Suspendido: e.target.checked })}
-                            />
-                        </label>
-                        <input
-                            type="text"
-                            name="Interno"
-                            placeholder="Interno"
-                            value={formData["Interno"] || ""}
-                            onChange={handleInputChange}
-                        />
-                    </div>
-                    <div className="form-column">
-                        <label>
-                            Activo en Trasat_1:
-                            <input
-                                type="checkbox"
-                                name="ACTIVO EN \nTRASAT_1"
-                                checked={!!formData["ACTIVO EN \nTRASAT_1"]}
-                                onChange={(e) => setFormData({ ...formData, 'ACTIVO EN \nTRASAT_1': e.target.checked })}
-                            />
-                        </label>
-                        <label>
-                            Activo en Akita:
-                            <input
-                                type="checkbox"
-                                name="ACTIVO EN \nAKITA"
-                                checked={!!formData["ACTIVO EN \nAKITA"]}
-                                onChange={(e) => setFormData({ ...formData, 'ACTIVO EN \nAKITA': e.target.checked })}
-                            />
-                        </label>
-                        <label>
-                            Activo en Tgo:
-                            <input
-                                type="checkbox"
-                                name="ACTIVO EN\nTgo"
-                                checked={!!formData["ACTIVO EN\nTgo"]}
-                                onChange={(e) => setFormData({ ...formData, 'ACTIVO EN\nTgo': e.target.checked })}
-                            />
-                        </label>
-                        <input
-                            type="text"
-                            name="Marca"
-                            placeholder="Marca"
-                            value={formData["Marca"] || ""}
-                            onChange={handleInputChange}
-                        />
-                        <input
-                            type="text"
-                            name="Tipo"
-                            placeholder="Tipo"
-                            value={formData["Tipo"] || ""}
-                            onChange={handleInputChange}
-                        />
-                    </div>
-                    <div className="form-column">
-                        <input
-                            type="text"
-                            name="Chofer"
-                            placeholder="Chofer"
-                            value={formData["Chofer"] || ""}
-                            onChange={handleInputChange}
-                        />
-                        <input
-                            type="text"
-                            name="Equipo Princ"
-                            placeholder="Equipo Principal"
-                            value={formData["Equipo Princ"] || ""}
-                            onChange={handleInputChange}
-                        />
-                        <input
-                            type="text"
-                            name="TECNOLOGIA \nEQUIPO"
-                            placeholder="Tecnología del Equipo"
-                            value={formData["TECNOLOGIA \nEQUIPO"] || ""}
-                            onChange={handleInputChange}
-                        />
-                        <input
-                            type="date"
-                            name="FECHA INSTALACION EQUIPO"
-                            placeholder="Fecha de Instalación del Equipo"
-                            value={formData["FECHA INSTALACION EQUIPO"] || ""}
-                            onChange={handleInputChange}
-                        />
-                    </div>
-                    <div className="form-column">
-                        <input
-                            type="number"
-                            name="Equipo Secundario_1"
-                            placeholder="Equipo Secundario 1"
-                            value={formData["Equipo Secundario_1"] || ""}
-                            onChange={handleInputChange}
-                        />
-                        <input
-                            type="text"
-                            name="Equipo Secundario_2"
-                            placeholder="Equipo Secundario 2"
-                            value={formData["Equipo Secundario_2"] || ""}
-                            onChange={handleInputChange}
-                        />
-                        <input
-                            type="text"
-                            name="Equipo Secundario_3"
-                            placeholder="Equipo Secundario 3"
-                            value={formData["Equipo Secundario_3"] || ""}
-                            onChange={handleInputChange}
-                        />
-                        <input
-                            type="text"
-                            name="Tecnico\nInstalador"
-                            placeholder="Técnico Instalador"
-                            value={formData["Tecnico\nInstalador"] || ""}
-                            onChange={handleInputChange}
-                        />
-                        <textarea
-                            name="NOTAS"
-                            placeholder="Notas"
-                            rows="3"
-                            value={formData["NOTAS"] || ""}
-                            onChange={handleInputChange}
-                        />
-                    </div>
-                </div>
-            )}
+  <div className="form-secciones">
+    <div className="form-section">
+      <input
+        type="text"
+        name="Patente"
+        placeholder="Patente"
+        value={formData["Patente"] || ""}
+        onChange={handleInputChange}
+        required
+      />
+      <input
+        type="text"
+        name="Cliente"
+        placeholder="Cliente asociado"
+        value={formData["Cliente"] || ""}
+        onChange={handleInputChange}
+        required
+      />
+      <input
+        type="text"
+        name="CONDICION \nMOVIL"
+        placeholder="Condición del Móvil"
+        value={formData["CONDICION \nMOVIL"] || ""}
+        onChange={handleInputChange}
+      />
+      <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        Suspendido:
+        <input
+          type="checkbox"
+          name="Suspendido"
+          checked={!!formData["Suspendido"]}
+          onChange={(e) => setFormData({ ...formData, Suspendido: e.target.checked })}
+        />
+      </label>
+      <input
+        type="text"
+        name="Interno"
+        placeholder="Interno"
+        value={formData["Interno"] || ""}
+        onChange={handleInputChange}
+      />
+      <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        Activo en Trasat_1:
+        <input
+          type="checkbox"
+          name="ACTIVO EN \nTRASAT_1"
+          checked={!!formData["ACTIVO EN \nTRASAT_1"]}
+          onChange={(e) => setFormData({ ...formData, 'ACTIVO EN \nTRASAT_1': e.target.checked })}
+        />
+      </label>
+      <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        Activo en Akita:
+        <input
+          type="checkbox"
+          name="ACTIVO EN \nAKITA"
+          checked={!!formData["ACTIVO EN \nAKITA"]}
+          onChange={(e) => setFormData({ ...formData, 'ACTIVO EN \nAKITA': e.target.checked })}
+        />
+      </label>
+      <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        Activo en Tgo:
+        <input
+          type="checkbox"
+          name="ACTIVO EN\nTgo"
+          checked={!!formData["ACTIVO EN\nTgo"]}
+          onChange={(e) => setFormData({ ...formData, 'ACTIVO EN\nTgo': e.target.checked })}
+        />
+      </label>
+    </div>
+
+
+    <div className="form-section">
+      <input
+        type="text"
+        name="Marca"
+        placeholder="Marca"
+        value={formData["Marca"] || ""}
+        onChange={handleInputChange}
+      />
+      <input
+        type="text"
+        name="Tipo"
+        placeholder="Tipo"
+        value={formData["Tipo"] || ""}
+        onChange={handleInputChange}
+      />
+      <input
+        type="text"
+        name="Chofer"
+        placeholder="Chofer"
+        value={formData["Chofer"] || ""}
+        onChange={handleInputChange}
+      />
+      <input
+        type="text"
+        name="Equipo Princ"
+        placeholder="Equipo Principal"
+        value={formData["Equipo Princ"] || ""}
+        onChange={handleInputChange}
+      />
+      <input
+        type="text"
+        name="TECNOLOGIA \nEQUIPO"
+        placeholder="Tecnología del Equipo"
+        value={formData["TECNOLOGIA \nEQUIPO"] || ""}
+        onChange={handleInputChange}
+      />
+      <input
+        type="date"
+        name="FECHA INSTALACION EQUIPO"
+        placeholder="Fecha de Instalación del Equipo"
+        value={formData["FECHA INSTALACION EQUIPO"] || ""}
+        onChange={handleInputChange}
+      />
+      <input
+        type="number"
+        name="Equipo Secundario_1"
+        placeholder="Equipo Secundario 1"
+        value={formData["Equipo Secundario_1"] || ""}
+        onChange={handleInputChange}
+      />
+      <input
+        type="text"
+        name="Equipo Secundario_2"
+        placeholder="Equipo Secundario 2"
+        value={formData["Equipo Secundario_2"] || ""}
+        onChange={handleInputChange}
+      />
+      <input
+        type="text"
+        name="Equipo Secundario_3"
+        placeholder="Equipo Secundario 3"
+        value={formData["Equipo Secundario_3"] || ""}
+        onChange={handleInputChange}
+      />
+      <input
+        type="text"
+        name="Tecnico\nInstalador"
+        placeholder="Técnico Instalador"
+        value={formData["Tecnico\nInstalador"] || ""}
+        onChange={handleInputChange}
+      />
+      <textarea
+        name="NOTAS"
+        placeholder="Notas"
+        rows="3"
+        value={formData["NOTAS"] || ""}
+        onChange={handleInputChange}
+      />
+    </div>
+  </div>
+)}
 
             {tipo === 'EquipoAVL' && (
                 <>

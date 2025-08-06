@@ -16,7 +16,7 @@ const Landing = () => {
       minHeight: '100vh', display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center', background: '#eaf6ff'
     }}>
-      <h1 style={{ marginBottom: 24 }}>Bienvenido a M2TApp</h1>
+      <h1 style={{ marginBottom: 24 }}>Plataforma de Soporte de M2 Technic SPA</h1>
       <button
         style={{
           padding: '12px 36px',
