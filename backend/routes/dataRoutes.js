@@ -7,6 +7,7 @@ const Movil = require('../models/Movil');
 const Simcard = require('../models/Simcard');
 const HistorialCambio = require('../models/HistorialCambio');
 const Usuario = require('../models/Usuario');
+const auth = require('../middleware/logMiddleware.js');
 
 router.get('/search', dataController.searchData);
 router.get('/suggestions', dataController.getSuggestions);
@@ -43,7 +44,7 @@ router.get('/export-todo', async (req, res) => {
     }
 });
 
-router.put('/update', async (req, res) => {
+router.put('/update', auth, async (req, res) => {
     const { type, data } = req.body;
     if (!type || !data) {
         return res.status(400).json({ message: 'Faltan datos para actualizar' });
@@ -74,20 +75,22 @@ router.put('/update', async (req, res) => {
         });
 
         if (cambios.length > 0) {
-            let usuarioId = null;
-            try {
-                const token = req.headers.authorization?.replace("Bearer ", "") || req.headers['x-access-token'];
-                if (token) {
-                    const jwt = require("jsonwebtoken");
-                    const payload = jwt.verify(token, process.env.JWT_SECRET);
-                    usuarioId = payload.id;
-                }
-            } catch {}
+            let userInfo = {};
+            if (req.user) {
+                userInfo = {
+                    id: req.user._id,
+                    nombre: req.user.nombre,
+                    email: req.user.email,
+                    rol: req.user.rol
+                };
+            } else {
+                return res.status(401).json({ message: "Usuario no autenticado para registrar cambios." });
+            }  
 
             await HistorialCambio.create({
                 entidad: type,
                 entidadId: data._id,
-                usuario: usuarioId,
+                usuario: userInfo,
                 fecha: new Date(),
                 cambios
             });
