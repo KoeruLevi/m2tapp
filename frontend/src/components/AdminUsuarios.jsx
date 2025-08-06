@@ -57,18 +57,22 @@ const AdminUsuarios = () => {
                     </tr>
                 </thead>
                 <tbody>
-                {usuarios.map(u =>
-                    <tr key={u._id}>
-                        <td>{u.nombre}</td>
-                        <td>{u.email}</td>
-                        <td>{u.rol}</td>
-                        <td>
-                            <button onClick={() => handleEdit(u)}>Editar</button>
-                            <button onClick={() => handleDelete(u._id)} style={{color:'red'}}>Eliminar</button>
-                        </td>
-                    </tr>
-                )}
-                </tbody>
+  {usuarios.length === 0 ? (
+    <tr><td colSpan="4">No hay usuarios registrados.</td></tr>
+  ) : (
+    usuarios.map(u =>
+      <tr key={u._id}>
+        <td>{u.nombre}</td>
+        <td>{u.email}</td>
+        <td>{u.rol}</td>
+        <td>
+          <button onClick={() => handleEdit(u)}>Editar</button>
+          <button onClick={() => handleDelete(u._id)} style={{color:'red'}}>Eliminar</button>
+        </td>
+      </tr>
+    )
+  )}
+</tbody>
             </table>
             {editando && (
                 <form onSubmit={handleSubmitEdit}>
