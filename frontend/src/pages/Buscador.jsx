@@ -258,7 +258,7 @@ const Buscador = () => {
         setPopupType('');
     };
 
-    const handleSaveChanges = async () => {
+    const Changes = async () => {
         try {
             const payload = {
                 type: popupType,
@@ -269,7 +269,9 @@ const Buscador = () => {
             };
     
             const token = localStorage.getItem('token');
-
+        
+        console.log('🚀 Guardando cambios:', payload);
+        console.log('🔑 Token usado:', token);
         const response = await axios.put(
             `https://m2t-backend.onrender.com/api/data/update`,
             payload,
