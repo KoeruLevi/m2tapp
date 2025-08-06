@@ -3,7 +3,12 @@ const mongoose = require('mongoose');
 const HistorialCambioSchema = new mongoose.Schema({
     entidad: { type: String, required: true },
     entidadId: { type: mongoose.Schema.Types.ObjectId, required: true },
-    usuario: { type: mongoose.Schema.Types.ObjectId, ref: 'Usuario', required: true },
+    usuario: {
+        id: { type: mongoose.Schema.Types.ObjectId, ref: 'Usuario', required: true },
+        nombre: String,
+        email: String,
+        rol: String
+    },
     fecha: { type: Date, default: Date.now },
     cambios: [{
         campo: String,
