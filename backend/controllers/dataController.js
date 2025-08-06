@@ -190,10 +190,6 @@ if (
             simcards = await Simcard.find({ ID: { $in: equipoIds } }).lean();
         }
 
-        if (simcardFilter) {
-            simcards = simcards.filter(sc => simcardFilter.test(sc.ICCID));
-        }
-
         clientes = clientes.filter((cliente, index, self) =>
             index === self.findIndex((c) => c._id.toString() === cliente._id.toString())
         );
