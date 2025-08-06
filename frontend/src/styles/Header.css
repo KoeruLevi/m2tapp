@@ -140,3 +140,20 @@
     align-items: center;
     gap: 4px;
 }
+
+.gestion-usuarios-btn {
+    background: white;
+    color: #007bff;
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    margin-right: 14px;
+    padding: 8px 18px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.17s, color 0.17s;
+}
+.gestion-usuarios-btn:hover {
+    background: #e6e6e6;
+    color: #0056b3;
+}

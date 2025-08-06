@@ -28,7 +28,6 @@ const Header = () => {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    // ⬇️ Hooks SIEMPRE antes del return o condicionales
     if (location.pathname === '/') return null;
 
     const goToDashboard = () => {
@@ -51,6 +50,14 @@ const Header = () => {
                 <h1 className="header-title">Soporte M2T</h1>
             </div>
             <div className="header-actions">
+                {user?.rol === "admin" && (
+                    <button
+                        className="gestion-usuarios-btn"
+                        onClick={() => navigate('/admin-usuarios')}
+                    >
+                        👥 Gestión de usuarios
+                    </button>
+                )}
                 {user && (
                     <span className="header-username">
                         👤 {user.nombre}
@@ -87,11 +94,6 @@ const Header = () => {
         >
             Editar mis datos
         </button>
-        {user?.rol === "admin" && (
-            <button onClick={()=>navigate('/admin-usuarios')}>
-                Gestión de usuarios
-            </button>
-        )}
         <button
             className="user-menu-btn"
             onClick={handleLogout}
