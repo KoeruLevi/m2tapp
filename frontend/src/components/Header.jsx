@@ -73,12 +73,14 @@ const Header = () => {
             {user?.nombre} <br />
             <span style={{ fontSize: 12, color: '#888' }}>{user?.rol}</span>
         </span>
+        {user?.rol?.toLowerCase() === "admin" && (
         <button
             className="user-menu-btn"
             onClick={abrirCrearUsuario}
         >
             Crear usuario
         </button>
+        )}
         <button
             className="user-menu-btn"
             onClick={abrirEditarUsuario}
@@ -93,7 +95,7 @@ const Header = () => {
         </button>
     </div>
 )}
-{showCrearUsuario && (
+{showCrearUsuario && user?.rol?.toLowerCase() === "admin" && (
     <div className="modal-overlay">
         <div className="modal-content">
             <h2>Crear usuario</h2>

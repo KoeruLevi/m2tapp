@@ -12,20 +12,25 @@ const FormularioCrearUsuario = ({ onClose }) => {
     const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
 
     const handleSubmit = async e => {
-        e.preventDefault();
-        if (form.password !== confirmPassword) {
-            setMensaje("❌ Las contraseñas no coinciden.");
-            return;
-        }
-        try {
-            await axios.post("https://m2t-backend.onrender.com/api/auth/register", form);
-            setMensaje("✅ Usuario creado exitosamente.");
-            setForm({ nombre: "", email: "", password: "", rol: "" });
-            setConfirmPassword("");
-        } catch (err) {
-            setMensaje("❌ Error: " + (err.response?.data?.message || err.message));
-        }
-    };
+    e.preventDefault();
+    if (form.password !== confirmPassword) {
+        setMensaje("❌ Las contraseñas no coinciden.");
+        return;
+    }
+    try {
+        const token = localStorage.getItem("token");
+        await axios.post(
+            "https://m2t-backend.onrender.com/api/auth/register",
+            form,
+            { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setMensaje("✅ Usuario creado exitosamente.");
+        setForm({ nombre: "", email: "", password: "", rol: "" });
+        setConfirmPassword("");
+    } catch (err) {
+        setMensaje("❌ Error: " + (err.response?.data?.message || err.message));
+    }
+};
 
     return (
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
