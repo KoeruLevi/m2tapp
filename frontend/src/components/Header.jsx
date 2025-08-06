@@ -87,6 +87,11 @@ const Header = () => {
         >
             Editar mis datos
         </button>
+        {user?.rol === "admin" && (
+            <button onClick={()=>navigate('/admin-usuarios')}>
+                Gestión de usuarios
+            </button>
+        )}
         <button
             className="user-menu-btn"
             onClick={handleLogout}
