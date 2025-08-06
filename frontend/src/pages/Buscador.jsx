@@ -258,7 +258,7 @@ const Buscador = () => {
         setPopupType('');
     };
 
-    const Changes = async () => {
+    const handleSaveChanges = async () => {
         try {
             const payload = {
                 type: popupType,
