@@ -64,13 +64,46 @@ exports.register = async (req, res) => {
     }
 };
 
-exports.updateUsuario = async (req, res) => {
+exports.updateMe = async (req, res) => {
     try {
         const token = req.headers.authorization?.replace("Bearer ", "");
         const jwt = require("jsonwebtoken");
         const payload = jwt.verify(token, process.env.JWT_SECRET);
-        const user = await Usuario.findById(payload.id);
 
+        const user = await Usuario.findById(payload.id);
+        if (!user) return res.status(404).json({ message: "Usuario no encontrado" });
+
+        if (req.body.nombre) user.nombre = req.body.nombre;
+        if (req.body.email) user.email = req.body.email;
+        if (req.body.password) {
+            const bcrypt = require("bcryptjs");
+            const salt = await bcrypt.genSalt(10);
+            user.password = await bcrypt.hash(req.body.password, salt);
+        }
+
+        await user.save();
+        res.json({ message: "Tus datos han sido actualizados correctamente" });
+    } catch (err) {
+        res.status(500).json({ message: "Error al actualizar datos", error: err.message });
+    }
+};
+
+exports.deleteUsuario = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const user = await Usuario.findById(id);
+        if (!user) return res.status(404).json({ message: "Usuario no encontrado" });
+        await user.deleteOne();
+        res.json({ message: "Usuario eliminado correctamente" });
+    } catch (err) {
+        res.status(500).json({ message: "Error al eliminar usuario", error: err.message });
+    }
+};
+
+exports.updateUsuario = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const user = await Usuario.findById(id);
         if (!user) return res.status(404).json({ message: "Usuario no encontrado" });
 
         if (req.body.nombre) user.nombre = req.body.nombre;

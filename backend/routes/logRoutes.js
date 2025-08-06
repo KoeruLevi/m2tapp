@@ -2,8 +2,13 @@ const express = require('express');
 const { login, register, getUsers } = require('../controllers/logController');
 const router = express.Router();
 const auth = require('../middleware/logMiddleware.js');
-const { updateUsuario } = require('../controllers/logController');
 const isAdmin = require('../middleware/isAdmin');
+const { updateMe, updateUsuario, deleteUsuario } = require('../controllers/logController');
+
+
+router.put('/updateMe', auth, updateMe);
+router.put('/updateUser/:id', auth, isAdmin, updateUsuario);
+router.delete('/deleteUser/:id', auth, isAdmin, deleteUsuario);
 
 
 router.get('/dashboard', auth, (req, res) => {
@@ -13,6 +18,5 @@ router.get('/dashboard', auth, (req, res) => {
 router.get('/users', getUsers);
 router.post('/login', login);
 router.post('/register', auth, isAdmin, register);
-router.put('/updateUser', auth, updateUsuario);
 
 module.exports = router;
