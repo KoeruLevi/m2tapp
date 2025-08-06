@@ -26,12 +26,10 @@ function mostrarValor(valor) {
       );
     }
     if (Object.keys(valor).length === 0) return "(objeto vacío)";
-    // Si solo tiene una clave, muestra esa clave y valor
     if (Object.keys(valor).length === 1) {
       const k = Object.keys(valor)[0];
       return <span><b>{k}:</b> {String(valor[k])}</span>;
     }
-    // Si tiene más claves, muestra el JSON
     return (
       <pre style={{maxWidth: 180, overflow: "auto", whiteSpace: "pre-wrap"}}>
         {JSON.stringify(valor, null, 1)}
@@ -88,7 +86,11 @@ const HistorialCambios = () => {
                                     .map((c, i) => (
                                         <tr key={h._id + c.campo + i}>
                                             <td>{new Date(h.fecha).toLocaleString("es-CL")}</td>
-                                            <td>{h.usuario?.nombre || h.usuario?.email || "Desconocido"}</td>
+                                            <td>
+                                            {typeof h.usuario === "object"
+                                                ? (h.usuario.nombre || h.usuario.email || h.usuario._id || "Desconocido")
+                                                : (h.usuario || "Desconocido")}
+                                            </td>
                                             <td>{h.entidad}</td>
                                             <td>{beautifyFieldName(c.campo)}</td>
                                             <td>{mostrarValor(c.valorAnterior)}</td>

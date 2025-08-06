@@ -13,7 +13,6 @@ router.get('/suggestions', dataController.getSuggestions);
 router.get('/historial', dataController.getHistorial);
 router.get('/historial-cambios', async (req, res) => {
     try {
-        // Filtros por query (opcional)
         const { entidad, usuarioId } = req.query;
         let filtro = {};
         if (entidad) filtro.entidad = entidad;
@@ -57,16 +56,12 @@ router.put('/update', async (req, res) => {
         else if (type === 'Simcard') Modelo = Simcard;
         else return res.status(400).json({ message: 'Tipo de actualización no válido' });
 
-        // Encuentra documento anterior
         const prevDoc = await Modelo.findById(data._id).lean();
 
-        // Actualiza documento
         await Modelo.updateOne({ _id: data._id }, data);
 
-        // Encuentra documento actualizado
         const newDoc = await Modelo.findById(data._id).lean();
 
-        // Encuentra los campos que cambiaron
         let cambios = [];
         Object.keys(data).forEach((key) => {
             if (prevDoc[key] !== data[key]) {
@@ -78,29 +73,21 @@ router.put('/update', async (req, res) => {
             }
         });
 
-        // Solo registra si hubo cambios reales
         if (cambios.length > 0) {
-            // Recupera usuario desde el token
-            let userInfo = {};
+            let usuarioId = null;
             try {
                 const token = req.headers.authorization?.replace("Bearer ", "") || req.headers['x-access-token'];
                 if (token) {
                     const jwt = require("jsonwebtoken");
                     const payload = jwt.verify(token, process.env.JWT_SECRET);
-                    const user = await Usuario.findById(payload.id);
-                    userInfo = {
-                        id: user._id,
-                        nombre: user.nombre,
-                        email: user.email,
-                        rol: user.rol
-                    };
+                    usuarioId = payload.id;
                 }
             } catch {}
 
             await HistorialCambio.create({
                 entidad: type,
                 entidadId: data._id,
-                usuario: userInfo,
+                usuario: usuarioId,
                 fecha: new Date(),
                 cambios
             });

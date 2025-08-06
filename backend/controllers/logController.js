@@ -18,16 +18,13 @@ exports.login = async (req, res) => {
         }
         console.log('[LOGIN] Password en BD:', user.password);
 
-        // Comparar contraseñas con bcrypt
         const validPassword = await bcrypt.compare(password, user.password);
         console.log('[LOGIN] ¿Password coincide?', validPassword);
 
         if (!validPassword) {
             return res.status(400).json({ message: 'Contraseña incorrecta' });
         }
-        // Genera JWT
         const token = jwt.sign({ id: user._id, rol: user.rol }, process.env.JWT_SECRET, { expiresIn: '1d' });
-        // Por seguridad, no devuelvas la contraseña
         const { password: pass, ...userSafe } = user._doc;
         res.json({ token, user: userSafe });
     } catch (error) {
@@ -39,7 +36,6 @@ exports.login = async (req, res) => {
 
 exports.getUsers = async (req, res) => {
     try {
-        // Busca todos los usuarios y excluye el campo `password` por seguridad
         const users = await Usuario.find();
         console.log('Usuarios encontrados:', users);
         res.status(200).json(users);
@@ -77,7 +73,6 @@ exports.updateUsuario = async (req, res) => {
 
         if (!user) return res.status(404).json({ message: "Usuario no encontrado" });
 
-        // Solo actualiza lo permitido
         if (req.body.nombre) user.nombre = req.body.nombre;
         if (req.body.email) user.email = req.body.email;
         if (req.body.rol) user.rol = req.body.rol;

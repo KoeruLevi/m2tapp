@@ -155,12 +155,10 @@ if (equipos.length > 0) {
     console.log('Simcard Query (con equipos):', simcardQuery);
 }
 
-// SOLO ejecuta la búsqueda si realmente hay filtros
 if (
     (simcardQuery.$or && simcardQuery.$or.length > 0) ||
     simcardQuery.ID
 ) {
-    // Debug extra: muestra los 10 primeros
     const simcardsPreview = await Simcard.find({}).limit(10).lean();
     console.log('Primeras simcards en la base:', simcardsPreview.map(sc => ({
         ICCID: sc.ICCID, operador: sc.operador, portador: sc.portador
