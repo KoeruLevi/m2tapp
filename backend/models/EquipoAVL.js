@@ -4,7 +4,7 @@ const EquipoAVLSchema = new mongoose.Schema({
     imei: { type: String },
     serial: { type: String},
     current_firmware: { type: String },
-    ID: { type: Number, unique: true }, // ID único para enlazar con Movil
+    ID: { type: Number, unique: true },
 }, { collection: 'EquipoAVL',
     timestamps: true
 });

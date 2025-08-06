@@ -74,6 +74,14 @@ router.put('/update', auth, async (req, res) => {
         let Modelo;
         if (type === 'Cliente') Modelo = Cliente;
         else if (type === 'Movil') Modelo = Movil;
+        if (type === 'Movil') {
+        if (data["Equipo Princ"] && typeof data["Equipo Princ"] === "string" && !isNaN(data["Equipo Princ"])) {
+        data["Equipo Princ"] = { "": Number(data["Equipo Princ"]) };
+        }
+        if (typeof data["Equipo Princ"] === "number") {
+        data["Equipo Princ"] = { "": data["Equipo Princ"] };
+        }
+        }
         else if (type === 'EquipoAVL') Modelo = EquipoAVL;
         else if (type === 'Simcard') Modelo = Simcard;
         else return res.status(400).json({ message: 'Tipo de actualización no válido' });
