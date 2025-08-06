@@ -15,7 +15,7 @@ router.get('/dashboard', auth, (req, res) => {
     res.json({ message: 'Acceso permitido', user: req.user });
 });
 
-router.get('/users', getUsers);
+router.get('/users', auth, isAdmin, getUsers);
 router.post('/login', login);
 router.post('/register', auth, isAdmin, register);
 
