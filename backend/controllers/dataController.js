@@ -147,8 +147,10 @@ if (simcard) {
         simcardQuery.$or.push({ ICCID: simcard });
         simcardQuery.$or.push({ fono: Number(simcard) });
     }
-    console.log('Simcard Query (con simcardFilter):', simcardQuery);
+    console.log('Simcard Query FINAL:', simcardQuery);
 }
+
+simcards = await Simcard.find(simcardQuery).lean();
 
 if (equipos.length > 0) {
     const equipoIds = equipos.map((e) => e.ID);
