@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import "../styles/AdminUsuarios.css";
 
 const AdminUsuarios = () => {
     const [usuarios, setUsuarios] = useState([]);
-    const [editando, setEditando] = useState(null); // usuario a editar
+    const [editando, setEditando] = useState(null);
     const [form, setForm] = useState({});
     const token = localStorage.getItem('token');
 

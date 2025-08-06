@@ -8,6 +8,8 @@ import Header from './components/Header';
 import Landing from './pages/Landing';
 import { UserProvider } from './context/UserContext';
 import HistorialCambios from './pages/HistorialCambios';
+import AdminUsuarios from './components/AdminUsuarios';
+import RequireAdmin from './components/RequireAdmin';
 import './App.css';
 
 const App = () => {
@@ -15,11 +17,16 @@ const App = () => {
         <UserProvider>
         <Router>
             <div className="app-container">
-                <Header /> {/* Se mantiene el Header en la parte superior */}
+                <Header />
                 <main className="page-container">
                     <Routes>
                         <Route path="/" element={<Landing />} />
                         <Route path="/login" element={<Login />} />
+                        <Route path="/admin-usuarios" element={
+                            <RequireAdmin>
+                                <AdminUsuarios />
+                            </RequireAdmin>
+                        } />
                         <Route path="/dashboard" element={<Dashboard />} />
                         <Route path="/buscador" element={<Buscador />} />
                         <Route path="/nuevo-cliente" element={<NuevoDocumento tipo="Cliente" />} />
