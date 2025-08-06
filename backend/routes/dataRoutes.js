@@ -20,6 +20,27 @@ router.get('/historial-cambios', async (req, res) => {
         if (usuarioId) filtro['usuario.id'] = usuarioId;
 
         const historial = await HistorialCambio.find(filtro).sort({ fecha: -1 }).limit(200).lean();
+
+        const userIds = [
+            ...new Set(historial.map(h => h.usuario && h.usuario.id ? h.usuario.id.toString() : null).filter(Boolean))
+        ];
+
+        const usuarios = await Usuario.find({ _id: { $in: userIds } }, { nombre: 1, email: 1, rol: 1 }).lean();
+
+        const userDict = {};
+        usuarios.forEach(u => { userDict[u._id.toString()] = u; });
+
+        historial.forEach(h => {
+            if (h.usuario && h.usuario.id) {
+                const u = userDict[h.usuario.id.toString()];
+                if (u) {
+                    h.usuario.nombre = u.nombre;
+                    h.usuario.email = u.email;
+                    h.usuario.rol = u.rol;
+                }
+            }
+        });
+
         res.json(historial);
     } catch (error) {
         res.status(500).json({ message: 'Error al obtener historial', error: error.message });
