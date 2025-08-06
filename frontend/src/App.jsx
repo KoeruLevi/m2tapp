@@ -10,6 +10,7 @@ import { UserProvider } from './context/UserContext';
 import HistorialCambios from './pages/HistorialCambios';
 import AdminUsuarios from './components/AdminUsuarios';
 import RequireAdmin from './components/RequireAdmin';
+import EliminarDocumento from './components/EliminarDocumento';
 import './App.css';
 
 const App = () => {
@@ -33,6 +34,7 @@ const App = () => {
                         <Route path="/nuevo-movil" element={<NuevoDocumento tipo="Movil" />} />
                         <Route path="/nuevo-equipo" element={<NuevoDocumento tipo="EquipoAVL" />} />
                         <Route path="/nueva-simcard" element={<NuevoDocumento tipo="Simcard" />} />
+                        <Route path="/eliminar-documento" element={<EliminarDocumento />} />
                         <Route path="/historial-cambios" element={<HistorialCambios />} />
                     </Routes>
                 </main>

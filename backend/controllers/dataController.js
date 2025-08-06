@@ -384,3 +384,38 @@ exports.getHistorial = async (req, res) => {
         res.status(500).json({ message: 'Error al obtener historial' });
     }
 };
+
+exports.deleteDocumento = async (req, res) => {
+    const { tipo, id } = req.params;
+    let Modelo;
+
+    // Selección del modelo según tipo
+    switch ((tipo || '').toLowerCase()) {
+        case 'cliente':
+            Modelo = Cliente;
+            break;
+        case 'movil':
+            Modelo = Movil;
+            break;
+        case 'equipoavl':
+            Modelo = EquipoAVL;
+            break;
+        case 'simcard':
+            Modelo = Simcard;
+            break;
+        default:
+            return res.status(400).json({ message: 'Tipo de documento no válido.' });
+    }
+
+    try {
+        const doc = await Modelo.findById(id);
+        if (!doc) return res.status(404).json({ message: 'Documento no encontrado.' });
+
+        await doc.deleteOne();
+
+        res.json({ message: 'Documento eliminado correctamente.' });
+    } catch (err) {
+        console.error('Error al eliminar documento:', err);
+        res.status(500).json({ message: 'Error al eliminar documento', error: err.message });
+    }
+};

@@ -132,6 +132,7 @@ router.put('/update', auth, async (req, res) => {
         res.status(500).json({ message: 'Error al actualizar el documento', error });
     }
 });
+router.delete('/delete/:tipo/:id', auth, dataController.deleteDocumento);
 
 
 router.post('/cliente', dataController.createCliente);
