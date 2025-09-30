@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useUser } from '../context/UserContext';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { FiSettings } from 'react-icons/fi';
+import { FiSettings, FiLayers } from 'react-icons/fi';
 import '../styles/Header.css';
 import FormularioCrearUsuario from './FormularioCrearUsuario';
 import FormularioEditarUsuario from './FormularioEditarUsuario';
@@ -14,6 +14,7 @@ const Header = () => {
     const menuRef = useRef(null);
     const [showCrearUsuario, setShowCrearUsuario] = useState(false);
     const [showEditarUsuario, setShowEditarUsuario] = useState(false);
+    const [modulo, setModulo] = useState(localStorage.getItem('modulo') || 'actual');
 
     const abrirCrearUsuario = () => setShowCrearUsuario(true);
     const abrirEditarUsuario = () => setShowEditarUsuario(true);
@@ -26,6 +27,18 @@ const Header = () => {
         }
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    // Refresca el badge cuando cambias de ruta o cuando otro tab cambia el módulo
+    useEffect(() => {
+        setModulo(localStorage.getItem('modulo') || 'actual');
+    }, [location.pathname]);
+    useEffect(() => {
+        const onStorage = (e) => {
+           if (e.key === 'modulo') setModulo(e.newValue || 'actual');
+        };
+        window.addEventListener('storage', onStorage);
+       return () => window.removeEventListener('storage', onStorage);
     }, []);
 
     if (location.pathname === '/') return null;
@@ -50,6 +63,19 @@ const Header = () => {
                 <h1 className="header-title">Soporte M2T</h1>
             </div>
             <div className="header-actions">
+                <div className="header-module">
+                    <FiLayers style={{ marginRight: 6 }} />
+                    <span className={`badge ${modulo === 'historico' ? 'badge-historico' : 'badge-actual'}`}>
+                        Módulo: {modulo === 'historico' ? 'Histórico' : 'Actual'}
+                    </span>
+                    <button
+                        className="switch-module-btn"
+                        onClick={() => navigate('/modulos')}
+                        title="Cambiar módulo"
+                    >
+                        Cambiar módulo
+                    </button>
+                </div>
                 {user?.rol === "admin" && (
                     <button
                         className="gestion-usuarios-btn"
@@ -66,7 +92,6 @@ const Header = () => {
                 <button className="home-button" onClick={goToDashboard}>
                     🏠 Home
                 </button>
-                const modulo = localStorage.getItem('modulo') || 'actual';
                 <span className="badge">Módulo: {modulo}</span>
                 <button onClick={() => navigate('/modulos')}>Cambiar módulo</button>
                 <div style={{ position: 'relative' }} ref={menuRef}>
