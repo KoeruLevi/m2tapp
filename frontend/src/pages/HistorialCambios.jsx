@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { api, apiPath } from "../utils/api";
 import '../styles/HistorialCambios.css';
-import { api, apiPath } from '../utils/api';
+
 
 
 const CAMPO_TRADUCCIONES = {
