@@ -184,14 +184,21 @@
 }
 
 .switch-module-btn {
-  padding: 6px 10px;
+  color: #ffffff;            /* ← color del texto */
+  background: transparent;
   border: 1px solid #ddd;
   border-radius: 8px;
-  background: #fff;
-  cursor: pointer;
+  padding: 6px 10px;
   font-size: 12px;
+  cursor: pointer;
 }
 
 .switch-module-btn:hover {
-  background: #f5f5f5;
+  color: #ffffff;            /* asegúralo también en hover */
+  background: rgba(255,255,255,0.12);
+}
+
+.switch-module-btn:focus-visible {
+  outline: 2px solid #fff;   /* accesible sobre fondo azul */
+  outline-offset: 2px;
 }
