@@ -11,6 +11,7 @@ import HistorialCambios from './pages/HistorialCambios';
 import AdminUsuarios from './components/AdminUsuarios';
 import RequireAdmin from './components/RequireAdmin';
 import EliminarDocumento from './components/EliminarDocumento';
+import ModuloSelector from './pages/ModuloSelector';
 import './App.css';
 
 const App = () => {
@@ -28,6 +29,7 @@ const App = () => {
                                 <AdminUsuarios />
                             </RequireAdmin>
                         } />
+                        <Route path="/modulos" element={<ModuloSelector />} />
                         <Route path="/dashboard" element={<Dashboard />} />
                         <Route path="/buscador" element={<Buscador />} />
                         <Route path="/nuevo-cliente" element={<NuevoDocumento tipo="Cliente" />} />

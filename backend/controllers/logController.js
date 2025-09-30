@@ -4,8 +4,7 @@ const Usuario = require('../models/Usuario');
 
 exports.login = async (req, res) => {
     const { email, password } = req.body;
-    console.log('[LOGIN] Email recibido:', email);
-    console.log('[LOGIN] Password recibido:', password);
+    
 
     if (!email || !password) {
         return res.status(400).json({ message: 'Todos los campos son obligatorios' });
@@ -16,7 +15,7 @@ exports.login = async (req, res) => {
             console.log('[LOGIN] Usuario no encontrado');
             return res.status(404).json({ message: 'Usuario no encontrado' });
         }
-        console.log('[LOGIN] Password en BD:', user.password);
+        
 
         const validPassword = await bcrypt.compare(password, user.password);
         console.log('[LOGIN] ¿Password coincide?', validPassword);

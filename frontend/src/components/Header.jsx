@@ -66,6 +66,9 @@ const Header = () => {
                 <button className="home-button" onClick={goToDashboard}>
                     🏠 Home
                 </button>
+                const modulo = localStorage.getItem('modulo') || 'actual';
+                <span className="badge">Módulo: {modulo}</span>
+                <button onClick={() => navigate('/modulos')}>Cambiar módulo</button>
                 <div style={{ position: 'relative' }} ref={menuRef}>
                     <button
                         className="settings-btn"

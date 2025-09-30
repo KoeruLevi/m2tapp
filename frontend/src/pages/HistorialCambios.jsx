@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import { api, apiPath } from "../utils/api";
 import '../styles/HistorialCambios.css';
+import { api, apiPath } from '../utils/api';
 
 
 const CAMPO_TRADUCCIONES = {
@@ -48,7 +49,7 @@ const HistorialCambios = () => {
         async function fetchCambios() {
             setLoading(true);
             try {
-                const resp = await axios.get('https://m2t-backend.onrender.com/api/data/historial-cambios');
+                const resp = await api.get(apiPath('/historial-cambios'));
                 setCambios(resp.data);
             } catch {
                 setCambios([]);

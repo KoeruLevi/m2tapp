@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import { api, apiPath } from "../utils/api";
 
 const Search = () => {
     const [query, setQuery] = useState('');
@@ -17,7 +17,7 @@ const Search = () => {
         setError(null);
 
         try {
-            const { data } = await axios.get('https://m2t-backend.onrender.com/api/data/search', { params: { cliente: query, movil: query, equipo: query, simcard: query } });
+            const { data } = await api.get(apiPath('/search'), { params: { cliente: query, movil: query, equipo: query, simcard: query } });
             console.log("Datos recibidos:", data);
             setResults(data);
         } catch (error) {

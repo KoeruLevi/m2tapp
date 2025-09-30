@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import '../styles/NuevoDocumento.css';
 import { formatearRut } from '../utils/rut.js';
+import { api, apiPath } from '../utils/api.js';
 
 const NuevoDocumento = ({ tipo }) => {
     const [formData, setFormData] = useState({});
@@ -21,8 +22,8 @@ const NuevoDocumento = ({ tipo }) => {
         setLoading(true);
         setMensaje('');
         try {
-            const endpoint = `https://m2t-backend.onrender.com/api/data/${tipo.toLowerCase()}`;
-            await axios.post(endpoint, formData);
+            const endpoint = apiPath(`/${tipo.toLowerCase()}`);
+            await api.post(endpoint, formData);
             setShowModal(true);
             setMensaje('');
             setFormData({});

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import axios from "axios";
+import { api, apiPath } from "../utils/api";
 import "../styles/EliminarDocumento.css";
 
 const camposResumen = {
@@ -41,8 +41,8 @@ const EliminarDocumento = () => {
         setLoading(true);
 
         try {
-            const resp = await axios.get(
-                "https://m2t-backend.onrender.com/api/data/search",
+            const resp = await api.get(
+                apiPath('/search'),
                 { params: { [tipo.toLowerCase()]: busqueda } }
             );
             let items = resp.data[tipo];
@@ -66,8 +66,8 @@ const EliminarDocumento = () => {
         try {
             const token = localStorage.getItem('token');
             // Notar: ajusta endpoint según tu backend. Ejemplo: /api/data/eliminar/{tipo}/{id}
-            const res = await axios.delete(
-                `https://m2t-backend.onrender.com/api/data/delete/${tipo}/${resultado._id}`,
+            const res = await api.delete(
+                apiPath('/delete/${tipo}/${resultado._id}'),
                 {
                     headers: { Authorization: `Bearer ${token}` }
                 }
