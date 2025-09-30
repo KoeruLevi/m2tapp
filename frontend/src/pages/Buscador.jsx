@@ -411,8 +411,18 @@ const Buscador = () => {
           {beautifyFieldName(key)}
           </label>
           {isEditing ? (
+            key === "CONDICION \nCLIENTE" ? (
+              <select
+                value={editedData[key] ?? (displayValue || "ACTIVO")}
+                onChange={(e) => setEditedData({ ...editedData, [key]: e.target.value })}
+                style={{ width: "100%" }}
+              >
+              <option value="ACTIVO">Activo</option>
+              <option value="SUSPENDIDO">Suspendido</option>
+              </select>
+            ) :
           
-          key === "RUT" ? (
+            key === "RUT" ? (
   
           <input
             type="text"

@@ -40,7 +40,14 @@ const NuevoDocumento = ({ tipo }) => {
             <>
                 <div className="form-row">
                     <input type="text" name="Cliente" placeholder="Nombre del Cliente" value={formData.Cliente || ""} onChange={handleInputChange} required />
-                    <input type="text" name="CONDICION \nCLIENTE" placeholder="Condición del Cliente" value={formData["CONDICION \nCLIENTE"] || ""} onChange={handleInputChange} />
+                    <select
+                        name="CONDICION \nCLIENTE"
+                        value={formData["CONDICION \nCLIENTE"] || "ACTIVO"}
+                        onChange={handleInputChange}
+                    >
+                    <option value="ACTIVO">Activo</option>
+                    <option value="SUSPENDIDO">Suspendido</option>
+                    </select>
                 </div>
                 <div className="form-row">
                     <input type="text" name="RUT" placeholder="RUT" value={formData.RUT || ''} onChange={handleInputChange} required />
