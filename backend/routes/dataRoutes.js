@@ -2,11 +2,8 @@ const express = require('express');
 const router = express.Router();
 const dataController = require('../controllers/dataController');
 const auth = require('../middleware/logMiddleware.js');
-// Si más adelante quieres limitar por rol:
-// const isAdmin = require('../middleware/isAdmin');
-
 const Usuario = require('../models/Usuario');
-
+const isAdmin = require('../middleware/isAdmin');
 router.get('/search',        dataController.searchData);
 router.get('/suggestions',   dataController.getSuggestions);
 router.get('/historial',     dataController.getHistorial);
@@ -141,7 +138,7 @@ router.put('/update', auth, async (req, res) => {
   }
 });
 
-router.delete('/delete/:tipo/:id', auth, dataController.deleteDocumento);
+router.delete('/delete/:tipo/:id', auth, isAdmin, dataController.deleteDocumento);
 
 router.post('/cliente',   dataController.createCliente);
 router.post('/movil',     dataController.createMovil);

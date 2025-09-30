@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { api, apiPath } from "../utils/api";
 import "../styles/EliminarDocumento.css";
+import { useUser } from '../context/UserContext';
+import { Navigate } from 'react-router-dom';
 
 const camposResumen = {
     Cliente: [
@@ -26,12 +28,22 @@ const camposResumen = {
     ]
 };
 
+const tipoToQueryKey = {
+  Cliente: "cliente",
+  Movil: "movil",
+  EquipoAVL: "equipo",   // <- importante
+  Simcard: "simcard",
+};
+
 const EliminarDocumento = () => {
     const [tipo, setTipo] = useState("Cliente");
     const [busqueda, setBusqueda] = useState("");
     const [resultado, setResultado] = useState(null);
     const [loading, setLoading] = useState(false);
     const [mensaje, setMensaje] = useState("");
+    const { user } = useUser?.() || { user: null };
+
+    if (!user || user.rol !== "admin") return <Navigate to="/dashboard" />;
 
     const handleBuscar = async (e) => {
         e.preventDefault();
@@ -41,11 +53,12 @@ const EliminarDocumento = () => {
         setLoading(true);
 
         try {
+            const qKey = tipoToQueryKey[tipo];
             const resp = await api.get(
                 apiPath('/search'),
-                { params: { [tipo.toLowerCase()]: busqueda } }
+                { params: { [qKey]: busqueda } }
             );
-            let items = resp.data[tipo];
+            const items = resp.data?.[tipo];
             if (!items || items.length === 0) {
                 setMensaje("No se encontró ningún documento.");
                 setResultado(null);
@@ -64,23 +77,18 @@ const EliminarDocumento = () => {
         setLoading(true);
         setMensaje("");
         try {
-            const token = localStorage.getItem('token');
-            // Notar: ajusta endpoint según tu backend. Ejemplo: /api/data/eliminar/{tipo}/{id}
-            const res = await api.delete(
-                apiPath('/delete/${tipo}/${resultado._id}'),
-                {
-                    headers: { Authorization: `Bearer ${token}` }
-                }
+            await api.delete(
+                apiPath(`/delete/${tipo}/${resultado._id}`) // <- backticks y template string correctos
             );
             setMensaje("✅ Documento eliminado correctamente.");
             setResultado(null);
             setBusqueda("");
-        } catch (err) {
+            } catch (err) {
             setMensaje("❌ Error al eliminar: " + (err.response?.data?.message || err.message));
-        } finally {
+            } finally {
             setLoading(false);
-        }
-    };
+            }
+        };
 
     return (
         <div className="eliminar-documento-wrapper">
@@ -101,13 +109,17 @@ const EliminarDocumento = () => {
                     {loading ? "Buscando..." : "Buscar"}
                 </button>
             </form>
+
             {mensaje && <div className="eliminar-doc-msg">{mensaje}</div>}
+
             {resultado && (
                 <div className="eliminar-doc-card">
                     <h3>{tipo}</h3>
                     <ul>
                         {camposResumen[tipo].map(field => (
-                            <li key={field.key}><b>{field.label}:</b> {resultado[field.key] ?? "No disponible"}</li>
+                            <li key={field.key}>
+                                <b>{field.label}:</b> {resultado[field.key] ?? "No disponible"}
+                            </li>
                         ))}
                     </ul>
                     <button

@@ -36,7 +36,14 @@ const App = () => {
                         <Route path="/nuevo-movil" element={<NuevoDocumento tipo="Movil" />} />
                         <Route path="/nuevo-equipo" element={<NuevoDocumento tipo="EquipoAVL" />} />
                         <Route path="/nueva-simcard" element={<NuevoDocumento tipo="Simcard" />} />
-                        <Route path="/eliminar-documento" element={<EliminarDocumento />} />
+                        <Route
+                            path="/eliminar-documento"
+                            element={
+                                <RequireAdmin>
+                                    <EliminarDocumento />
+                                </RequireAdmin>
+                            }
+                        />
                         <Route path="/historial-cambios" element={<HistorialCambios />} />
                     </Routes>
                 </main>
