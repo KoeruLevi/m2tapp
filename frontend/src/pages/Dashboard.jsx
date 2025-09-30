@@ -5,9 +5,11 @@ import '../styles/Dashboard.css';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { api, apiPath } from "../utils/api";
+import { useUser } from '../context/UserContext';
 
 const Dashboard = () => {
     const navigate = useNavigate();
+    const { user } = useUser();
 
     useEffect(() => {
         const token = localStorage.getItem('token');
@@ -92,24 +94,26 @@ const Dashboard = () => {
             <button className="dashboard-button" onClick={() => navigate('/historial-cambios')}>
                 Ver Historial de Cambios
             </button>
+            {user?.rol === 'admin' && (
             <button
                 className="delete-document-btn"
                 style={{
-                    background: "#c82333",
-                    color: "white",
-                    fontWeight: "bold",
-                    margin: "16px 0",
-                    borderRadius: "8px",
-                    border: "none",
-                    fontSize: "20px",
-                    padding: "16px",
-                    cursor: "pointer",
-                    transition: "background 0.18s"
-                }}
-                onClick={() => navigate('/eliminar-documento')}
-            >
-                Eliminar Documento
-            </button>
+                background: "#c82333",
+                color: "white",
+                fontWeight: "bold",
+                margin: "16px 0",
+                borderRadius: "8px",
+                border: "none",
+                fontSize: "20px",
+                padding: "16px",
+                cursor: "pointer",
+                transition: "background 0.18s"
+            }}
+         onClick={() => navigate('/eliminar-documento')}
+       >
+         Eliminar Documento
+       </button>
+     )}
             <button className="export-excel-btn" onClick={exportarTodoExcel}>
                 📦 Exportar todo a Excel
             </button>
