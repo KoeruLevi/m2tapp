@@ -1,12 +1,10 @@
 require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const mongoose = require('mongoose');
-
-const connectDB = require('./config/database');   // <-- conecta AUTH (usuarios) como ya tenías
-const buildModels = require('./services/buildModels'); // NUEVO (abajo)
-const dataRouter = require('./routes/dataRoutes');     // REUSAMOS el mismo router (ver 1.4)
-const authRoutes = require('./routes/logRoutes');
+import express, { json, urlencoded } from 'express';
+import cors from 'cors';
+import { connection, createConnection } from 'mongoose';
+import connectDB from './config/database';   // <-- conecta AUTH (usuarios) como ya tenías
+import dataRouter from './routes/dataRoutes';     // REUSAMOS el mismo router (ver 1.4)
+import authRoutes from './routes/logRoutes';
 
 const app = express();
 
@@ -16,21 +14,21 @@ const corsOptions = {
   credentials: true
 };
 app.use(cors(corsOptions));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(json());
+app.use(urlencoded({ extended: true }));
 
 // 1) Conexión default => MONGO_URI (Histórico + Usuario)
 await connectDB(); // deja tu database.js tal como está
-const connHistorico = mongoose.connection; // reutilizamos la conexión default
+const connHistorico = connection; // reutilizamos la conexión default
 
 // 2) Conexión adicional => MONGO_URI_ACTUAL (módulo Actual)
-const connActual = mongoose.createConnection(process.env.MONGO_URI_ACTUAL, {
+const connActual = createConnection(process.env.MONGO_URI_ACTUAL, {
   useNewUrlParser: true, useUnifiedTopology: true
 });
 connActual.on('connected', () => console.log('Mongo ACTUAL conectado'));
 
 // 3) Modelos por conexión
-const build = require('./services/buildModels');
+import build from './services/buildModels';
 const modelsHistorico = build(connHistorico);
 const modelsActual    = build(connActual);
 
