@@ -3,9 +3,9 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 
-const connectDB = require('./config/database');   // <-- conecta AUTH (usuarios) como ya tenías
-const buildModels = require('./services/buildModels'); // NUEVO (abajo)
-const dataRouter = require('./routes/dataRoutes');     // REUSAMOS el mismo router (ver 1.4)
+const connectDB = require('./config/database');      // conecta MONGO_URI (Histórico + Usuario)
+const buildModels = require('./services/buildModels'); // fabrica modelos por conexión
+const dataRouter = require('./routes/dataRoutes');     // usa req.models
 const authRoutes = require('./routes/logRoutes');
 
 const app = express();
@@ -13,38 +13,48 @@ const app = express();
 const corsOptions = {
   origin: ['https://m2tapp.vercel.app'],
   methods: ['GET','POST','PUT','DELETE'],
-  credentials: true
+  credentials: true,
 };
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// 1) Conexión default => MONGO_URI (Histórico + Usuario)
-await connectDB(); // deja tu database.js tal como está
-const connHistorico = mongoose.connection; // reutilizamos la conexión default
+const mongoOpts = { useNewUrlParser: true, useUnifiedTopology: true };
 
-// 2) Conexión adicional => MONGO_URI_ACTUAL (módulo Actual)
-const connActual = mongoose.createConnection(process.env.MONGO_URI_ACTUAL, {
-  useNewUrlParser: true, useUnifiedTopology: true
-});
-connActual.on('connected', () => console.log('Mongo ACTUAL conectado'));
+// 1) Conexión default: MONGO_URI (Histórico + Usuario)
+connectDB()
+  .then(() => {
+    console.log('Histórico/Auth conectado');
+    const connHistorico = mongoose.connection;
 
-// 3) Modelos por conexión
-const build = require('./services/buildModels');
-const modelsHistorico = build(connHistorico);
-const modelsActual    = build(connActual);
+    // 2) Conexión adicional: MONGO_URI_ACTUAL (módulo Actual)
+    const connActual = mongoose.createConnection(process.env.MONGO_URI_ACTUAL, mongoOpts);
 
-// 4) Inyección por prefijo
-const bind = (models) => (req, _res, next) => { req.models = models; next(); };
+    // Mongoose 6/7/8: asPromise() resuelve cuando la conexión está lista
+    return connActual.asPromise().then(() => {
+      console.log('Actual conectado');
 
-app.use('/api/historico', bind(modelsHistorico), dataRouter);
-app.use('/api/actual',    bind(modelsActual),    dataRouter);
+      // 3) Modelos por conexión
+      const modelsHistorico = buildModels(connHistorico);
+      const modelsActual    = buildModels(connActual);
 
-// Auth (usuarios) siguen en la default (MONGO_URI)
-app.use('/api/auth', authRoutes);
+      // 4) Middleware para inyectar modelos por request
+      const bind = (models) => (req, _res, next) => { req.models = models; next(); };
 
-app.get('/', (_req,res)=>res.send('Backend OK multi-módulo'));
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Servidor en ${PORT}`));
+      // 5) Montar routers por módulo
+      app.use('/api/historico', bind(modelsHistorico), dataRouter);
+      app.use('/api/actual',    bind(modelsActual),    dataRouter);
 
-module.exports = connectDB;
+      // Auth (siempre en la conexión histórica/MONGO_URI)
+      app.use('/api/auth', authRoutes);
+
+      app.get('/', (_req, res) => res.send('Backend OK (multi-módulo, CJS)'));
+
+      const PORT = process.env.PORT || 5000;
+      app.listen(PORT, () => console.log(`Servidor corriendo en ${PORT}`));
+    });
+  })
+  .catch((err) => {
+    console.error('Fallo al conectar Mongo:', err);
+    process.exit(1);
+  });
