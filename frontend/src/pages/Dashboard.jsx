@@ -74,52 +74,53 @@ const Dashboard = () => {
     }
 };
     return (
-        <div className="dashboard-container">
-            <h1>Bienvenido al Dashboard</h1>
-            <button className="dashboard-button" onClick={goToBuscador}>
-                Ir al Buscador
-            </button>
-            <button className="dashboard-button" onClick={goToNuevoCliente}>
-                Crear Nuevo Cliente
-            </button>
-            <button className="dashboard-button" onClick={goToNuevoMovil}>
-                Crear Nuevo Móvil
-            </button>
-            <button className="dashboard-button" onClick={goToNuevoEquipoAVL}>
-                Crear Nuevo Equipo AVL
-            </button>
-            <button className="dashboard-button" onClick={goToNuevaSimcard}>
-                Crear Nueva Simcard
-            </button>
-            <button className="dashboard-button" onClick={() => navigate('/inventario')}>Inventario Equipos / Simcards</button>
-            <button className="dashboard-button" onClick={() => navigate('/historial-cambios')}>
-                Ver Historial de Cambios
-            </button>
-            {user?.rol === 'admin' && (
-            <button
-                className="delete-document-btn"
-                style={{
-                background: "#c82333",
-                color: "white",
-                fontWeight: "bold",
-                margin: "16px 0",
-                borderRadius: "8px",
-                border: "none",
-                fontSize: "20px",
-                padding: "16px",
-                cursor: "pointer",
-                transition: "background 0.18s"
-            }}
-         onClick={() => navigate('/eliminar-documento')}
-       >
-         Eliminar Documento
-       </button>
-     )}
-            <button className="export-excel-btn" onClick={exportarTodoExcel}>
-                📦 Exportar todo a Excel
-            </button>
-        </div>
-    );
+  <div className="dashboard-container">
+    <h1>Bienvenido al Dashboard</h1>
+
+    <div className="dashboard-grid">
+      <button className="dashboard-button" onClick={() => navigate('/buscador')}>
+        Ir al Buscador
+      </button>
+
+      <button className="dashboard-button" onClick={() => navigate('/inventario')}>
+        Inventario Equipos / Simcards
+      </button>
+
+      <button className="dashboard-button" onClick={() => navigate('/nuevo-cliente')}>
+        Crear Nuevo Cliente
+      </button>
+
+      <button className="dashboard-button" onClick={() => navigate('/nuevo-movil')}>
+        Crear Nuevo Móvil
+      </button>
+
+      <button className="dashboard-button" onClick={() => navigate('/nuevo-equipo')}>
+        Crear Nuevo Equipo AVL
+      </button>
+
+      <button className="dashboard-button" onClick={() => navigate('/nueva-simcard')}>
+        Crear Nueva Simcard
+      </button>
+
+      <button className="dashboard-button" onClick={() => navigate('/historial-cambios')}>
+        Ver Historial de Cambios
+      </button>
+
+      {user?.rol === 'admin' && (
+        <button
+          className="delete-document-btn"
+          onClick={() => navigate('/eliminar-documento')}
+        >
+          Eliminar Documento
+        </button>
+      )}
+    </div>
+
+    <button className="export-excel-btn" onClick={exportarTodoExcel}>
+      📦 Exportar todo a Excel
+    </button>
+  </div>
+);
 };
 
 export default Dashboard;
