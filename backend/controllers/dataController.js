@@ -426,76 +426,136 @@ exports.updateDocumento = async (req, res) => {
     }
 
     const { Cliente, Movil, EquipoAVL, Simcard, HistorialCambio } = req.models;
-    const Modelo = elegirModelo(type, { Cliente, Movil, EquipoAVL, Simcard });
-    if (!Modelo) {
-      return res.status(400).json({ message: 'Tipo de actualización no válido' });
+    const peer = req.peerModels; // modelos del otro módulo (para mover cuando aplique)
+
+    // Normalizaciones previas
+    if (type === 'Movil') {
+      if (data["Equipo Princ"] && typeof data["Equipo Princ"] === "string" && !isNaN(data["Equipo Princ"])) {
+        data["Equipo Princ"] = { "": Number(data["Equipo Princ"]) };
+      }
+      if (typeof data["Equipo Princ"] === "number") {
+        data["Equipo Princ"] = { "": data["Equipo Princ"] };
+      }
     }
+    if (type === 'Cliente' && data["CONDICION \nCLIENTE"]) {
+      data["CONDICION \nCLIENTE"] = String(data["CONDICION \nCLIENTE"]).toUpperCase();
+    }
+    if (type === 'Movil' && data['CONDICION \nMOVIL']) {
+      data['CONDICION \nMOVIL'] = String(data['CONDICION \nMOVIL']).toUpperCase();
+    }
+
+    // Selección de modelo
+    let Modelo;
+    if (type === 'Cliente') Modelo = Cliente;
+    else if (type === 'Movil') Modelo = Movil;
+    else if (type === 'EquipoAVL') Modelo = EquipoAVL;
+    else if (type === 'Simcard') Modelo = Simcard;
+    else return res.status(400).json({ message: 'Tipo no válido' });
 
     const prevDoc = await Modelo.findById(data._id).lean();
     if (!prevDoc) return res.status(404).json({ message: 'Documento no encontrado' });
 
-    // Construir update sin mutar data original
-    const update = { ...data };
-    delete update._id;
-    delete update.__v;
-
-    // Normalización específica para 'Movil'
-    if (type === 'Movil' && Object.prototype.hasOwnProperty.call(update, 'Equipo Princ')) {
-      update['Equipo Princ'] = normalizarEquipoPrinc(update['Equipo Princ']);
-    }
-
-    await Modelo.updateOne({ _id: data._id }, update, { runValidators: true });
-
+    // Actualiza el doc principal
+    await Modelo.updateOne({ _id: data._id }, data);
     const newDoc = await Modelo.findById(data._id).lean();
 
-    // Diff superficial entre prevDoc y newDoc
-    const cambios = [];
-    const llaves = new Set([
-      ...Object.keys(prevDoc || {}),
-      ...Object.keys(newDoc || {}),
-      ...Object.keys(update || {}),
-    ]);
-
-    llaves.forEach((k) => {
-      if (k === '_id' || k === '__v') return;
-      const a = prevDoc?.[k];
-      const b = newDoc?.[k];
-      const iguales =
-        (typeof a === 'object' || typeof b === 'object')
-          ? JSON.stringify(a) === JSON.stringify(b)
-          : a === b;
-
-      if (!iguales) {
-        cambios.push({ campo: k, valorAnterior: a, valorNuevo: b });
+    // Log de cambios
+    try {
+      if (HistorialCambio && req.user) {
+        const cambios = [];
+        Object.keys(data).forEach((k) => {
+          if (JSON.stringify(prevDoc[k]) !== JSON.stringify(newDoc[k])) {
+            cambios.push({ campo: k, valorAnterior: prevDoc[k], valorNuevo: newDoc[k] });
+          }
+        });
+        if (cambios.length) {
+          await HistorialCambio.create({
+            entidad: type,
+            entidadId: data._id,
+            usuario: {
+              id: req.user._id, nombre: req.user.nombre, email: req.user.email, rol: req.user.rol
+            },
+            fecha: new Date(),
+            cambios
+          });
+        }
       }
-    });
-
-    // Registrar historial
-    if (cambios.length > 0) {
-      if (!req.user) {
-        return res.status(401).json({ message: 'Usuario no autenticado para registrar cambios.' });
-      }
-      await HistorialCambio.create({
-        entidad: type,
-        entidadId: data._id,
-        usuario: {
-          id: req.user._id,
-          nombre: req.user.nombre,
-          email: req.user.email,
-          rol: req.user.rol,
-        },
-        fecha: new Date(),
-        cambios,
-      });
+    } catch (e) {
+      console.warn('No se pudo registrar HistorialCambio:', e.message);
     }
 
-    return res.json({ message: 'Documento actualizado correctamente' });
-  } catch (error) {
-    console.error('Error al actualizar documento:', error);
-    return res.status(500).json({
-      message: 'Error al actualizar el documento',
-      error: error.message,
+    // --------- CASCADA “RETIRADO” PARA CLIENTE ----------
+    const becameRetirado =
+      type === 'Cliente' &&
+      (newDoc["CONDICION \nCLIENTE"] || '').toString().toUpperCase() === 'RETIRADO' &&
+      (prevDoc["CONDICION \nCLIENTE"] || '').toString().toUpperCase() !== 'RETIRADO';
+
+    let movedToHistorico = false;
+    let afectados = { movilesActualizados: 0, movilesMovidos: 0 };
+
+    if (becameRetirado) {
+      // 1) Poner todos los móviles del cliente en RETIRADO y mover “Equipo Princ” -> “Equipo anterior”
+      const movilesCliente = await Movil.find({ Cliente: prevDoc.Cliente }).lean();
+
+      if (movilesCliente.length) {
+        const ops = movilesCliente.map(m => {
+          const equipoPrinc = m['Equipo Princ'] ?? null;
+          return {
+            updateOne: {
+              filter: { _id: m._id },
+              update: {
+                $set: {
+                  'CONDICION \nMOVIL': 'RETIRADO',
+                  ...(equipoPrinc ? { 'Equipo anterior': equipoPrinc } : {})
+                },
+                $unset: { 'Equipo Princ': "" } // desvincular
+              }
+            }
+          };
+        });
+        const bw = await Movil.bulkWrite(ops);
+        afectados.movilesActualizados = bw.modifiedCount || movilesCliente.length;
+      }
+
+      // 2) Si la petición viene a /api/actual -> mover Cliente + Móviles a base “Histórico”
+      const isActual = (req.baseUrl || '').includes('/api/actual');
+      if (isActual && peer) {
+        const { Cliente: HCliente, Movil: HMovil } = peer;
+
+        // Copiar cliente al histórico (sin _id)
+        const { _id: _c, __v: _vC, createdAt: _caC, updatedAt: _uaC, ...clientePlano } = newDoc;
+        // upsert por RUT o por nombre de cliente, lo que tengas más estable
+        const filtroCliente = newDoc.RUT ? { RUT: newDoc.RUT } : { Cliente: newDoc.Cliente };
+        await HCliente.updateOne(filtroCliente, clientePlano, { upsert: true });
+
+        // Traer los móviles ya actualizados (RETIRADO) y copiarlos
+        const movs = await Movil.find({ Cliente: prevDoc.Cliente }).lean();
+        if (movs.length) {
+          const movsPlano = movs.map(({ _id, __v, createdAt, updatedAt, ...rest }) => rest);
+          if (movsPlano.length) {
+            await HMovil.insertMany(movsPlano);
+            afectados.movilesMovidos = movsPlano.length;
+          }
+        }
+
+        // Borrar de la base ACTUAL
+        await Movil.deleteMany({ Cliente: prevDoc.Cliente });
+        await Modelo.deleteOne({ _id: newDoc._id });
+
+        movedToHistorico = true;
+      }
+    }
+
+    return res.json({
+      message: movedToHistorico
+        ? 'Cliente retirado, móviles actualizados y documentos movidos a Histórico.'
+        : 'Documento actualizado correctamente',
+      movedToHistorico,
+      afectados
     });
+  } catch (error) {
+    console.error('Error en updateDocumento:', error);
+    return res.status(500).json({ message: 'Error al actualizar', error: error.message });
   }
 };
 

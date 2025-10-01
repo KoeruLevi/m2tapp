@@ -47,6 +47,7 @@ const NuevoDocumento = ({ tipo }) => {
                     >
                     <option value="ACTIVO">Activo</option>
                     <option value="SUSPENDIDO">Suspendido</option>
+                    <option value="RETIRADO">Retirado</option>
                     </select>
                 </div>
                 <div className="form-row">

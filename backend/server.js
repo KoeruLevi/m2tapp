@@ -39,11 +39,13 @@ connectDB()
       const modelsActual    = buildModels(connActual);
 
       // 4) Middleware para inyectar modelos por request
-      const bind = (models) => (req, _res, next) => { req.models = models; next(); };
-
-      // 5) Montar routers por módulo
-      app.use('/api/historico', bind(modelsHistorico), dataRouter);
-      app.use('/api/actual',    bind(modelsActual),    dataRouter);
+      const bind = (models, peerModels) => (req, _res, next) => {
+        req.models = models;       // DB del módulo actual de la ruta
+        req.peerModels = peerModels; // DB del “otro” módulo (para mover docs)
+      next();
+      };
+      app.use('/api/historico', bind(modelsHistorico, modelsActual), dataRouter);
+      app.use('/api/actual',    bind(modelsActual,    modelsHistorico), dataRouter);
 
       // Auth (siempre en la conexión histórica/MONGO_URI)
       app.use('/api/auth', authRoutes);

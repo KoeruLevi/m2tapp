@@ -73,70 +73,7 @@ router.get('/export-todo', async (req, res) => {
   }
 });
 
-router.put('/update', auth, async (req, res) => {
-  const { type, data } = req.body;
-  if (!type || !data) {
-    return res.status(400).json({ message: 'Faltan datos para actualizar' });
-  }
-
-  try {
-    const { Cliente, Movil, EquipoAVL, Simcard, HistorialCambio } = req.models;
-
-    let Modelo;
-    if (type === 'Cliente') Modelo = Cliente;
-    else if (type === 'Movil') Modelo = Movil;
-    else if (type === 'EquipoAVL') Modelo = EquipoAVL;
-    else if (type === 'Simcard') Modelo = Simcard;
-    else return res.status(400).json({ message: 'Tipo de actualización no válido' });
-
-    if (type === 'Movil') {
-      const raw = data['Equipo Princ'];
-      if (raw != null) {
-        const n =
-          typeof raw === 'object' ? Number(raw.ID || raw[''] || raw) : Number(raw);
-        data['Equipo Princ'] = Number.isFinite(n) ? { '': n } : data['Equipo Princ'];
-      }
-    }
-
-    const prevDoc = await Modelo.findById(data._id).lean();
-    await Modelo.updateOne({ _id: data._id }, data);
-    const newDoc = await Modelo.findById(data._id).lean();
-
-    const cambios = [];
-    Object.keys(data).forEach((key) => {
-      if (prevDoc?.[key] !== newDoc?.[key]) {
-        cambios.push({
-          campo: key,
-          valorAnterior: prevDoc?.[key],
-          valorNuevo: newDoc?.[key],
-        });
-      }
-    });
-
-    if (cambios.length > 0) {
-      if (!req.user) {
-        return res.status(401).json({ message: 'Usuario no autenticado para registrar cambios.' });
-      }
-      await HistorialCambio.create({
-        entidad: type,
-        entidadId: data._id,
-        usuario: {
-          id: req.user._id,
-          nombre: req.user.nombre,
-          email: req.user.email,
-          rol: req.user.rol,
-        },
-        fecha: new Date(),
-        cambios,
-      });
-    }
-
-    res.json({ message: 'Documento actualizado correctamente' });
-  } catch (error) {
-    console.error('Error al actualizar documento:', error);
-    res.status(500).json({ message: 'Error al actualizar el documento', error: error.message });
-  }
-});
+router.put('/update', auth, dataController.updateDocumento);
 
 router.delete('/delete/:tipo/:id', auth, isAdmin, dataController.deleteDocumento);
 

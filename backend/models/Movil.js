@@ -16,6 +16,7 @@ const MovilSchema = new mongoose.Schema({
    'Equipo Princ': { 
        type: mongoose.Schema.Types.Mixed
    },
+   'Equipo anterior': { type: mongoose.Schema.Types.Mixed },
    'TECNOLOGIA \nEQUIPO': { type: String },
    'FECHA INSTALACION EQUIPO': { type: String },
    'Equipo Secundario_1': { type: Number },
