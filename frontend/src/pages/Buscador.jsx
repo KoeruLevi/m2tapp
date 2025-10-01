@@ -288,8 +288,8 @@ const Buscador = () => {
             setIsEditing(false);
             alert("✅ Cambios guardados exitosamente.");
         } catch (error) {
-            console.error("❌ Error al actualizar los datos:", error);
-            alert("Hubo un problema al guardar los cambios.");
+            console.error("❌ Error al actualizar los datos:", error.response?.status, error.response?.data || error.message);
+            alert(error?.response?.data?.message || "Hubo un problema al guardar los cambios.");
         }
     };
 
@@ -309,6 +309,13 @@ const Buscador = () => {
             }
         };
     };
+
+    const normalizeKey = (k) =>
+  k
+    .replace(/[ _\n\r\t]+/g, ' ')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toUpperCase();
 
     return (
         <div className="buscador-wrapper">
@@ -390,10 +397,18 @@ const Buscador = () => {
             )}
 
         <div className="detalle-formulario">
-            {Object.entries(popupData)
-  .filter(([key]) => key !== "_id" && key !== "__v")
-  .map(([key, value]) => {
+            {(() => {
+  let entries = Object.entries(popupData).filter(([k]) => k !== "_id" && k !== "__v");
+
+  // Inyecta la condición si es Cliente y no viene en el doc
+  if (popupType === 'Cliente' && !entries.some(([k]) => normalizeKey(k) === 'CONDICION CLIENTE')) {
+    entries = [['CONDICION \nCLIENTE', popupData["CONDICION \nCLIENTE"] || 'ACTIVO'], ...entries];
+  }
+
+  return entries.map(([key, value]) => {
+    const NK = normalizeKey(key); // clave normalizada
     let displayValue = value;
+
     if (key === "ICCID") {
       displayValue = typeof value === "object" && value !== null
         ? (value.low || value.high || "No disponible")
@@ -409,35 +424,34 @@ const Buscador = () => {
       <div className="detalle-fila" key={key} style={{ marginBottom: 14, display: 'flex', flexDirection: 'column' }}>
         <label className="detalle-label" style={{ fontWeight: 600, marginBottom: 2, color: '#225', fontSize: 15 }}>
           {beautifyFieldName(key)}
-          </label>
-          {isEditing ? (
-            key === "CONDICION \nCLIENTE" ? (
-              <select
-                value={editedData[key] ?? (displayValue || "ACTIVO")}
-                onChange={(e) => setEditedData({ ...editedData, [key]: e.target.value })}
-                style={{ width: "100%" }}
-              >
+        </label>
+
+        {isEditing ? (
+          // SELECT para condición del cliente (detecta variantes con/sin salto de línea/acentos)
+          (popupType === 'Cliente' && NK === 'CONDICION CLIENTE') ? (
+            <select
+              value={editedData[key] ?? (displayValue || "ACTIVO")}
+              onChange={(e) => setEditedData({ ...editedData, [key]: e.target.value })}
+              style={{ width: "100%" }}
+            >
               <option value="ACTIVO">Activo</option>
               <option value="SUSPENDIDO">Suspendido</option>
               <option value="RETIRADO">Retirado</option>
-              </select>
-            ) :
-          
-            key === "RUT" ? (
-  
-          <input
-            type="text"
-            value={editedData[key] ?? displayValue}
-            onChange={e => {
-              const raw = e.target.value;
-            const formatted = formatRut(raw);
-            setEditedData({ ...editedData, [key]: formatted });
-            }}
-            style={{ width: "100%" }}
-            maxLength={12}
-            placeholder="Ej: 12.345.678-9"
+            </select>
+          ) : key === "RUT" ? (
+            <input
+              type="text"
+              value={editedData[key] ?? displayValue}
+              onChange={e => {
+                const raw = e.target.value;
+                const formatted = formatRut(raw);
+                setEditedData({ ...editedData, [key]: formatted });
+              }}
+              style={{ width: "100%" }}
+              maxLength={12}
+              placeholder="Ej: 12.345.678-9"
             />
-          ) :  key === "ICCID" || key === "Equipo Princ" ? (
+          ) : key === "ICCID" || key === "Equipo Princ" ? (
             <input
               type="text"
               value={editedData[key] ?? displayValue}
@@ -507,7 +521,8 @@ const Buscador = () => {
         )}
       </div>
     );
-  })}
+  });
+})()}
   </div>
     {historial.length > 0 && (
   <div className="historial-section" style={{ marginTop: '30px' }}>
