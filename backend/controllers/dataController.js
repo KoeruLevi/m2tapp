@@ -588,3 +588,163 @@ exports.deleteDocumento = async (req, res) => {
     res.status(500).json({ message: 'Error al eliminar documento', error: err.message });
   }
 };
+
+function toNumberSafe(v) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+function buildEquipoPrincQueryById(equipoId) {
+  // Soporta 'Equipo Princ' como número o como objeto { "": ID } o { ID: ID }
+  return {
+    $or: [
+      { 'Equipo Princ': equipoId },
+      { 'Equipo Princ': { '': equipoId } },
+      { 'Equipo Princ.ID': equipoId },
+    ]
+  };
+}
+
+exports.inventoryEquipos = async (req, res) => {
+  try {
+    const { EquipoAVL, Movil } = req.models;
+    const search = (req.query.search || '').trim();
+    const page  = Math.max(parseInt(req.query.page || '1', 10), 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit || '20', 10), 1), 100);
+    const skip  = (page - 1) * limit;
+
+    const q = {};
+    if (search) {
+      const asNum = toNumberSafe(search);
+      q.$or = [
+        { imei:  new RegExp(search, 'i') },
+        { serial:new RegExp(search, 'i') },
+        { model: new RegExp(search, 'i') },
+      ];
+      if (asNum !== null) q.$or.push({ ID: asNum });
+    }
+
+    const [total, rows] = await Promise.all([
+      EquipoAVL.countDocuments(q),
+      EquipoAVL.find(q).sort({ updatedAt: -1, ID: 1 }).skip(skip).limit(limit).lean()
+    ]);
+
+    // Marcar si el equipo está asignado (buscar un móvil que lo tenga como principal)
+    const items = await Promise.all(rows.map(async (e) => {
+      const m = await Movil.findOne(buildEquipoPrincQueryById(e.ID), { Patente: 1, Cliente: 1 }).lean();
+      return {
+        ...e,
+        asignadoA: m ? { Patente: m.Patente, Cliente: m.Cliente } : null
+      };
+    }));
+
+    res.json({ items, page, limit, total, pages: Math.ceil(total / limit) });
+  } catch (err) {
+    res.status(500).json({ message: 'Error al obtener inventario de equipos', error: err.message });
+  }
+};
+
+/**
+ * GET /inventario/simcards?search=&page=1&limit=20
+ */
+exports.inventorySimcards = async (req, res) => {
+  try {
+    const { Simcard, EquipoAVL } = req.models;
+    const search = (req.query.search || '').trim();
+    const page  = Math.max(parseInt(req.query.page || '1', 10), 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit || '20', 10), 1), 100);
+    const skip  = (page - 1) * limit;
+
+    const q = {};
+    if (search) {
+      const asNum = toNumberSafe(search);
+      q.$or = [
+        { operador: new RegExp(search, 'i') },
+        { portador: new RegExp(search, 'i') },
+        { ICCID:    new RegExp(search, 'i') },
+      ];
+      if (asNum !== null) {
+        q.$or.push({ fono: asNum });
+        q.$or.push({ ID: asNum });
+      }
+    }
+
+    const [total, rows] = await Promise.all([
+      Simcard.countDocuments(q),
+      Simcard.find(q).sort({ updatedAt: -1 }).skip(skip).limit(limit).lean()
+    ]);
+
+    const items = await Promise.all(rows.map(async (s) => {
+      const eq = s.ID ? await EquipoAVL.findOne({ ID: s.ID }, { ID: 1 }).lean() : null;
+      return {
+        ...s,
+        asignadoA: eq ? { ID: eq.ID } : null
+      };
+    }));
+
+    res.json({ items, page, limit, total, pages: Math.ceil(total / limit) });
+  } catch (err) {
+    res.status(500).json({ message: 'Error al obtener inventario de simcards', error: err.message });
+  }
+};
+
+/**
+ * POST /inventario/asignar-equipo  { equipoId:number, patente:string }
+ */
+exports.assignEquipoToMovil = async (req, res) => {
+  try {
+    const { EquipoAVL, Movil } = req.models;
+    const equipoId = toNumberSafe(req.body.equipoId);
+    const patente  = (req.body.patente || '').trim();
+
+    if (equipoId === null || !patente) {
+      return res.status(400).json({ message: 'equipoId y patente son obligatorios' });
+    }
+
+    const equipo = await EquipoAVL.findOne({ ID: equipoId }).lean();
+    if (!equipo) return res.status(404).json({ message: 'Equipo no encontrado' });
+
+    const yaAsignado = await Movil.findOne(buildEquipoPrincQueryById(equipoId), { Patente: 1 }).lean();
+    if (yaAsignado) {
+      return res.status(400).json({ message: `El equipo ${equipoId} ya está asignado al móvil ${yaAsignado.Patente}`});
+    }
+
+    const movil = await Movil.findOne({ Patente: new RegExp(`^${patente}$`, 'i') });
+    if (!movil) return res.status(404).json({ message: `No existe móvil con patente ${patente}` });
+
+    // Asignamos como objeto { "": ID } (formato que ya usas)
+    movil['Equipo Princ'] = { '': equipoId };
+    await movil.save();
+
+    res.json({ message: 'Equipo asignado correctamente', movilId: movil._id, patente: movil.Patente, equipoId });
+  } catch (err) {
+    res.status(500).json({ message: 'Error al asignar equipo a móvil', error: err.message });
+  }
+};
+
+/**
+ * POST /inventario/asignar-simcard  { iccid:string, equipoId:number }
+ */
+exports.assignSimcardToEquipo = async (req, res) => {
+  try {
+    const { Simcard, EquipoAVL } = req.models;
+    const iccid    = (req.body.iccid || '').trim();
+    const equipoId = toNumberSafe(req.body.equipoId);
+
+    if (!iccid || equipoId === null) {
+      return res.status(400).json({ message: 'iccid y equipoId son obligatorios' });
+    }
+
+    const sim = await Simcard.findOne({ ICCID: iccid });
+    if (!sim) return res.status(404).json({ message: 'Simcard no encontrada' });
+
+    const equipo = await EquipoAVL.findOne({ ID: equipoId }).lean();
+    if (!equipo) return res.status(404).json({ message: 'Equipo no encontrado' });
+
+    sim.ID = equipoId;
+    await sim.save();
+
+    res.json({ message: 'Simcard asignada correctamente', iccid, equipoId });
+  } catch (err) {
+    res.status(500).json({ message: 'Error al asignar simcard a equipo', error: err.message });
+  }
+};

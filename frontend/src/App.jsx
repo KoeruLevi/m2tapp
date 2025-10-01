@@ -12,6 +12,7 @@ import AdminUsuarios from './components/AdminUsuarios';
 import RequireAdmin from './components/RequireAdmin';
 import EliminarDocumento from './components/EliminarDocumento';
 import ModuloSelector from './pages/ModuloSelector';
+import Inventario from './pages/Inventario';
 import './App.css';
 
 const App = () => {
@@ -44,6 +45,7 @@ const App = () => {
                                 </RequireAdmin>
                             }
                         />
+                        <Route path="/inventario" element={<Inventario />} />
                         <Route path="/historial-cambios" element={<HistorialCambios />} />
                     </Routes>
                 </main>

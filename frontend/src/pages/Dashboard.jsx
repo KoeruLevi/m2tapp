@@ -91,6 +91,7 @@ const Dashboard = () => {
             <button className="dashboard-button" onClick={goToNuevaSimcard}>
                 Crear Nueva Simcard
             </button>
+            <button className="dashboard-button" onClick={() => navigate('/inventario')}>Inventario Equipos / Simcards</button>
             <button className="dashboard-button" onClick={() => navigate('/historial-cambios')}>
                 Ver Historial de Cambios
             </button>

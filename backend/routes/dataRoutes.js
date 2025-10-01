@@ -73,6 +73,11 @@ router.get('/export-todo', async (req, res) => {
   }
 });
 
+router.get('/inventario/equipos', auth, dataController.inventoryEquipos);
+router.get('/inventario/simcards', auth, dataController.inventorySimcards);
+router.post('/inventario/asignar-equipo', auth, dataController.assignEquipoToMovil);
+router.post('/inventario/asignar-simcard', auth, dataController.assignSimcardToEquipo);
+
 router.put('/update', auth, dataController.updateDocumento);
 
 router.delete('/delete/:tipo/:id', auth, isAdmin, dataController.deleteDocumento);
