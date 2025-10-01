@@ -18,8 +18,17 @@
 .t-assignees .tag { background:#eef4ff; color:#234; padding:4px 8px; border-radius:999px; margin-right:6px; display:inline-block; margin-bottom:4px; }
 .muted { color:#888; }
 
-.t-actions button { margin-right:8px; padding:6px 10px; border-radius:8px; border:1px solid #cfe3ff; background:#fff; cursor:pointer; }
-.t-actions .danger { border-color:#ffb3b3; color:#a22; }
+/*.t-actions button { margin-right:8px; padding:6px 10px; border-radius:8px; border:1px solid #cfe3ff; background:#fff; cursor:pointer; } */
+.t-actions {
+  min-width: 320px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.t-actions .action-btn {
+  margin-right: 8px;
+}
+.t-actions .danger { border-color:#ffb3b3; color:#a22; } 
 
 .tickets-footer { display:flex; justify-content:flex-end; margin-top: 14px; }
 .pager { display:flex; align-items:center; gap:12px; }
@@ -145,4 +154,23 @@
 /* Para celdas estrechas, evita que se colapsen */
 .tickets-table td.actions-cell {
   min-width: 280px;
+}
+.pager button {
+  padding: 8px 12px;
+  border: 1px solid #bcd2ff;
+  border-radius: 10px;
+  background: #eef4ff;
+  color: #1f3b82;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .18s, border-color .18s, color .18s, box-shadow .18s;
+}
+.pager button:hover:not(:disabled) {
+  background: #2d6cdf;
+  border-color: #2d6cdf;
+  color: #fff;
+}
+.pager button:disabled {
+  opacity: .45;
+  cursor: not-allowed;
 }
