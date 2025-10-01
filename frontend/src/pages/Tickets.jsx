@@ -162,15 +162,15 @@ const Tickets = () => {
                       {/* marcar listo / deshacer */}
                       {t.status==='open' && (
                         <>
-                          <button onClick={()=>toggleDone(t._id, true)}>Marcar listo</button>
-                          <button onClick={()=>toggleDone(t._id, false)}>Deshacer</button>
-                          <button onClick={()=>closeManual(t._id)} className="danger">Cerrar</button>
+                          <button className="action-btn action-btn--ghost" onClick={()=>toggleDone(t._id, true)}>Marcar listo</button>
+                          <button className="action-btn action-btn--success" onClick={()=>toggleDone(t._id, false)}>Deshacer</button>
+                          <button className="action-btn action-btn--danger" onClick={()=>closeManual(t._id)}>Cerrar</button>
                         </>
                       )}
                       {t.status==='closed' && (
                         <>
-                          <button onClick={()=>reopen(t._id)}>Reabrir</button>
-                          <button onClick={()=>remove(t._id)} className="danger">Eliminar</button>
+                          <button className="action-btn action-btn--primary" onClick={()=>reopen(t._id)}>Reabrir</button>
+                          <button className="action-btn action-btn--danger" onClick={()=>remove(t._id)}>Eliminar</button>
                         </>
                       )}
                     </td>
