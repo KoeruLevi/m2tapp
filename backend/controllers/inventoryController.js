@@ -9,6 +9,7 @@ const getModels = (req) => {
     Simcard: require('../models/Simcard'),
   };
 };
+const { bsonToJsonSafe } = require('../utils/bsonSafe');
 
 exports.listEquipos = async (req, res) => {
   const { EquipoAVL, Movil } = getModels(req);
@@ -31,7 +32,7 @@ exports.listEquipos = async (req, res) => {
   );
   data.forEach(e => e.__asignadoA = byId.get(e.ID) || null);
 
-  res.json({ total, page: Number(page), pageSize: Number(pageSize), data });
+  res.json(bsonToJsonSafe({ total, page: Number(page), pageSize: Number(pageSize), data }));
 };
 
 exports.listSimcards = async (req, res) => {
@@ -55,7 +56,7 @@ exports.listSimcards = async (req, res) => {
     .limit(Number(pageSize))
     .lean();
 
-  res.json({ total, page: Number(page), pageSize: Number(pageSize), data });
+  res.json(bsonToJsonSafe({ total, page: Number(page), pageSize: Number(pageSize), data }));
 };
 
 exports.assignEquipoToMovil = async (req, res) => {
@@ -74,7 +75,7 @@ exports.assignEquipoToMovil = async (req, res) => {
   if (!movil) return res.status(404).json({ message: 'Patente no existe' });
 
   await Movil.updateOne({ _id: movil._id }, { $set: { 'Equipo Princ': { '': Number(equipoId) } } });
-  res.json({ message: 'Equipo asignado', movilId: movil._id });
+  res.json(bsonToJsonSafe({ message: 'Equipo asignado', movilId: movil._id }));
 };
 
 exports.assignSimcardToEquipo = async (req, res) => {
@@ -90,5 +91,5 @@ exports.assignSimcardToEquipo = async (req, res) => {
   if (!sim) return res.status(404).json({ message: 'ICCID no existe' });
 
   await Simcard.updateOne({ _id: sim._id }, { $set: { ID: Number(equipoId) } });
-  res.json({ message: 'Simcard asignada', simId: sim._id });
+  res.json(bsonToJsonSafe({ message: 'Simcard asignada', simId: sim._id }));
 };

@@ -41,6 +41,7 @@ function elegirModelo(type, models) {
 exports.searchData = async (req, res) => {
   const { Cliente, Movil, EquipoAVL, Simcard } = req.models;
   const { cliente, movil, equipo, simcard } = req.query;
+  const { bsonToJsonSafe } = require('../utils/bsonSafe');
 
   console.log('\n=== INICIO DE BÚSQUEDA CON FILTROS ===');
   console.log(`Cliente: ${cliente || 'Sin filtro'}, Móvil: ${movil || 'Sin filtro'}, Equipo: ${equipo || 'Sin filtro'}, Simcard: ${simcard || 'Sin filtro'}`);
@@ -252,12 +253,12 @@ exports.searchData = async (req, res) => {
     console.log('\n=== RESULTADOS FINALES ===');
     console.log(`Clientes: ${clientes.length}, Móviles: ${moviles.length}, Equipos: ${equipos.length}, Simcards: ${simcards.length}`);
 
-    res.json({
+    res.json(bsonToJsonSafe({
       Cliente: clientes,
       Movil: moviles,
       EquipoAVL: equipos,
       Simcard: simcards,
-    });
+    }));
   } catch (error) {
     console.error('\n=== ERROR EN LA BÚSQUEDA ===');
     console.error(error);
@@ -319,7 +320,7 @@ exports.exportTodo = async (req, res) => {
   const moviles  = await Movil.find().lean();
   const equipos  = await EquipoAVL.find().lean();
   const simcards = await Simcard.find().lean();
-  res.json({ clientes, moviles, equipos, simcards });
+  res.json(bsonToJsonSafe({ clientes, moviles, equipos, simcards }));
 };
 
 exports.createCliente = async (req, res) => {
@@ -332,7 +333,7 @@ exports.createCliente = async (req, res) => {
     }
     const cliente = new Cliente(req.body);
     const savedCliente = await cliente.save();
-    res.status(201).json(savedCliente);
+    res.status(201).json(bsonToJsonSafe(savedCliente));
   } catch (error) {
     console.error('Error al crear Cliente:', error);
     res.status(500).json({ message: 'Error al crear Cliente', error: error.message });
@@ -348,7 +349,7 @@ exports.createMovil = async (req, res) => {
     }
     const movil = new Movil(req.body);
     const savedMovil = await movil.save();
-    res.status(201).json(savedMovil);
+    res.status(201).json(bsonToJsonSafe(savedMovil));
   } catch (error) {
     console.error('Error al crear Movil:', error);
     res.status(500).json({ message: 'Error al crear Movil', error: error.message });
@@ -364,7 +365,7 @@ exports.createEquipoAVL = async (req, res) => {
     }
     const equipo = new EquipoAVL(req.body);
     const savedEquipo = await equipo.save();
-    res.status(201).json(savedEquipo);
+    res.status(201).json(bsonToJsonSafe(savedEquipo));
   } catch (error) {
     console.error('Error al crear EquipoAVL:', error);
     res.status(500).json({ message: 'Error al crear EquipoAVL', error: error.message });
@@ -380,7 +381,7 @@ exports.createSimcard = async (req, res) => {
     }
     const simcard = new Simcard(req.body);
     const savedSimcard = await simcard.save();
-    res.status(201).json(savedSimcard);
+    res.status(201).json(bsonToJsonSafe(savedSimcard));
   } catch (error) {
     console.error('Error al crear Simcard:', error);
     res.status(500).json({ message: 'Error al crear Simcard', error: error.message });
@@ -410,7 +411,7 @@ exports.getHistorial = async (req, res) => {
       historial = await Simcard.find({ ICCID: id }).sort({ updatedAt: -1 }).lean();
     }
 
-    res.json(historial);
+    res.json(bsonToJsonSafe(historial));
   } catch (error) {
     console.error('Error al obtener historial:', error);
     res.status(500).json({ message: 'Error al obtener historial' });
@@ -546,13 +547,13 @@ exports.updateDocumento = async (req, res) => {
       }
     }
 
-    return res.json({
+    return res.json(bsonToJsonSafe({
       message: movedToHistorico
         ? 'Cliente retirado, móviles actualizados y documentos movidos a Histórico.'
         : 'Documento actualizado correctamente',
       movedToHistorico,
       afectados
-    });
+    }));
   } catch (error) {
     console.error('Error en updateDocumento:', error);
     return res.status(500).json({ message: 'Error al actualizar', error: error.message });
@@ -637,7 +638,7 @@ exports.inventoryEquipos = async (req, res) => {
       };
     }));
 
-    res.json({ items, page, limit, total, pages: Math.ceil(total / limit) });
+    res.json(bsonToJsonSafe({ items, page, limit, total, pages: Math.ceil(total / limit) }));
   } catch (err) {
     res.status(500).json({ message: 'Error al obtener inventario de equipos', error: err.message });
   }
@@ -681,7 +682,7 @@ exports.inventorySimcards = async (req, res) => {
       };
     }));
 
-    res.json({ items, page, limit, total, pages: Math.ceil(total / limit) });
+    res.json(bsonToJsonSafe({ items, page, limit, total, pages: Math.ceil(total / limit) }));
   } catch (err) {
     res.status(500).json({ message: 'Error al obtener inventario de simcards', error: err.message });
   }
@@ -715,7 +716,7 @@ exports.assignEquipoToMovil = async (req, res) => {
     movil['Equipo Princ'] = { '': equipoId };
     await movil.save();
 
-    res.json({ message: 'Equipo asignado correctamente', movilId: movil._id, patente: movil.Patente, equipoId });
+    res.json(bsonToJsonSafe({ message: 'Equipo asignado correctamente', movilId: movil._id, patente: movil.Patente, equipoId }));
   } catch (err) {
     res.status(500).json({ message: 'Error al asignar equipo a móvil', error: err.message });
   }
@@ -743,7 +744,7 @@ exports.assignSimcardToEquipo = async (req, res) => {
     sim.ID = equipoId;
     await sim.save();
 
-    res.json({ message: 'Simcard asignada correctamente', iccid, equipoId });
+    res.json(bsonToJsonSafe({ message: 'Simcard asignada correctamente', iccid, equipoId }));
   } catch (err) {
     res.status(500).json({ message: 'Error al asignar simcard a equipo', error: err.message });
   }

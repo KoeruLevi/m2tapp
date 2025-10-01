@@ -241,6 +241,8 @@ const Buscador = () => {
         console.log(`🔎 Mostrando detalles de ${type}:`, data);
         setPopupType(type);
         setPopupData(data);
+        setEditedData({});
+        setIsEditing(false);
 
         try {
             const response = await api.get(apiPath('/historial'), {
