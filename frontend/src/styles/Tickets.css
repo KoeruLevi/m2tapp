@@ -31,3 +31,30 @@
 .assignees-list { max-height: 220px; overflow:auto; border:1px solid #eee; border-radius:8px; padding:8px; }
 .check { display:block; padding:4px 2px; }
 .modal-actions { display:flex; justify-content:flex-end; gap:10px; margin-top: 8px; }
+
+.filters .chip {
+  background: #eef4ff;                 /* inactivo claro */
+  border: 1px solid #d7e6ff;
+  color: #1f3b82 !important;           /* <-- texto oscuro SIEMPRE */
+  font-weight: 600;
+}
+
+.filters .chip.active {
+  background: #2d6cdf;                 /* activo azul */
+  border-color: #2d6cdf;
+  color: #fff !important;               /* texto blanco en activo */
+}
+
+.filters .chip:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(45,108,223,.25);
+}
+
+/* si algún chip se renderiza disabled en tu UI */
+.filters .chip:disabled {
+  background: #f5f8ff;
+  border-color: #e8f0ff;
+  color: #7a8aa1 !important;
+  opacity: .8;
+  cursor: not-allowed;
+}

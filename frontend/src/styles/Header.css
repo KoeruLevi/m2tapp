@@ -202,3 +202,28 @@
   outline: 2px solid #fff;   /* accesible sobre fondo azul */
   outline-offset: 2px;
 }
+
+.header-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 10px;
+  text-decoration: none;
+  border: 1px solid rgba(255,255,255,.25);
+  background: rgba(255,255,255,.10);
+  color: #fff !important;               /* <-- texto SIEMPRE blanco */
+  font-weight: 600;
+}
+
+.header-icon-btn:hover {
+  background: rgba(255,255,255,.18);
+  border-color: rgba(255,255,255,.38);
+}
+
+/* por si alguna regla global fuerza el color de <a> */
+.header-icon-btn:link,
+.header-icon-btn:visited,
+.header-icon-btn:active {
+  color: #fff !important;
+}
