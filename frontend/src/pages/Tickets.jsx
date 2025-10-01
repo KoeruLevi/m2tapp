@@ -162,8 +162,8 @@ const Tickets = () => {
                       {/* marcar listo / deshacer */}
                       {t.status==='open' && (
                         <>
-                          <button className="action-btn action-btn--ghost" onClick={()=>toggleDone(t._id, true)}>Marcar listo</button>
-                          <button className="action-btn action-btn--success" onClick={()=>toggleDone(t._id, false)}>Deshacer</button>
+                          <button className="action-btn action-btn--success" onClick={()=>toggleDone(t._id, true)}>Marcar listo</button>
+                          <button className="action-btn action-btn--ghost" onClick={()=>toggleDone(t._id, false)}>Deshacer</button>
                           <button className="action-btn action-btn--danger" onClick={()=>closeManual(t._id)}>Cerrar</button>
                         </>
                       )}
