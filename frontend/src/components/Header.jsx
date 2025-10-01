@@ -5,6 +5,7 @@ import { FiSettings, FiLayers } from 'react-icons/fi';
 import '../styles/Header.css';
 import FormularioCrearUsuario from './FormularioCrearUsuario';
 import FormularioEditarUsuario from './FormularioEditarUsuario';
+import { Link } from 'react-router-dom';
 
 const Header = () => {
     const navigate = useNavigate();
@@ -63,6 +64,10 @@ const Header = () => {
                 <h1 className="header-title">Soporte M2T</h1>
             </div>
             <div className="header-actions">
+                <Link to="/tickets" className="header-icon-btn" title="Tickets">
+                    {/* ícono simple (emoji) o tu icon pack */}
+                    📝 <span style={{marginLeft: 6}}>Tickets</span>
+                </Link>
                 <div className="header-module">
                     <FiLayers style={{ marginRight: 6 }} />
                     <span className={`badge ${modulo === 'historico' ? 'badge-historico' : 'badge-actual'}`}>

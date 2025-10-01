@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const inventoryRoutes = require('./routes/inventoryRoutes');
+const ticketRoutes = require('./routes/ticketRoutes');
 const connectDB = require('./config/database');      // conecta MONGO_URI (Histórico + Usuario)
 const buildModels = require('./services/buildModels'); // fabrica modelos por conexión
 const dataRouter = require('./routes/dataRoutes');     // usa req.models
@@ -52,6 +53,8 @@ connectDB()
 
       // Auth (siempre en la conexión histórica/MONGO_URI)
       app.use('/api/auth', authRoutes);
+
+      app.use('/api/tickets', ticketRoutes);
 
       app.get('/', (_req, res) => res.send('Backend OK (multi-módulo, CJS)'));
 

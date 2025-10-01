@@ -13,6 +13,7 @@ import RequireAdmin from './components/RequireAdmin';
 import EliminarDocumento from './components/EliminarDocumento';
 import ModuloSelector from './pages/ModuloSelector';
 import Inventario from './pages/Inventario';
+import Tickets from './pages/Tickets';
 import './App.css';
 
 const App = () => {
@@ -30,6 +31,7 @@ const App = () => {
                                 <AdminUsuarios />
                             </RequireAdmin>
                         } />
+                        <Route path="/tickets" element={<Tickets />} />
                         <Route path="/modulos" element={<ModuloSelector />} />
                         <Route path="/dashboard" element={<Dashboard />} />
                         <Route path="/buscador" element={<Buscador />} />
