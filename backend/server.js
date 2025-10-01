@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
-
+const inventoryRoutes = require('./routes/inventoryRoutes');
 const connectDB = require('./config/database');      // conecta MONGO_URI (Histórico + Usuario)
 const buildModels = require('./services/buildModels'); // fabrica modelos por conexión
 const dataRouter = require('./routes/dataRoutes');     // usa req.models
@@ -42,10 +42,13 @@ connectDB()
       const bind = (models, peerModels) => (req, _res, next) => {
         req.models = models;       // DB del módulo actual de la ruta
         req.peerModels = peerModels; // DB del “otro” módulo (para mover docs)
-      next();
+        next();
       };
       app.use('/api/historico', bind(modelsHistorico, modelsActual), dataRouter);
       app.use('/api/actual',    bind(modelsActual,    modelsHistorico), dataRouter);
+
+      app.use('/api/historico', bind(modelsHistorico, modelsActual), inventoryRoutes);
+      app.use('/api/actual',    bind(modelsActual,    modelsHistorico), inventoryRoutes);
 
       // Auth (siempre en la conexión histórica/MONGO_URI)
       app.use('/api/auth', authRoutes);
