@@ -36,13 +36,13 @@ function elegirModelo(type, models) {
   return mapa[type] || null;
 }
 
+const { bsonToJsonSafe } = require('../utils/bsonSafe');
 // ========= Handlers =========
 
 exports.searchData = async (req, res) => {
   const { Cliente, Movil, EquipoAVL, Simcard } = req.models;
   const { cliente, movil, equipo, simcard } = req.query;
-  const { bsonToJsonSafe } = require('../utils/bsonSafe');
-
+  
   console.log('\n=== INICIO DE BÚSQUEDA CON FILTROS ===');
   console.log(`Cliente: ${cliente || 'Sin filtro'}, Móvil: ${movil || 'Sin filtro'}, Equipo: ${equipo || 'Sin filtro'}, Simcard: ${simcard || 'Sin filtro'}`);
 
