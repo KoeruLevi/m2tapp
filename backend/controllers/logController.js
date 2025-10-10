@@ -2,6 +2,10 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const Usuario = require('../models/Usuario');
 
+function esMaster(user) {
+    return user && (user.email === process.env.MASTER_USER_EMAIL);
+}
+
 exports.login = async (req, res) => {
     const { email, password } = req.body;
     
@@ -88,35 +92,48 @@ exports.updateMe = async (req, res) => {
 };
 
 exports.deleteUsuario = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const user = await Usuario.findById(id);
-        if (!user) return res.status(404).json({ message: "Usuario no encontrado" });
-        await user.deleteOne();
-        res.json({ message: "Usuario eliminado correctamente" });
-    } catch (err) {
-        res.status(500).json({ message: "Error al eliminar usuario", error: err.message });
+  try {
+    const { id } = req.params;
+    const user = await Usuario.findById(id);
+    if (!user) return res.status(404).json({ message: "Usuario no encontrado" });
+
+    if (esMaster(user)) {
+      return res.status(403).json({ message: "El usuario master no puede ser eliminado" });
     }
+
+    await user.deleteOne();
+    res.json({ message: "Usuario eliminado correctamente" });
+  } catch (err) {
+    res.status(500).json({ message: "Error al eliminar usuario", error: err.message });
+  }
 };
 
 exports.updateUsuario = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const user = await Usuario.findById(id);
-        if (!user) return res.status(404).json({ message: "Usuario no encontrado" });
+  try {
+    const { id } = req.params;
+    const user = await Usuario.findById(id);
+    if (!user) return res.status(404).json({ message: "Usuario no encontrado" });
 
-        if (req.body.nombre) user.nombre = req.body.nombre;
-        if (req.body.email) user.email = req.body.email;
-        if (req.body.rol) user.rol = req.body.rol;
-        if (req.body.password) {
-            const bcrypt = require("bcryptjs");
-            const salt = await bcrypt.genSalt(10);
-            user.password = await bcrypt.hash(req.body.password, salt);
-        }
+    if (req.body.nombre) user.nombre = req.body.nombre;
+    if (req.body.email)  user.email  = req.body.email;
 
-        await user.save();
-        res.json({ message: "Usuario actualizado correctamente" });
-    } catch (err) {
-        res.status(500).json({ message: "Error al actualizar usuario", error: err.message });
+    // 🔒 Bloquea cambios de rol para el master
+    if (typeof req.body.rol !== 'undefined') {
+      if (esMaster(user) && req.body.rol !== user.rol) {
+        return res.status(403).json({ message: "No se puede cambiar el rol del usuario master" });
+      }
+      user.rol = req.body.rol;
     }
+
+    if (req.body.password) {
+      const bcrypt = require("bcryptjs");
+      const salt = await bcrypt.genSalt(10);
+      user.password = await bcrypt.hash(req.body.password, salt);
+    }
+
+    await user.save();
+    res.json({ message: "Usuario actualizado correctamente" });
+  } catch (err) {
+    res.status(500).json({ message: "Error al actualizar usuario", error: err.message });
+  }
 };

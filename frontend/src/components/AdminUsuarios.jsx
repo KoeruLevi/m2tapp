@@ -7,6 +7,7 @@ const AdminUsuarios = () => {
     const [editando, setEditando] = useState(null);
     const [form, setForm] = useState({});
     const token = localStorage.getItem('token');
+    const [isMasterEdit, setIsMasterEdit] = useState(false);
 
     useEffect(() => {
         fetchUsuarios();
@@ -21,6 +22,7 @@ const AdminUsuarios = () => {
 
     const handleEdit = (usuario) => {
         setEditando(usuario._id);
+        setIsMasterEdit((usuario.nombre || '').trim().toLowerCase() === 'admin');
         setForm({
             nombre: usuario.nombre,
             email: usuario.email,
@@ -30,6 +32,8 @@ const AdminUsuarios = () => {
 
     const handleSubmitEdit = async (e) => {
         e.preventDefault();
+        const payload = { ...form };
+        if (isMasterEdit) delete payload.rol;
         await axios.put(`https://m2t-backend.onrender.com/api/auth/updateUser/${editando}`,
             form,
             { headers: { Authorization: `Bearer ${token}` } }
@@ -39,6 +43,12 @@ const AdminUsuarios = () => {
     };
 
     const handleDelete = async (id) => {
+        const u = usuarios.find(x => x._id === id);
+        if (u && (u.nombre || '').trim().toLowerCase() === 'admin') {  // <-- NUEVO
+            alert('Este usuario está protegido y no puede eliminarse.');
+            return;
+        }
+        
         if (window.confirm("¿Seguro que quieres borrar este usuario?")) {
             await axios.delete(`https://m2t-backend.onrender.com/api/auth/deleteUser/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
@@ -66,8 +76,12 @@ const AdminUsuarios = () => {
         <td>{u.email}</td>
         <td>{u.rol}</td>
         <td>
-          <button onClick={() => handleEdit(u)}>Editar</button>
-          <button onClick={() => handleDelete(u._id)} style={{color:'red'}}>Eliminar</button>
+            <button onClick={() => handleEdit(u)}>Editar</button>
+            {((u.nombre || '').trim().toLowerCase() === 'admin') ? (
+                <span className="badge-locked">Bloqueado</span>
+            ) : (
+                <button onClick={() => handleDelete(u._id)} style={{ color: 'red' }}>Eliminar</button>
+            )}
         </td>
       </tr>
     )
@@ -78,11 +92,22 @@ const AdminUsuarios = () => {
                 <form onSubmit={handleSubmitEdit}>
                     <input value={form.nombre} onChange={e=>setForm({...form, nombre: e.target.value})} placeholder="Nombre"/>
                     <input value={form.email} onChange={e=>setForm({...form, email: e.target.value})} placeholder="Email"/>
-                    <select value={form.rol} onChange={e=>setForm({...form, rol: e.target.value})}>
+                    <select
+                        value={form.rol}
+                        onChange={e => setForm({ ...form, rol: e.target.value })}
+                        disabled={isMasterEdit}                     // <-- NUEVO
+                        title={isMasterEdit ? 'El rol del usuario maestro no se puede modificar' : ''}
+                    >
                         <option value="admin">Admin</option>
                         <option value="operador">Operador</option>
                         <option value="tecnico">Técnico</option>
                     </select>
+
+                    {isMasterEdit && (
+                        <small style={{ display: 'block', marginTop: 6, color: '#a22' }}>
+                        El rol del usuario maestro no se puede modificar.
+                        </small>
+                    )}
                     <button type="submit">Guardar cambios</button>
                     <button type="button" onClick={()=>setEditando(null)}>Cancelar</button>
                 </form>
