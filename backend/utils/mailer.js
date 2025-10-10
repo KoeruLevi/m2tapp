@@ -20,6 +20,9 @@ const transporter = (host && user && pass)
       maxConnections: 3,
       maxMessages: 50,
       logger: true,
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 10000,
     })
   : null;
 

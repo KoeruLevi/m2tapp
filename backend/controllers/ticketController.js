@@ -116,25 +116,30 @@ exports.create = async (req, res) => {
       .populate('createdBy', 'nombre email')
       .populate('assignees', 'nombre email')
       .lean();
+    // --- responder primero ---
+res.status(201).json(viewOf(created));
 
-    // correo a asignados
-    if (users.length) {
-      const to = users.map(u => u.email).filter(Boolean).join(',');
-      const subj = `[Ticket #${number}] ${title}`;
-      const text = `Se te asignó el Ticket #${number}\n\n${body}\n\nLímite: ${
-        dueAt ? new Date(dueAt).toLocaleString('es-CL') : '—'
-      }`;
-      const html = `
-        <p>Se te asignó el <b>Ticket #${number}</b></p>
-        <p><b>Título:</b> ${title}</p>
-        <p><b>Descripción:</b><br/>${body.replace(/\n/g,'<br/>')}</p>
-        <p><b>Fecha límite:</b> ${dueAt ? new Date(dueAt).toLocaleString('es-CL') : '—'}</p>
-      `;
-      try { await sendMail({ to, subject: subj, text, html }); }
-      catch (e) { console.log('[TICKETS] Error enviando correo:', e.message); }
-    }
+// --- enviar correo en background (no bloquear la respuesta) ---
+if (users.length) {
+  const to = users.map(u => u.email).filter(Boolean).join(',');
+  const subj = `[Ticket #${number}] ${title}`;
+  const text = `Se te asignó el Ticket #${number}\n\n${body}\n\nLímite: ${
+    dueAt ? new Date(dueAt).toLocaleString('es-CL') : '—'
+  }`;
+  const html = `
+    <p>Se te asignó el <b>Ticket #${number}</b></p>
+    <p><b>Título:</b> ${title}</p>
+    <p><b>Descripción:</b><br/>${body.replace(/\n/g,'<br/>')}</p>
+    <p><b>Fecha límite:</b> ${dueAt ? new Date(dueAt).toLocaleString('es-CL') : '—'}</p>
+  `;
 
-    res.status(201).json(viewOf(created));
+  // fire & forget
+  setImmediate(() => {
+    sendMail({ to, subject: subj, text, html })
+      .catch(e => console.log('[TICKETS] Error enviando correo:', e.message));
+  });
+}
+
   } catch (err) {
     res.status(500).json({ message: 'Error al crear ticket', error: err.message });
   }
