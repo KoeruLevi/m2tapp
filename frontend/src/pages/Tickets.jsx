@@ -8,24 +8,22 @@ const PAGE = 20;
 const Tickets = () => {
   const [users, setUsers] = useState([]);
   const [items, setItems] = useState([]);
-  const [status, setStatus] = useState('open'); // 'open' | 'closed' | 'all' | 'late'
-  const [mine, setMine] = useState(''); // '' | 'created' | 'assigned'
+  const [status, setStatus] = useState('open');
+  const [mine, setMine] = useState(''); 
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [pages, setPages] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [flash, setFlash] = useState(null); // { type:'success'|'error', text:string } | null
+  const [flash, setFlash] = useState(null);
 
-  // Crear ticket
   const [openCreate, setOpenCreate] = useState(false);
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [assignees, setAssignees] = useState([]);
-  const [dueAtNew, setDueAtNew] = useState(''); // NUEVO: fecha límite al crear
+  const [dueAtNew, setDueAtNew] = useState('');
 
-  // Edición rápida por fila
-  const [draftResult, setDraftResult] = useState({}); // ticketId -> string
+  const [draftResult, setDraftResult] = useState({});
 
   const fetchUsers = async () => {
     const r = await api.get('/api/tickets/users-lite');
@@ -47,7 +45,7 @@ const Tickets = () => {
   };
 
   useEffect(() => { fetchUsers(); }, []);
-  useEffect(() => { fetchTickets(); /* eslint-disable-next-line */ }, [status, mine, page]);
+  useEffect(() => { fetchTickets();}, [status, mine, page]);
 
   const onSearch = (e) => {
     e.preventDefault();
@@ -93,7 +91,7 @@ const Tickets = () => {
     try {
       await api.put(`/api/tickets/${id}/done`, {
         done,
-        result: draftResult[id] // el backend exige resultado si done=true
+        result: draftResult[id]
       });
       fetchTickets();
     } catch (e) {
