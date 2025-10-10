@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Header from '../components/Header';
 import { api } from '../utils/api';
 import '../styles/Tickets.css';
@@ -8,22 +8,25 @@ const PAGE = 20;
 const Tickets = () => {
   const [users, setUsers] = useState([]);
   const [items, setItems] = useState([]);
-  const [status, setStatus] = useState('open');
-  const [mine, setMine] = useState(''); 
+  const [status, setStatus] = useState('open'); // 'open' | 'closed' | 'all' | 'late'
+  const [mine, setMine] = useState(''); // '' | 'created' | 'assigned'
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [pages, setPages] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [flash, setFlash] = useState(null);
+  const [flash, setFlash] = useState(null); // { type:'success'|'error', text:string } | null
 
+  // Crear ticket
   const [openCreate, setOpenCreate] = useState(false);
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [assignees, setAssignees] = useState([]);
   const [dueAtNew, setDueAtNew] = useState('');
+  const [creating, setCreating] = useState(false); // evita doble envío
 
-  const [draftResult, setDraftResult] = useState({});
+  // Edición rápida por fila
+  const [draftResult, setDraftResult] = useState({}); // ticketId -> string
 
   const fetchUsers = async () => {
     const r = await api.get('/api/tickets/users-lite');
@@ -33,7 +36,9 @@ const Tickets = () => {
   const fetchTickets = async () => {
     setLoading(true);
     try {
-      const r = await api.get('/api/tickets', { params: { status, mine, page, limit: PAGE, search } });
+      const r = await api.get('/api/tickets', {
+        params: { status, mine, page, limit: PAGE, search }
+      });
       setItems(r.data.items || []);
       setTotal(r.data.total || 0);
       setPages(r.data.pages || 1);
@@ -45,7 +50,7 @@ const Tickets = () => {
   };
 
   useEffect(() => { fetchUsers(); }, []);
-  useEffect(() => { fetchTickets();}, [status, mine, page]);
+  useEffect(() => { fetchTickets(); }, [status, mine, page]);
 
   const onSearch = (e) => {
     e.preventDefault();
@@ -55,18 +60,27 @@ const Tickets = () => {
 
   const createTicket = async (e) => {
     e.preventDefault();
+    if (creating) return;
+    setCreating(true);
+
     try {
-      const { data } = await api.post('/api/tickets', { title, body, assignees, dueAt: dueAtNew || undefined });
+      const { data } = await api.post('/api/tickets', {
+        title, body, assignees, dueAt: dueAtNew || undefined
+      });
+
+      // Mostrar confirmación y cerrar modal inmediatamente
       setFlash({ type: 'success', text: `✅ Ticket N°${data.number} creado exitosamente.` });
-      setTimeout(()=>setFlash(null), 4000);
+      setTimeout(() => setFlash(null), 4000);
       setOpenCreate(false);
       setTitle(''); setBody(''); setAssignees([]); setDueAtNew('');
-      setPage(1);
-      fetchTickets();
+
+      // Refrescar lista sin romper la UX si falla
+      fetchTickets().catch(() => {});
     } catch (e) {
-      alert(e.response?.data?.message || 'Error al crear ticket');
       setFlash({ type: 'error', text: `❌ ${e.response?.data?.message || 'Error al crear ticket'}` });
-      setTimeout(()=>setFlash(null), 5000);
+      setTimeout(() => setFlash(null), 5000);
+    } finally {
+      setCreating(false);
     }
   };
 
@@ -91,7 +105,7 @@ const Tickets = () => {
     try {
       await api.put(`/api/tickets/${id}/done`, {
         done,
-        result: draftResult[id]
+        result: draftResult[id] // el backend exige resultado si done=true
       });
       fetchTickets();
     } catch (e) {
@@ -141,18 +155,20 @@ const Tickets = () => {
   return (
     <div className="tickets-wrapper">
       <Header />
+
+      {/* Toast de confirmación/errores (por encima del modal) */}
       {flash && (
-    <div className={`toast toast--${flash.type}`} role="status">
-      <span>{flash.text}</span>
-      <button
-        className="toast-close"
-        onClick={() => setFlash(null)}
-        aria-label="Cerrar notificación"
-      >
-        ×
-      </button>
-    </div>
-  )}
+        <div className={`toast toast--${flash.type}`} role="status">
+          <span>{flash.text}</span>
+          <button
+            className="toast-close"
+            onClick={() => setFlash(null)}
+            aria-label="Cerrar notificación"
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       <div className="tickets-card">
         <div className="tickets-toolbar">
@@ -170,7 +186,11 @@ const Tickets = () => {
           </div>
 
           <form onSubmit={onSearch} className="search-line">
-            <input placeholder="Buscar por título / contenido / resultado" value={search} onChange={e=>setSearch(e.target.value)} />
+            <input
+              placeholder="Buscar por título / contenido / resultado"
+              value={search}
+              onChange={e=>setSearch(e.target.value)}
+            />
             <button type="submit">Buscar</button>
           </form>
 
@@ -264,11 +284,29 @@ const Tickets = () => {
           <div className="modal">
             <h3>Nuevo ticket</h3>
             <form onSubmit={createTicket} className="create-form">
-              <input placeholder="Título" value={title} onChange={e=>setTitle(e.target.value)} required />
-              <textarea placeholder="Descripción / notas" rows={6} value={body} onChange={e=>setBody(e.target.value)} required />
+              <input
+                placeholder="Título"
+                value={title}
+                onChange={e=>setTitle(e.target.value)}
+                required
+                disabled={creating}
+              />
+              <textarea
+                placeholder="Descripción / notas"
+                rows={6}
+                value={body}
+                onChange={e=>setBody(e.target.value)}
+                required
+                disabled={creating}
+              />
 
               <label>Fecha límite (opcional):</label>
-              <input type="datetime-local" value={dueAtNew} onChange={e=>setDueAtNew(e.target.value)} />
+              <input
+                type="datetime-local"
+                value={dueAtNew}
+                onChange={e=>setDueAtNew(e.target.value)}
+                disabled={creating}
+              />
 
               <label>Asignar a:</label>
               <div className="assignees-list">
@@ -277,6 +315,7 @@ const Tickets = () => {
                     <input
                       type="checkbox"
                       checked={assignees.includes(u._id)}
+                      disabled={creating}
                       onChange={(e) => {
                         const on = e.target.checked;
                         setAssignees(prev => on ? [...prev, u._id] : prev.filter(x => x !== u._id));
@@ -288,8 +327,10 @@ const Tickets = () => {
               </div>
 
               <div className="modal-actions">
-                <button type="button" onClick={()=>setOpenCreate(false)}>Cancelar</button>
-                <button type="submit" className="btn-primary">Crear</button>
+                <button type="button" onClick={()=>!creating && setOpenCreate(false)} disabled={creating}>Cancelar</button>
+                <button type="submit" className="btn-primary" disabled={creating}>
+                  {creating ? 'Creando…' : 'Crear'}
+                </button>
               </div>
             </form>
           </div>
