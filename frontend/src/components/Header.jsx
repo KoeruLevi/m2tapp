@@ -148,6 +148,7 @@ const Header = () => {
             <FormularioEditarUsuario 
                 usuario={user} 
                 onClose={() => setShowEditarUsuario(false)}
+                canEditRole={user?.rol?.toLowerCase() === 'admin'}
             />
         </div>
     </div>
