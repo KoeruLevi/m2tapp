@@ -2,8 +2,12 @@ const { Schema, model, Types } = require('mongoose');
 
 const TicketSchema = new Schema(
   {
-    title: { type: String, required: true, trim: true, maxlength: 160 },
-    body:  { type: String, required: true, trim: true },
+    number: { type: Number, unique: true, index: true },   // ← correlativo
+    title:  { type: String, required: true, trim: true, maxlength: 160 },
+    body:   { type: String, required: true, trim: true },
+
+    result: { type: String, default: '' },                 // ← resultado
+    dueAt:  { type: Date, default: null },                 // ← fecha límite
 
     createdBy: { type: Types.ObjectId, ref: 'Usuario', required: true },
     assignees: [{ type: Types.ObjectId, ref: 'Usuario' }],
@@ -12,7 +16,7 @@ const TicketSchema = new Schema(
 
     marks: {
       creatorDone: { type: Boolean, default: false },
-      assigneesDone: [{ type: Types.ObjectId, ref: 'Usuario' }], // usuarios que marcaron "listo"
+      assigneesDone: [{ type: Types.ObjectId, ref: 'Usuario' }],
     },
 
     closedAt: Date,
@@ -20,10 +24,7 @@ const TicketSchema = new Schema(
     closedReason: { type: String, enum: ['auto', 'manual', null], default: null },
 
     reopenEvents: [
-      {
-        at: Date,
-        by: { type: Types.ObjectId, ref: 'Usuario' }
-      }
+      { at: Date, by: { type: Types.ObjectId, ref: 'Usuario' } }
     ]
   },
   { timestamps: true }

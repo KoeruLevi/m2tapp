@@ -174,3 +174,45 @@
   opacity: .45;
   cursor: not-allowed;
 }
+
+.row-overdue { background: #fff4f4; }
+.due-badge { padding: 4px 8px; border-radius: 999px; background: #eef4ff; }
+.due-badge.overdue { background: #ffe0e0; color: #a02222; font-weight: 700; }
+
+.result-input {
+  min-width: 180px;
+  max-width: 260px;
+  width: 100%;
+  border: 1px solid #cfe3ff;
+  border-radius: 8px;
+  padding: 6px 8px;
+}
+.row-overdue {
+  background: #fff4f4;
+}
+
+/* badge de due date */
+.due-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid #e6eeff;
+  background: #f7faff;
+  font-weight: 600;
+  font-size: 12px;
+}
+.due-badge.overdue {
+  background: #ffe9e9;
+  border-color: #ffc9c9;
+  color: #a22;
+}
+
+/* input corto para el resultado en la tabla */
+.result-input {
+  min-width: 180px;
+  max-width: 260px;
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #d6e3ff;
+  border-radius: 8px;
+}

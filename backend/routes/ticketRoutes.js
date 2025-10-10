@@ -9,6 +9,8 @@ router.get('/users-lite', auth, ctl.usersLite);
 router.get('/', auth, ctl.list);
 router.post('/', auth, ctl.create);
 
+router.put('/:id', auth, ctl.updateMeta);
+
 router.put('/:id/done', auth, ctl.markDone);
 router.put('/:id/close', auth, ctl.closeManual);
 router.put('/:id/reopen', auth, ctl.reopen);

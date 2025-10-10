@@ -8,7 +8,7 @@ const PAGE = 20;
 const Tickets = () => {
   const [users, setUsers] = useState([]);
   const [items, setItems] = useState([]);
-  const [status, setStatus] = useState('open'); // 'open' | 'closed' | 'all'
+  const [status, setStatus] = useState('open'); // 'open' | 'closed' | 'all' | 'late'
   const [mine, setMine] = useState(''); // '' | 'created' | 'assigned'
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -21,6 +21,10 @@ const Tickets = () => {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [assignees, setAssignees] = useState([]);
+  const [dueAtNew, setDueAtNew] = useState(''); // NUEVO: fecha límite al crear
+
+  // Edición rápida por fila
+  const [draftResult, setDraftResult] = useState({}); // ticketId -> string
 
   const fetchUsers = async () => {
     const r = await api.get('/api/tickets/users-lite');
@@ -53,9 +57,9 @@ const Tickets = () => {
   const createTicket = async (e) => {
     e.preventDefault();
     try {
-      await api.post('/api/tickets', { title, body, assignees });
+      await api.post('/api/tickets', { title, body, assignees, dueAt: dueAtNew || undefined });
       setOpenCreate(false);
-      setTitle(''); setBody(''); setAssignees([]);
+      setTitle(''); setBody(''); setAssignees([]); setDueAtNew('');
       setPage(1);
       fetchTickets();
     } catch (e) {
@@ -63,9 +67,29 @@ const Tickets = () => {
     }
   };
 
-  const toggleDone = async (id, done) => {
+  const saveMeta = async (id) => {
     try {
-      await api.put(`/api/tickets/${id}/done`, { done });
+      await api.put(`/api/tickets/${id}`, { result: draftResult[id] ?? '' });
+      fetchTickets();
+    } catch (e) {
+      alert(e.response?.data?.message || 'Error al guardar resultado');
+    }
+  };
+
+  const toggleDone = async (id, done) => {
+    if (done) {
+      const t = items.find(x => x._id === id);
+      const effective = (draftResult[id] ?? t?.result ?? '').trim();
+      if (!effective) {
+        alert('Debes ingresar un resultado antes de marcar el ticket como listo.');
+        return;
+      }
+    }
+    try {
+      await api.put(`/api/tickets/${id}/done`, {
+        done,
+        result: draftResult[id] // el backend exige resultado si done=true
+      });
       fetchTickets();
     } catch (e) {
       alert(e.response?.data?.message || 'Error al actualizar');
@@ -74,8 +98,14 @@ const Tickets = () => {
 
   const closeManual = async (id) => {
     if (!window.confirm('¿Cerrar este ticket?')) return;
+    const t = items.find(x => x._id === id);
+    const effective = (draftResult[id] ?? t?.result ?? '').trim();
+    if (!effective) {
+      alert('Debes ingresar un resultado antes de cerrar el ticket.');
+      return;
+    }
     try {
-      await api.put(`/api/tickets/${id}/close`);
+      await api.put(`/api/tickets/${id}/close`, { result: draftResult[id] });
       fetchTickets();
     } catch (e) {
       alert(e.response?.data?.message || 'Error al cerrar');
@@ -102,6 +132,9 @@ const Tickets = () => {
     }
   };
 
+  const fmt = (d) => d ? new Date(d).toLocaleString('es-CL') : '—';
+  const isOverdue = (t) => t.overdue;
+
   return (
     <div className="tickets-wrapper">
       <Header />
@@ -109,6 +142,7 @@ const Tickets = () => {
         <div className="tickets-toolbar">
           <div className="filters">
             <button className={`chip ${status==='open'?'active':''}`} onClick={()=>{setStatus('open');setPage(1)}}>Abiertos</button>
+            <button className={`chip ${status==='late'?'active':''}`} onClick={()=>{setStatus('late');setPage(1)}}>Atrasados</button>
             <button className={`chip ${status==='closed'?'active':''}`} onClick={()=>{setStatus('closed');setPage(1)}}>Cerrados</button>
             <button className={`chip ${status==='all'?'active':''}`} onClick={()=>{setStatus('all');setPage(1)}}>Todos</button>
 
@@ -120,33 +154,37 @@ const Tickets = () => {
           </div>
 
           <form onSubmit={onSearch} className="search-line">
-            <input placeholder="Buscar por título/contenido" value={search} onChange={e=>setSearch(e.target.value)} />
+            <input placeholder="Buscar por título / contenido / resultado" value={search} onChange={e=>setSearch(e.target.value)} />
             <button type="submit">Buscar</button>
           </form>
 
           <button className="btn-primary" onClick={()=>setOpenCreate(true)}>+ Nuevo ticket</button>
         </div>
 
-        {/* tabla simple */}
+        {/* tabla */}
         <div className="tickets-table">
           <table>
             <thead>
               <tr>
+                <th>#</th>
                 <th>Título</th>
                 <th>Creador</th>
                 <th>Asignados</th>
                 <th>Progreso</th>
+                <th>Creado</th>
+                <th>Fecha límite</th>
                 <th>Estado</th>
-                <th style={{width: 230}}>Acciones</th>
+                <th style={{width: 380}}>Resultado / Acciones</th>
               </tr>
             </thead>
             <tbody>
               {items.length===0 ? (
-                <tr><td colSpan={6} style={{textAlign:'center'}}>Sin resultados</td></tr>
+                <tr><td colSpan={9} style={{textAlign:'center'}}>Sin resultados</td></tr>
               ) : items.map(t => {
                 const prog = `${t.progress.doneAssignees}/${t.progress.totalAssignees}`;
                 return (
-                  <tr key={t._id}>
+                  <tr key={t._id} className={isOverdue(t) ? 'row-overdue' : ''}>
+                    <td>#{t.number}</td>
                     <td>
                       <div className="t-title">{t.title}</div>
                       <div className="t-body">{t.body}</div>
@@ -157,9 +195,24 @@ const Tickets = () => {
                       {t.assignees.length===0 && <span className="muted">—</span>}
                     </td>
                     <td>{t.progress.creatorDone ? 'Creador ✓ · ' : 'Creador — · '}{prog}</td>
+                    <td>{fmt(t.createdAt)}</td>
+                    <td>
+                      <span className={isOverdue(t) ? 'due-badge overdue' : 'due-badge'}>
+                        {fmt(t.dueAt)}
+                      </span>
+                    </td>
                     <td>{t.status==='open' ? 'Abierto' : 'Cerrado'}</td>
-                    <td className="t-actions">
-                      {/* marcar listo / deshacer */}
+
+                    <td className="t-actions actions-cell">
+                      {/* caja de resultado */}
+                      <input
+                        className="result-input"
+                        placeholder="Resultado..."
+                        value={draftResult[t._id] ?? t.result ?? ''}
+                        onChange={(e)=>setDraftResult(s=>({ ...s, [t._id]: e.target.value }))}
+                      />
+                      <button className="action-btn action-btn--ghost" onClick={()=>saveMeta(t._id)}>Guardar</button>
+
                       {t.status==='open' && (
                         <>
                           <button className="action-btn action-btn--success" onClick={()=>toggleDone(t._id, true)}>Marcar listo</button>
@@ -197,6 +250,10 @@ const Tickets = () => {
             <form onSubmit={createTicket} className="create-form">
               <input placeholder="Título" value={title} onChange={e=>setTitle(e.target.value)} required />
               <textarea placeholder="Descripción / notas" rows={6} value={body} onChange={e=>setBody(e.target.value)} required />
+
+              <label>Fecha límite (opcional):</label>
+              <input type="datetime-local" value={dueAtNew} onChange={e=>setDueAtNew(e.target.value)} />
+
               <label>Asignar a:</label>
               <div className="assignees-list">
                 {users.map(u => (
@@ -213,6 +270,7 @@ const Tickets = () => {
                   </label>
                 ))}
               </div>
+
               <div className="modal-actions">
                 <button type="button" onClick={()=>setOpenCreate(false)}>Cancelar</button>
                 <button type="submit" className="btn-primary">Crear</button>

@@ -1,23 +1,31 @@
 const Ticket = require('../models/Ticket');
 const Usuario = require('../models/Usuario');
+const Counter = require('../models/Counter');
+const { sendMail } = require('../utils/mailer');
 
 const atLeastHalf = (doneCount, total) => total === 0 ? true : (doneCount / total) >= 0.5;
-
 const canManage = (user, ticket) =>
   user && (user.rol === 'admin' || String(ticket.createdBy) === String(user._id));
 
-/** Devuelve un VO ya "listo para UI" */
+/** VO listo para UI */
 function viewOf(ticket) {
   const t = ticket;
   const total = t.assignees?.length || 0;
   const done = t.marks?.assigneesDone?.length || 0;
+  const now = new Date();
+
   return {
     _id: t._id,
+    number: t.number,
     title: t.title,
     body: t.body,
+    result: t.result || '',
+    dueAt: t.dueAt || null,
     status: t.status,
     createdAt: t.createdAt,
     updatedAt: t.updatedAt,
+
+    overdue: t.status === 'open' && t.dueAt && t.dueAt < now,
 
     createdBy: t.createdBy && {
       _id: t.createdBy._id, nombre: t.createdBy.nombre, email: t.createdBy.email
@@ -35,7 +43,7 @@ function viewOf(ticket) {
   };
 }
 
-/** GET /api/tickets?status=open|closed|all&mine=assigned|created&page=1&limit=20&search= */
+/** GET /api/tickets?status=open|closed|all|late&mine=assigned|created&page=1&limit=20&search= */
 exports.list = async (req, res) => {
   try {
     const { status = 'open', mine = '', page = 1, limit = 20, search = '' } = req.query;
@@ -44,7 +52,11 @@ exports.list = async (req, res) => {
     const skip = (p - 1) * L;
 
     const q = {};
-    if (status !== 'all') q.status = status;
+    if (status !== 'all' && status !== 'late') q.status = status;
+    if (status === 'late') {
+      q.status = 'open';
+      q.dueAt = { $lt: new Date() };
+    }
 
     if (mine === 'created') q.createdBy = req.user._id;
     if (mine === 'assigned') q.assignees = req.user._id;
@@ -52,7 +64,8 @@ exports.list = async (req, res) => {
     if (search) {
       q.$or = [
         { title: new RegExp(search, 'i') },
-        { body:  new RegExp(search, 'i') }
+        { body:  new RegExp(search, 'i') },
+        { result:new RegExp(search, 'i') }
       ];
     }
 
@@ -75,20 +88,28 @@ exports.list = async (req, res) => {
   }
 };
 
-/** POST /api/tickets  { title, body, assignees: [userId] } */
+/** POST /api/tickets  { title, body, assignees: [userId], dueAt? } */
 exports.create = async (req, res) => {
   try {
-    const { title, body, assignees = [] } = req.body;
+    const { title, body, assignees = [], dueAt } = req.body;
     if (!title || !body) return res.status(400).json({ message: 'title y body son obligatorios' });
 
     // validar usuarios
     const userIds = Array.from(new Set(assignees.map(String)));
-    const users = await Usuario.find({ _id: { $in: userIds } }, { _id: 1 }).lean();
+    const users = await Usuario.find({ _id: { $in: userIds } }, { _id: 1, email: 1, nombre: 1 }).lean();
+
+    // número correlativo
+    const seq = await Counter.findOneAndUpdate(
+      { key: 'ticket' }, { $inc: { seq: 1 } }, { new: true, upsert: true }
+    );
+    const number = seq.seq;
 
     const ticket = await Ticket.create({
+      number,
       title, body,
       createdBy: req.user._id,
       assignees: users.map(u => u._id),
+      dueAt: dueAt ? new Date(dueAt) : null
     });
 
     const created = await Ticket.findById(ticket._id)
@@ -96,31 +117,77 @@ exports.create = async (req, res) => {
       .populate('assignees', 'nombre email')
       .lean();
 
+    // correo a asignados
+    if (users.length) {
+      const to = users.map(u => u.email).filter(Boolean).join(',');
+      const subj = `[Ticket #${number}] ${title}`;
+      const text = `Se te asignó el Ticket #${number}\n\n${body}\n\nLímite: ${
+        dueAt ? new Date(dueAt).toLocaleString('es-CL') : '—'
+      }`;
+      const html = `
+        <p>Se te asignó el <b>Ticket #${number}</b></p>
+        <p><b>Título:</b> ${title}</p>
+        <p><b>Descripción:</b><br/>${body.replace(/\n/g,'<br/>')}</p>
+        <p><b>Fecha límite:</b> ${dueAt ? new Date(dueAt).toLocaleString('es-CL') : '—'}</p>
+      `;
+      try { await sendMail({ to, subject: subj, text, html }); }
+      catch (e) { console.log('[TICKETS] Error enviando correo:', e.message); }
+    }
+
     res.status(201).json(viewOf(created));
   } catch (err) {
     res.status(500).json({ message: 'Error al crear ticket', error: err.message });
   }
 };
 
-/** PUT /api/tickets/:id/done  { done: true|false }  (creador o asignado) */
+/** PUT /api/tickets/:id  { result?, dueAt? }  (creador o admin) */
+exports.updateMeta = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const t = await Ticket.findById(id);
+    if (!t) return res.status(404).json({ message: 'Ticket no encontrado' });
+    if (!canManage(req.user, t)) return res.status(403).json({ message: 'No autorizado' });
+
+    if (typeof req.body.result === 'string') t.result = req.body.result.trim();
+    if (req.body.dueAt !== undefined) t.dueAt = req.body.dueAt ? new Date(req.body.dueAt) : null;
+
+    await t.save();
+
+    const withPop = await Ticket.findById(id)
+      .populate('createdBy', 'nombre email')
+      .populate('assignees', 'nombre email')
+      .lean();
+    res.json(viewOf(withPop));
+  } catch (err) {
+    res.status(500).json({ message: 'Error al actualizar ticket', error: err.message });
+  }
+};
+
+/** PUT /api/tickets/:id/done  { done: true|false, result? }  (creador o asignado) */
 exports.markDone = async (req, res) => {
   try {
     const { id } = req.params;
     const done = !!req.body.done;
+    const incomingResult = typeof req.body.result === 'string' ? req.body.result.trim() : undefined;
 
     const t = await Ticket.findById(id);
     if (!t) return res.status(404).json({ message: 'Ticket no encontrado' });
 
     const isCreator = String(t.createdBy) === String(req.user._id);
     const isAssigned = t.assignees.some(a => String(a) === String(req.user._id));
-    if (!isCreator && !isAssigned) {
-      return res.status(403).json({ message: 'No autorizado' });
+    if (!isCreator && !isAssigned) return res.status(403).json({ message: 'No autorizado' });
+
+    // si viene resultado, lo guardamos
+    if (incomingResult !== undefined) t.result = incomingResult;
+
+    // si intenta marcar listo y NO hay resultado => bloquear
+    if (done && (!t.result || !t.result.trim())) {
+      return res.status(400).json({ message: 'Debes ingresar un resultado antes de marcar como listo.' });
     }
 
     if (isCreator) {
       t.marks.creatorDone = done;
     } else {
-      // toggle en arreglo
       const idx = t.marks.assigneesDone.findIndex(u => String(u) === String(req.user._id));
       if (done && idx === -1) t.marks.assigneesDone.push(req.user._id);
       if (!done && idx !== -1) t.marks.assigneesDone.splice(idx, 1);
@@ -152,13 +219,20 @@ exports.markDone = async (req, res) => {
   }
 };
 
-/** PUT /api/tickets/:id/close  (manual: creador o admin) */
+/** PUT /api/tickets/:id/close  (manual: creador o admin)  { result? } */
 exports.closeManual = async (req, res) => {
   try {
     const { id } = req.params;
+    const incomingResult = typeof req.body.result === 'string' ? req.body.result.trim() : undefined;
+
     const t = await Ticket.findById(id);
     if (!t) return res.status(404).json({ message: 'Ticket no encontrado' });
     if (!canManage(req.user, t)) return res.status(403).json({ message: 'No autorizado' });
+
+    if (incomingResult !== undefined) t.result = incomingResult;
+    if (!t.result || !t.result.trim()) {
+      return res.status(400).json({ message: 'Debes ingresar un resultado antes de cerrar el ticket.' });
+    }
 
     t.status = 'closed';
     t.closedAt = new Date();
@@ -177,7 +251,7 @@ exports.closeManual = async (req, res) => {
   }
 };
 
-/** PUT /api/tickets/:id/reopen  (creador o admin). Resetea marcas. */
+/** PUT /api/tickets/:id/reopen  (creador o admin) */
 exports.reopen = async (req, res) => {
   try {
     const { id } = req.params;
@@ -205,7 +279,7 @@ exports.reopen = async (req, res) => {
   }
 };
 
-/** DELETE /api/tickets/:id  (solo si está cerrado) -> creador o admin */
+/** DELETE /api/tickets/:id */
 exports.remove = async (req, res) => {
   try {
     const { id } = req.params;
@@ -221,7 +295,7 @@ exports.remove = async (req, res) => {
   }
 };
 
-/** GET /api/tickets/users-lite  -> lista para el selector (cualquier usuario autenticado) */
+/** GET /api/tickets/users-lite */
 exports.usersLite = async (_req, res) => {
   try {
     const users = await Usuario.find({}, { nombre: 1, email: 1 }).sort({ nombre: 1 }).lean();
