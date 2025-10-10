@@ -77,11 +77,11 @@ const AdminUsuarios = () => {
         <td>{u.rol}</td>
         <td>
             <button onClick={() => handleEdit(u)}>Editar</button>
-            {((u.nombre || '').trim().toLowerCase() === 'admin') ? (
-                <span className="badge-locked">Bloqueado</span>
-            ) : (
-                <button onClick={() => handleDelete(u._id)} style={{ color: 'red' }}>Eliminar</button>
-            )}
+                {((u.nombre || '').trim().toLowerCase() !== 'admin') && (
+                <button onClick={() => handleDelete(u._id)} style={{ color: 'red' }}>
+                    Eliminar
+                </button>
+                )}
         </td>
       </tr>
     )
@@ -95,7 +95,7 @@ const AdminUsuarios = () => {
                     <select
                         value={form.rol}
                         onChange={e => setForm({ ...form, rol: e.target.value })}
-                        disabled={isMasterEdit}                     // <-- NUEVO
+                        disabled={isMasterEdit}
                         title={isMasterEdit ? 'El rol del usuario maestro no se puede modificar' : ''}
                     >
                         <option value="admin">Admin</option>
