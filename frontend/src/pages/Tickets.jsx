@@ -143,13 +143,20 @@ const Tickets = () => {
   return (
     <div className="tickets-wrapper">
       <Header />
+      {flash && (
+    <div className={`toast toast--${flash.type}`} role="status">
+      <span>{flash.text}</span>
+      <button
+        className="toast-close"
+        onClick={() => setFlash(null)}
+        aria-label="Cerrar notificación"
+      >
+        ×
+      </button>
+    </div>
+  )}
+
       <div className="tickets-card">
-          {flash && (
-      <div className={`flash flash--${flash.type}`}>
-        {flash.text}
-        <button className="flash-close" onClick={()=>setFlash(null)}>×</button>
-      </div>
-      )}
         <div className="tickets-toolbar">
           <div className="filters">
             <button className={`chip ${status==='open'?'active':''}`} onClick={()=>{setStatus('open');setPage(1)}}>Abiertos</button>
