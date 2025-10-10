@@ -177,3 +177,19 @@
 .export-excel-btn:hover {
     background: #157347;
 }
+.empty {
+  background: #f6f9ff;
+  border: 1px dashed #cfe0ff;
+  border-radius: 10px;
+  padding: 18px;
+  text-align: center;
+  color: #1f3b82;
+}
+.empty-title {
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.empty-subtitle {
+  color: #5a6b85;
+  font-size: 14px;
+}

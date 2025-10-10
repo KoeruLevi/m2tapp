@@ -19,6 +19,7 @@ const Buscador = () => {
     const [editedData, setEditedData] = useState({});
     const [loading, setLoading] = useState(false);
     const [historial, setHistorial] = useState([]);
+    const [searched, setSearched] = useState(false);
     const exportToExcel = () => {
 
     const allData = [
@@ -97,6 +98,7 @@ const Buscador = () => {
     }, [filteredClientes, filteredMoviles, filteredEquipos, filteredSimcards]);
 
     const handleSearch = async (e) => {
+        setSearched(true);
         e.preventDefault();
         console.log("🔍 Búsqueda iniciada con:", query);
         setLoading(true);
@@ -338,52 +340,77 @@ const Buscador = () => {
                   📁 Exportar a Excel
             </button>
 
-            <div className="tabs-container">
-    {["Cliente", "Movil", "EquipoAVL", "Simcard"].map((type) => (
-        <div className="tab" key={type}>
-            <h2>{type === "Movil" ? "Móviles" : type}</h2>
-            <div className="tab-content">
-                {(type === "Cliente" ? filteredClientes
-                : type === "Movil" ? filteredMoviles
-                : type === "EquipoAVL" ? filteredEquipos
-                : filteredSimcards).map((item, index) => (
-                    <div
-                        key={index}
-                        className={`card ${selectedFilters[type] &&
-                            JSON.stringify(selectedFilters[type]) === JSON.stringify(item)
-                            ? 'selected' 
-                            : ''}`}
-                        onClick={handleItemClick(type, item)}
-                    >
-                        {type === "Movil" ? (
-                            <>
-                                <p><strong>Cliente:</strong> {item.Cliente}</p>
-                                <p><strong>Nombre:</strong> {item.Nombre}</p>
-                                <p><strong>Patente:</strong> {item.Patente}</p>
-                            </>
-                        ) : type === "EquipoAVL" ? (
-                            <>
-                                <p><strong>IMEI:</strong> {item.imei}</p>
-                                <p><strong>ID:</strong> {item.ID}</p>
-                            </>
-                        ) : type === "Simcard" ? (
-                            <>
-                                <p><strong>Fono:</strong> {item.fono}</p>
-                                <p><strong>Operador:</strong> {item.operador}</p>
-                            </>
-                        ) : (
-                            Object.entries(item)
-                                .filter(([key]) => key !== "_id")
-                                .slice(0, 2)
-                                .map(([key, value]) => (
-                                    <p key={key}><strong>{key}:</strong> {value?.toString()}</p>
-                                ))
-                        )}
-                    </div>
-                ))}
+          <div className="tabs-container">
+  {["Cliente", "Movil", "EquipoAVL", "Simcard"].map((type) => {
+    const list =
+      type === "Cliente"   ? filteredClientes :
+      type === "Movil"     ? filteredMoviles  :
+      type === "EquipoAVL" ? filteredEquipos  :
+                             filteredSimcards;
+
+    const label =
+      type === "Cliente"   ? "clientes" :
+      type === "Movil"     ? "móviles"  :
+      type === "EquipoAVL" ? "equipos"  : "simcards";
+
+    return (
+      <div className="tab" key={type}>
+        <h2>{type === "Movil" ? "Móviles" : type}</h2>
+
+        <div className="tab-content">
+          {/* Mensaje de vacío solo después de realizar una búsqueda */}
+          {searched && list.length === 0 ? (
+            <div className="empty">
+              <div className="empty-title">No se han encontrado {label}.</div>
+              <div className="empty-subtitle">
+                Ajusta los filtros o intenta con otros términos.
+              </div>
             </div>
+          ) : (
+            list.map((item, index) => (
+              <div
+                key={index}
+                className={`card ${
+                  selectedFilters[type] &&
+                  JSON.stringify(selectedFilters[type]) === JSON.stringify(item)
+                    ? "selected"
+                    : ""
+                }`}
+                onClick={handleItemClick(type, item)}
+              >
+                {type === "Movil" ? (
+                  <>
+                    <p><strong>Cliente:</strong> {item.Cliente}</p>
+                    <p><strong>Nombre:</strong> {item.Nombre}</p>
+                    <p><strong>Patente:</strong> {item.Patente}</p>
+                  </>
+                ) : type === "EquipoAVL" ? (
+                  <>
+                    <p><strong>IMEI:</strong> {item.imei}</p>
+                    <p><strong>ID:</strong> {item.ID}</p>
+                  </>
+                ) : type === "Simcard" ? (
+                  <>
+                    <p><strong>Fono:</strong> {item.fono}</p>
+                    <p><strong>Operador:</strong> {item.operador}</p>
+                  </>
+                ) : (
+                  Object.entries(item)
+                    .filter(([key]) => key !== "_id")
+                    .slice(0, 2)
+                    .map(([key, value]) => (
+                      <p key={key}>
+                        <strong>{key}:</strong> {value?.toString()}
+                      </p>
+                    ))
+                )}
+              </div>
+            ))
+          )}
         </div>
-    ))}
+      </div>
+    );
+  })}
 </div>
 
             {popupData && (
