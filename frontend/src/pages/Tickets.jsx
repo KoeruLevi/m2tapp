@@ -15,6 +15,7 @@ const Tickets = () => {
   const [total, setTotal] = useState(0);
   const [pages, setPages] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [flash, setFlash] = useState(null); // { type:'success'|'error', text:string } | null
 
   // Crear ticket
   const [openCreate, setOpenCreate] = useState(false);
@@ -57,13 +58,17 @@ const Tickets = () => {
   const createTicket = async (e) => {
     e.preventDefault();
     try {
-      await api.post('/api/tickets', { title, body, assignees, dueAt: dueAtNew || undefined });
+      const { data } = await api.post('/api/tickets', { title, body, assignees, dueAt: dueAtNew || undefined });
+      setFlash({ type: 'success', text: `✅ Ticket N°${data.number} creado exitosamente.` });
+      setTimeout(()=>setFlash(null), 4000);
       setOpenCreate(false);
       setTitle(''); setBody(''); setAssignees([]); setDueAtNew('');
       setPage(1);
       fetchTickets();
     } catch (e) {
       alert(e.response?.data?.message || 'Error al crear ticket');
+      setFlash({ type: 'error', text: `❌ ${e.response?.data?.message || 'Error al crear ticket'}` });
+      setTimeout(()=>setFlash(null), 5000);
     }
   };
 
@@ -139,6 +144,12 @@ const Tickets = () => {
     <div className="tickets-wrapper">
       <Header />
       <div className="tickets-card">
+          {flash && (
+      <div className={`flash flash--${flash.type}`}>
+        {flash.text}
+        <button className="flash-close" onClick={()=>setFlash(null)}>×</button>
+      </div>
+      )}
         <div className="tickets-toolbar">
           <div className="filters">
             <button className={`chip ${status==='open'?'active':''}`} onClick={()=>{setStatus('open');setPage(1)}}>Abiertos</button>

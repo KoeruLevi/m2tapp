@@ -216,3 +216,31 @@
   border: 1px solid #d6e3ff;
   border-radius: 8px;
 }
+
+.flash {
+  position: relative;
+  margin: 8px 0 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+.flash--success {
+  background: #e9f9ee;
+  border: 1px solid #c9f0d6;
+  color: #106b3a;
+}
+.flash--error {
+  background: #ffecec;
+  border: 1px solid #ffc7c7;
+  color: #8a1f1f;
+}
+.flash-close {
+  position: absolute;
+  right: 10px; top: 8px;
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  color: inherit;
+}
