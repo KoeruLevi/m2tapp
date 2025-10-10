@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const Usuario = require('../models/Usuario');
+const crypto = require('crypto');
 
 function esMaster(user) {
     return user && (user.email === process.env.MASTER_USER_EMAIL);
@@ -157,7 +158,6 @@ exports.resetPassword = async (req, res) => {
       return res.status(403).json({ message: "Solo el master puede resetear la contraseña del master" });
     }
 
-    // genera una contraseña temporal de 12 chars alfanumérica
     const temp = crypto.randomBytes(9).toString('base64').replace(/[^A-Za-z0-9]/g, '').slice(0,12);
     const salt = await bcrypt.genSalt(10);
     target.password = await bcrypt.hash(temp, salt);
