@@ -4,12 +4,14 @@ const router = express.Router();
 const auth = require('../middleware/logMiddleware.js');
 const isAdmin = require('../middleware/isAdmin');
 const { updateMe, updateUsuario, deleteUsuario } = require('../controllers/logController');
-
+const { resetPassword, changePasswordByAdmin } = require('../controllers/logController');
 
 router.put('/updateMe', auth, updateMe);
 router.put('/updateUser/:id', auth, isAdmin, updateUsuario);
 router.delete('/deleteUser/:id', auth, isAdmin, deleteUsuario);
 
+router.post('/resetPassword/:id',  auth, isAdmin, resetPassword);
+router.put('/changePassword/:id',  auth, isAdmin, changePasswordByAdmin);
 
 router.get('/dashboard', auth, (req, res) => {
     res.json({ message: 'Acceso permitido', user: req.user });
