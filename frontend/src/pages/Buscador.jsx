@@ -530,23 +530,29 @@ const Buscador = () => {
           )
         ) : (
           typeof value === "object" && value !== null ? (
-            key === "Acc" || key === "Id" ? (
-              <div className="accesorios-container" style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
-                {Object.entries(value).map(([accKey, accValue]) => (
-                  <label key={accKey} className="accesorio-item" style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                    <input type="checkbox" checked={!!accValue} readOnly />
-                    {beautifyFieldName(accKey)}
-                  </label>
-                ))}
-              </div>
-            ) : (
-              <span style={{ color: "#444" }}>{displayValue}</span>
-            )
-          ) : typeof value === "boolean" ? (
-            <span>{value ? "Sí" : "No"}</span>
-          ) : (
-            <span style={{ color: "#444" }}>{beautifyValue(key, displayValue)}</span>
-          )
+    key === "Acc" || key === "Id" ? (
+      <div className="accesorios-container" style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+        {Object.entries(value).map(([accKey, accValue]) => (
+          <label key={accKey} className="accesorio-item" style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+            <input type="checkbox" checked={!!accValue} readOnly />
+            {beautifyFieldName(accKey)}
+          </label>
+        ))}
+      </div>
+    ) : (
+      <span style={{ color: "#444" }}>
+        {
+          (key.toLowerCase() === 'createdat' || key.toLowerCase() === 'updatedat')
+            ? beautifyValue(key, displayValue)                // fechas legibles
+            : JSON.stringify(displayValue)                    // objetos seguros
+        }
+      </span>
+    )
+  ) : typeof value === "boolean" ? (
+    <span>{value ? "Sí" : "No"}</span>
+  ) : (
+    <span style={{ color: "#444" }}>{beautifyValue(key, displayValue)}</span>
+  )
         )}
       </div>
     );
