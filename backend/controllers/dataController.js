@@ -14,6 +14,48 @@ function formatearRut(rutInput) {
   return `${rutFormateado}-${dv}`;
 }
 
+// ==== helpers para diffs granulares ====
+function isPlainObject(v) {
+  return v && typeof v === 'object' && !Array.isArray(v);
+}
+
+function normalizeUndef(v) {
+  return v === undefined ? null : v; // para que el front muestre "-" en vez de "undefined"
+}
+
+// Genera cambios por subclave cuando before/after son objetos (Map/Mixed)
+function diffField(topKey, before, after) {
+  const out = [];
+
+  // Caso objeto -> desglosar por subclave
+  if (isPlainObject(before) && isPlainObject(after)) {
+    const subkeys = new Set([...Object.keys(before), ...Object.keys(after)]);
+    for (const sk of subkeys) {
+      const b = before[sk];
+      const a = after[sk];
+      if (JSON.stringify(b) !== JSON.stringify(a)) {
+        out.push({
+          campo: topKey,
+          // objetos con UNA sola clave para que el front los muestre como "clave: valor"
+          valorAnterior: { [sk]: normalizeUndef(b) },
+          valorNuevo:    { [sk]: normalizeUndef(a) },
+        });
+      }
+    }
+    return out;
+  }
+
+  // Caso array o primitivo -> comparar directo
+  if (JSON.stringify(before) !== JSON.stringify(after)) {
+    out.push({
+      campo: topKey,
+      valorAnterior: normalizeUndef(before),
+      valorNuevo:    normalizeUndef(after),
+    });
+  }
+  return out;
+}
+
 function normalizarEquipoPrinc(valor) {
   // Acepta: 123, "123", { ID: 123 }, { "": 123 }
   if (valor === undefined) return undefined;
@@ -462,28 +504,36 @@ exports.updateDocumento = async (req, res) => {
 
     // Log de cambios
     try {
-      if (HistorialCambio && req.user) {
-        const cambios = [];
-        Object.keys(data).forEach((k) => {
-          if (JSON.stringify(prevDoc[k]) !== JSON.stringify(newDoc[k])) {
-            cambios.push({ campo: k, valorAnterior: prevDoc[k], valorNuevo: newDoc[k] });
-          }
-        });
-        if (cambios.length) {
-          await HistorialCambio.create({
-            entidad: type,
-            entidadId: data._id,
-            usuario: {
-              id: req.user._id, nombre: req.user.nombre, email: req.user.email, rol: req.user.rol
-            },
-            fecha: new Date(),
-            cambios
-          });
-        }
-      }
-    } catch (e) {
-      console.warn('No se pudo registrar HistorialCambio:', e.message);
+  if (HistorialCambio && req.user) {
+    const cambios = [];
+
+    // Tomamos solo las claves top-level tocadas en 'data'
+    const touchedTop = new Set(Object.keys(data).map(k => k.split('.')[0]));
+
+    for (const k of touchedTop) {
+      const before = prevDoc[k];
+      const after  = newDoc[k];
+      cambios.push(...diffField(k, before, after));
     }
+
+    if (cambios.length) {
+      await HistorialCambio.create({
+        entidad: type,
+        entidadId: data._id,
+        usuario: {
+          id: req.user._id,
+          nombre: req.user.nombre,
+          email: req.user.email,
+          rol: req.user.rol,
+        },
+        fecha: new Date(),
+        cambios
+      });
+    }
+  }
+} catch (e) {
+  console.warn('No se pudo registrar HistorialCambio:', e.message);
+}
 
     // --------- CASCADA “RETIRADO” PARA CLIENTE ----------
     const becameRetirado =
