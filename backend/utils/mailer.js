@@ -1,12 +1,20 @@
 const sgMail = require('@sendgrid/mail');
 
 const API_KEY = process.env.SENDGRID_API_KEY;
-const DEFAULT_FROM = process.env.MAIL_FROM || process.env.SMTP_FROM || process.env.SMTP_USER;
+const FROM = process.env.MAIL_FROM || process.env.SMTP_FROM || process.env.SMTP_USER;
 
 if (!API_KEY) {
   console.warn('[MAILER] SENDGRID_API_KEY no está configurada. No se enviarán correos.');
 } else {
   sgMail.setApiKey(API_KEY);
+}
+
+function normalizeList(to) {
+  if (Array.isArray(to)) return to.filter(Boolean);
+  return String(to || '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean);
 }
 
 /**
@@ -18,32 +26,30 @@ if (!API_KEY) {
  * @param {string} [opts.text]
  */
 async function sendMail({ to, subject, html, text }) {
+  const list = normalizeList(to);
+
   if (!API_KEY) {
-    console.log('[MAILER] Envío omitido (sin API key). Destinatarios:', to);
+    console.log('[MAILER] Envío omitido (sin API key). Destinatarios:', list);
     return;
   }
+  if (!list.length) return;
 
-  const list = Array.isArray(to)
-    ? to
-    : String(to)
-        .split(',')
-        .map(x => x.trim())
-        .filter(Boolean);
-
-  const msg = {
-    to: list,
-    from: DEFAULT_FROM,       // Debe estar verificado en SendGrid (Single Sender o dominio)
-    subject,
-    text,
-    html,
-  };
+  const base = { from: FROM, subject, html, text };
 
   try {
-    const [resp] = await sgMail.send(msg, false); // false = no usar batch por defecto
-    console.log('[MAILER] Enviado SendGrid:', resp?.statusCode, '->', list.join(', '));
+    if (list.length > 1) {
+      // envía a N destinatarios
+      await sgMail.sendMultiple({ ...base, to: list });
+      console.log('[MAILER] SendGrid OK (multiple) ->', list.join(', '));
+    } else {
+      // envía a 1 destinatario
+      const [resp] = await sgMail.send({ ...base, to: list[0] });
+      console.log('[MAILER] SendGrid OK:', resp?.statusCode, '->', list[0]);
+    }
   } catch (err) {
-    // No propagamos el error para que NUNCA bloquee tu request
-    console.error('[MAILER] Error SendGrid:', err?.message || err);
+    const details = err?.response?.body?.errors || err?.message || err;
+    console.error('[MAILER] Error SendGrid:', details);
+    // No relanzamos para no bloquear el flujo de la API
   }
 }
 
