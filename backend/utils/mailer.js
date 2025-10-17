@@ -1,12 +1,24 @@
-const sgMail = require('@sendgrid/mail');
+// utils/mailer.js
+const SibApiV3Sdk = require('sib-api-v3-sdk');
 
-const API_KEY = process.env.SENDGRID_API_KEY;
-const FROM = process.env.MAIL_FROM || process.env.SMTP_FROM || process.env.SMTP_USER;
+const PROVIDER = (process.env.MAIL_PROVIDER || 'brevo').toLowerCase();
+// Para Brevo:
+const BREVO_KEY = process.env.BREVO_API_KEY;
+// Remitente (usa el mismo para cualquier proveedor)
+const FROM_EMAIL = process.env.MAIL_FROM || process.env.SMTP_FROM || process.env.SMTP_USER;
+const FROM_NAME  = process.env.MAIL_FROM_NAME || 'Soporte M2T';
 
-if (!API_KEY) {
-  console.warn('[MAILER] SENDGRID_API_KEY no está configurada. No se enviarán correos.');
-} else {
-  sgMail.setApiKey(API_KEY);
+// --- Inicialización Brevo ---
+let brevoTransactional = null;
+if (PROVIDER === 'brevo') {
+  if (!BREVO_KEY) {
+    console.warn('[MAILER] BREVO_API_KEY no está configurada. No se enviarán correos.');
+  } else {
+    const defaultClient = SibApiV3Sdk.ApiClient.instance;
+    const apiKey = defaultClient.authentications['api-key'];
+    apiKey.apiKey = BREVO_KEY;
+    brevoTransactional = new SibApiV3Sdk.TransactionalEmailsApi();
+  }
 }
 
 function normalizeList(to) {
@@ -18,39 +30,39 @@ function normalizeList(to) {
 }
 
 /**
- * Enviar correo usando SendGrid API (HTTP).
- * @param {Object} opts
- * @param {string|string[]} opts.to - destinatario(s)
- * @param {string} opts.subject
- * @param {string} [opts.html]
- * @param {string} [opts.text]
+ * Enviar correo (actualmente Brevo).
+ * @param {{to:string|string[], subject:string, html?:string, text?:string}} param0
  */
 async function sendMail({ to, subject, html, text }) {
   const list = normalizeList(to);
-
-  if (!API_KEY) {
-    console.log('[MAILER] Envío omitido (sin API key). Destinatarios:', list);
-    return;
-  }
   if (!list.length) return;
 
-  const base = { from: FROM, subject, html, text };
-
-  try {
-    if (list.length > 1) {
-      // envía a N destinatarios
-      await sgMail.sendMultiple({ ...base, to: list });
-      console.log('[MAILER] SendGrid OK (multiple) ->', list.join(', '));
-    } else {
-      // envía a 1 destinatario
-      const [resp] = await sgMail.send({ ...base, to: list[0] });
-      console.log('[MAILER] SendGrid OK:', resp?.statusCode, '->', list[0]);
+  if (PROVIDER === 'brevo') {
+    if (!brevoTransactional) {
+      console.log('[MAILER] Envío omitido (Brevo no configurado). Destinatarios:', list);
+      return;
     }
-  } catch (err) {
-    const details = err?.response?.body?.errors || err?.message || err;
-    console.error('[MAILER] Error SendGrid:', details);
-    // No relanzamos para no bloquear el flujo de la API
+    const payload = {
+      sender: { email: FROM_EMAIL, name: FROM_NAME }, // remitente DEBES tenerlo verificado en Brevo
+      to: list.map(email => ({ email })),
+      subject,
+      htmlContent: html,
+      textContent: text,
+    };
+
+    try {
+      const data = await brevoTransactional.sendTransacEmail(payload);
+      console.log('[MAILER] Brevo OK ->', list.join(', '), 'messageId:', data?.messageId || data?.messageIds?.[0]);
+    } catch (err) {
+      const detail = err?.response?.text || err?.message || err;
+      console.error('[MAILER] Error Brevo:', detail);
+      // No relanzamos para no bloquear el flujo de la API
+    }
+    return;
   }
+
+  // Si en el futuro quieres soportar otros proveedores, agrégalos aquí.
+  console.warn('[MAILER] MAIL_PROVIDER no soportado:', PROVIDER);
 }
 
 module.exports = { sendMail };
