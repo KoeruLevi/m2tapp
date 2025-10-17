@@ -43,7 +43,7 @@ function viewOf(ticket) {
   };
 }
 
-/** GET /api/tickets?status=open|closed|all|late&mine=assigned|created&page=1&limit=20&search= */
+
 exports.list = async (req, res) => {
   try {
     const { status = 'open', mine = '', page = 1, limit = 20, search = '' } = req.query;
@@ -88,64 +88,96 @@ exports.list = async (req, res) => {
   }
 };
 
-/** POST /api/tickets  { title, body, assignees: [userId], dueAt? } */
 exports.create = async (req, res) => {
   try {
     const { title, body, assignees = [], dueAt } = req.body;
-    if (!title || !body) return res.status(400).json({ message: 'title y body son obligatorios' });
 
-    // validar usuarios
+    if (!title || !body) {
+      return res.status(400).json({ message: 'title y body son obligatorios' });
+    }
+
+    // Validar y normalizar IDs de asignados
     const userIds = Array.from(new Set(assignees.map(String)));
-    const users = await Usuario.find({ _id: { $in: userIds } }, { _id: 1, email: 1, nombre: 1 }).lean();
+    const users = await Usuario.find(
+      { _id: { $in: userIds } },
+      { _id: 1, email: 1, nombre: 1 }
+    ).lean();
 
-    // número correlativo
+    // Número correlativo
     const seq = await Counter.findOneAndUpdate(
-      { key: 'ticket' }, { $inc: { seq: 1 } }, { new: true, upsert: true }
+      { key: 'ticket' },
+      { $inc: { seq: 1 } },
+      { new: true, upsert: true }
     );
     const number = seq.seq;
 
+    // Crear ticket
     const ticket = await Ticket.create({
       number,
-      title, body,
+      title,
+      body,
       createdBy: req.user._id,
       assignees: users.map(u => u._id),
       dueAt: dueAt ? new Date(dueAt) : null
     });
 
+    // Recuperar con populate para enviar a la UI
     const created = await Ticket.findById(ticket._id)
       .populate('createdBy', 'nombre email')
       .populate('assignees', 'nombre email')
       .lean();
-    // --- responder primero ---
-res.status(201).json(viewOf(created));
 
-// --- enviar correo en background (no bloquear la respuesta) ---
-if (users.length) {
-  const to = users.map(u => u.email).filter(Boolean).join(',');
-  const subj = `[Ticket #${number}] ${title}`;
-  const text = `Se te asignó el Ticket #${number}\n\n${body}\n\nLímite: ${
-    dueAt ? new Date(dueAt).toLocaleString('es-CL') : '—'
-  }`;
-  const html = `
-    <p>Se te asignó el <b>Ticket #${number}</b></p>
-    <p><b>Título:</b> ${title}</p>
-    <p><b>Descripción:</b><br/>${body.replace(/\n/g,'<br/>')}</p>
-    <p><b>Fecha límite:</b> ${dueAt ? new Date(dueAt).toLocaleString('es-CL') : '—'}</p>
-  `;
+    // Responder a la UI de inmediato (no bloquear por enviar correo)
+    const payload = viewOf(created);
+    res.status(201).json(payload);
 
-  // fire & forget
-  setImmediate(() => {
-    sendMail({ to, subject: subj, text, html })
-      .catch(e => console.log('[TICKETS] Error enviando correo:', e.message));
-  });
-}
+    // Enviar correo en background (no bloquea la respuesta)
+    setImmediate(async () => {
+      try {
+        if (!users.length) return;
 
+        const to = users.map(u => u.email).filter(Boolean);
+        if (!to.length) return;
+
+        const subj = `[Ticket #${payload.number}] ${payload.title}`;
+        const limit = payload.dueAt
+          ? new Date(payload.dueAt).toLocaleString('es-CL')
+          : '—';
+        const appUrl = process.env.APP_URL || 'https://m2tapp.vercel.app';
+
+        const text = `Se te asignó el Ticket #${payload.number}
+
+Título: ${payload.title}
+
+Descripción:
+${payload.body}
+
+Fecha límite: ${limit}
+
+Ir a la app: ${appUrl}/tickets
+`;
+
+        const html = `
+          <p>Se te asignó el <b>Ticket #${payload.number}</b></p>
+          <p><b>Título:</b> ${payload.title}</p>
+          <p><b>Descripción:</b><br/>${String(payload.body || '')
+            .replace(/\n/g, '<br/>')}</p>
+          <p><b>Fecha límite:</b> ${limit}</p>
+          <p><a href="${appUrl}/tickets" target="_blank" rel="noopener">Abrir en la app</a></p>
+        `;
+
+        await sendMail({ to, subject: subj, text, html });
+      } catch (e) {
+        console.log('[TICKETS] Error enviando correo (background):', e?.message || e);
+      }
+    });
   } catch (err) {
-    res.status(500).json({ message: 'Error al crear ticket', error: err.message });
+    // Si algo falla ANTES de responder 201, devolvemos 500
+    return res.status(500).json({ message: 'Error al crear ticket', error: err.message });
   }
 };
 
-/** PUT /api/tickets/:id  { result?, dueAt? }  (creador o admin) */
+
 exports.updateMeta = async (req, res) => {
   try {
     const { id } = req.params;

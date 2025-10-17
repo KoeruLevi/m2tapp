@@ -1,52 +1,49 @@
-const nodemailer = require('nodemailer');
+const sgMail = require('@sendgrid/mail');
 
-const host = process.env.SMTP_HOST;
-const port = Number(process.env.SMTP_PORT || 587);
-const secure = process.env.SMTP_SECURE === 'true';
-const user = process.env.SMTP_USER;
-const pass = process.env.SMTP_PASS;
+const API_KEY = process.env.SENDGRID_API_KEY;
+const DEFAULT_FROM = process.env.MAIL_FROM || process.env.SMTP_FROM || process.env.SMTP_USER;
 
-if (!host || !user || !pass) {
-  console.warn('[MAILER] Variables SMTP incompletas. No se enviarán correos.');
+if (!API_KEY) {
+  console.warn('[MAILER] SENDGRID_API_KEY no está configurada. No se enviarán correos.');
+} else {
+  sgMail.setApiKey(API_KEY);
 }
 
-const transporter = (host && user && pass)
-  ? nodemailer.createTransport({
-      host,
-      port,
-      secure,
-      auth: { user, pass },
-      pool: true,
-      maxConnections: 3,
-      maxMessages: 50,
-      logger: true,
-      connectionTimeout: 10000,
-      greetingTimeout: 10000,
-      socketTimeout: 10000,
-    })
-  : null;
-
-if (transporter) {
-  transporter.verify().then(() => {
-    console.log('[MAILER] SMTP listo para enviar.');
-  }).catch(err => {
-    console.error('[MAILER] Error de SMTP en verify():', err.message);
-  });
-}
-
+/**
+ * Enviar correo usando SendGrid API (HTTP).
+ * @param {Object} opts
+ * @param {string|string[]} opts.to - destinatario(s)
+ * @param {string} opts.subject
+ * @param {string} [opts.html]
+ * @param {string} [opts.text]
+ */
 async function sendMail({ to, subject, html, text }) {
-  if (!transporter) {
-    console.log('[MAILER] Envío omitido: transporter no configurado. Destinatarios:', to);
+  if (!API_KEY) {
+    console.log('[MAILER] Envío omitido (sin API key). Destinatarios:', to);
     return;
   }
-  const from = process.env.SMTP_FROM || user;
+
+  const list = Array.isArray(to)
+    ? to
+    : String(to)
+        .split(',')
+        .map(x => x.trim())
+        .filter(Boolean);
+
+  const msg = {
+    to: list,
+    from: DEFAULT_FROM,       // Debe estar verificado en SendGrid (Single Sender o dominio)
+    subject,
+    text,
+    html,
+  };
+
   try {
-    const info = await transporter.sendMail({ from, to, subject, html, text });
-    console.log('[MAILER] Enviado:', info.messageId, '->', to);
-    return info;
+    const [resp] = await sgMail.send(msg, false); // false = no usar batch por defecto
+    console.log('[MAILER] Enviado SendGrid:', resp?.statusCode, '->', list.join(', '));
   } catch (err) {
-    console.error('[MAILER] Error al enviar:', err.message);
-    throw err;
+    // No propagamos el error para que NUNCA bloquee tu request
+    console.error('[MAILER] Error SendGrid:', err?.message || err);
   }
 }
 
