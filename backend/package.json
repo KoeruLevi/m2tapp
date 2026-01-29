@@ -22,8 +22,10 @@
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.10.0",
     "mongoose": "^8.8.3",
+    "multer": "^2.0.2",
     "nodemailer": "^7.0.9",
-    "sib-api-v3-sdk": "^8.5.0"
+    "sib-api-v3-sdk": "^8.5.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "nodemon": "^3.1.7"
@@ -33,4 +35,3 @@
     "get-intrinsic": "1.2.0"
   }
 }
-
