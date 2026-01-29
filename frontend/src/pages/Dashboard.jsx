@@ -18,6 +18,9 @@ const Dashboard = () => {
         }
     }, [navigate]);
 
+  const modulo = (localStorage.getItem('modulo') || 'actual').toLowerCase();
+  const isHistorico = modulo === 'historico';
+
     const goToBuscador = () => {
         navigate('/buscador');
     };
@@ -86,35 +89,39 @@ const Dashboard = () => {
         Inventario Equipos / Simcards
       </button>
 
-      <button className="dashboard-button" onClick={() => navigate('/nuevo-cliente')}>
-        Crear Nuevo Cliente
-      </button>
+       {!isHistorico && (
+          <>
+            <button className="dashboard-button" onClick={() => navigate('/nuevo-cliente')}>
+              Crear Nuevo Cliente
+            </button>
 
-      <button className="dashboard-button" onClick={() => navigate('/nuevo-movil')}>
-        Crear Nuevo Móvil
-      </button>
+            <button className="dashboard-button" onClick={() => navigate('/nuevo-movil')}>
+              Crear Nuevo Móvil
+            </button>
 
-      <button className="dashboard-button" onClick={() => navigate('/nuevo-equipo')}>
-        Crear Nuevo Equipo AVL
-      </button>
+            <button className="dashboard-button" onClick={() => navigate('/nuevo-equipo')}>
+              Crear Nuevo Equipo AVL
+            </button>
 
-      <button className="dashboard-button" onClick={() => navigate('/nueva-simcard')}>
-        Crear Nueva Simcard
-      </button>
+            <button className="dashboard-button" onClick={() => navigate('/nueva-simcard')}>
+              Crear Nueva Simcard
+            </button>
+          </>
+        )}
 
       <button className="dashboard-button" onClick={() => navigate('/historial-cambios')}>
         Ver Historial de Cambios
       </button>
 
-      {user?.rol === 'admin' && (
-        <button
-          className="delete-document-btn"
-          onClick={() => navigate('/eliminar-documento')}
-        >
-          Eliminar Documento
-        </button>
-      )}
-    </div>
+      {!isHistorico && user?.rol === 'admin' && (
+          <button
+            className="delete-document-btn"
+            onClick={() => navigate('/eliminar-documento')}
+          >
+            Eliminar Documento
+          </button>
+        )}
+      </div>
 
     <button className="export-excel-btn" onClick={exportarTodoExcel}>
       📦 Exportar todo a Excel
