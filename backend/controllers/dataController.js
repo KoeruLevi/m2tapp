@@ -198,30 +198,43 @@ exports.searchData = async (req, res) => {
       equipos = await EquipoAVL.find(equipoQuery).lean();
     }
 
-    let simcardQuery = {};
-    if (simcard) {
-      const simcardRegExp = new RegExp(simcard, 'i');
-      simcardQuery.$or = [
-        { operador: simcardRegExp },
-        { portador: simcardRegExp }
-      ];
-      if (!isNaN(Number(simcard))) {
-        simcardQuery.$or.push({ ICCID: simcard });
-        simcardQuery.$or.push({ fono: Number(simcard) });
-      }
-    }
+    function toNumberSafe(v) {
+  if (v == null) return null;
+  const n = Number(typeof v === 'object' && v.toString ? v.toString() : v);
+  return Number.isFinite(n) ? n : null;
+}
 
-    if (equipos.length > 0) {
-      const equipoIds = equipos.map((e) => e.ID);
-      simcardQuery.ID = { $in: equipoIds };
-    }
+let simcardQuery = {};
 
-    if (
-      (simcardQuery.$or && simcardQuery.$or.length > 0) ||
-      simcardQuery.ID
-    ) {
-      simcards = await Simcard.find(simcardQuery).lean();
-    }
+if (simcard) {
+  const simcardRegExp = new RegExp(simcard, 'i');
+  simcardQuery.$or = [
+    { operador: simcardRegExp },
+    { portador: simcardRegExp },
+  ];
+
+  const asNum = toNumberSafe(simcard);
+  if (asNum !== null) {
+    simcardQuery.$or.push({ ICCID: String(simcard) });
+    simcardQuery.$or.push({ fono: asNum });
+  }
+}
+
+if (equipos.length > 0) {
+  const equipoIds = equipos
+    .map(e => toNumberSafe(e.ID))
+    .filter(n => n !== null);
+
+  if (equipoIds.length > 0) {
+    simcardQuery.ID = { $in: equipoIds };
+  }
+}
+
+if (Object.keys(simcardQuery).length > 0) {
+  simcards = await Simcard.find(simcardQuery).lean();
+} else {
+  simcards = [];
+}
 
     if (!moviles.length && equipos.length > 0) {
       const equipoIds = equipos.map(e => e.ID);
@@ -235,11 +248,6 @@ exports.searchData = async (req, res) => {
     if (!clientes.length && moviles.length > 0) {
       const clienteNames = [...new Set(moviles.map(m => m.Cliente))];
       clientes = await Cliente.find({ Cliente: { $in: clienteNames } }).lean();
-    }
-
-    if (equipos.length > 0) {
-      const equipoIds = equipos.map(e => e.ID);
-      simcards = await Simcard.find({ ID: { $in: equipoIds } }).lean();
     }
 
     clientes = clientes.filter((cliente, index, self) =>
