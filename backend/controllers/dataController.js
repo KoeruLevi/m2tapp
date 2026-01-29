@@ -182,20 +182,31 @@ exports.searchData = async (req, res) => {
       }
 
       const equipoIdsFromMoviles = moviles
-        .map((m) => m['Equipo Princ'])
-        .filter((e) => e && typeof e === 'object' && e[''])
-        .map((e) => e['']);
+        .map((m) => {
+          const ep = m["Equipo Princ"];
+          if (typeof ep === "number") return ep;
+          if (ep && typeof ep === "object") return ep[""] ?? ep.ID ?? null;
+          return null;
+        })
+        .filter((id) => Number.isFinite(id));
 
       if (equipoIdsFromMoviles.length > 0) {
-        equipoQuery = {
-          $or: [
-            ...(equipoQuery.$or || []),
-            { ID: { $in: equipoIdsFromMoviles } }
-          ]
-        };
+          // Si no venía un filtro de equipo, amarra por IDs
+        if (!equipoFilter) {
+          equipos = await EquipoAVL.find({ ID: { $in: equipoIdsFromMoviles } }).lean();
+        } else {
+          // Si venía equipoFilter, aplica tu equipoQuery pero además amarra por IDs
+          equipos = await EquipoAVL.find({
+            $and: [
+              equipoQuery,
+              { ID: { $in: equipoIdsFromMoviles } }
+            ]
+          }).lean();
+        }
+      } else {
+        // Si no hay equipos asociados a los móviles filtrados, no traigas toda la colección
+        equipos = [];
       }
-
-      equipos = await EquipoAVL.find(equipoQuery).lean();
     }
 
     function toNumberSafe(v) {

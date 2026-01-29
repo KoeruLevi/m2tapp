@@ -27,5 +27,9 @@
   },
   "devDependencies": {
     "nodemon": "^3.1.7"
+  },
+  "overrides": {
+    "gopd": "1.1.0"
   }
 }
+
