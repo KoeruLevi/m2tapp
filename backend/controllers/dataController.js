@@ -169,178 +169,261 @@ function normalizeRow(tipo, row) {
 // ========= Handlers =========
 exports.searchData = async (req, res) => {
   const { Cliente, Movil, EquipoAVL, Simcard } = req.models;
-  const { cliente, movil, equipo, simcard } = req.query;
 
-  console.log('\n=== INICIO DE BÚSQUEDA CON FILTROS ===');
-  console.log(
-    `Cliente: ${cliente || 'Sin filtro'}, Móvil: ${movil || 'Sin filtro'}, Equipo: ${equipo || 'Sin filtro'}, Simcard: ${simcard || 'Sin filtro'}`
-  );
+  const clienteRaw = (req.query.cliente || '').trim();
+  const movilRaw = (req.query.movil || '').trim();
+  const equipoRaw = (req.query.equipo || '').trim();
+  const simcardRaw = (req.query.simcard || '').trim();
+
+  const hasCliente = clienteRaw.length > 0;
+  const hasMovil = movilRaw.length > 0;
+  const hasEquipo = equipoRaw.length > 0;
+  const hasSimcard = simcardRaw.length > 0;
+
+  // Si vienen todos vacíos, no traigas toda la BD
+  if (!hasCliente && !hasMovil && !hasEquipo && !hasSimcard) {
+    return res.json(bsonToJsonSafe({ Cliente: [], Movil: [], EquipoAVL: [], Simcard: [] }));
+  }
+
+  const clienteRegex = hasCliente ? new RegExp(clienteRaw, 'i') : null;
+  const movilRegex = hasMovil ? new RegExp(movilRaw, 'i') : null;
+  const simRegex = hasSimcard ? new RegExp(simcardRaw, 'i') : null;
+
+  const toNumberSafeLocal = (v) => {
+    if (v == null || v === '') return null;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  };
+
+  const extractEquipoIdFromMovil = (m) => {
+    const ep = m?.['Equipo Princ'];
+    if (ep == null) return null;
+    if (typeof ep === 'number') return ep;
+    if (typeof ep === 'string') {
+      const n = toNumberSafeLocal(ep);
+      return n === null ? null : n;
+    }
+    if (typeof ep === 'object') {
+      const n = toNumberSafeLocal(ep[''] ?? ep.ID);
+      return n === null ? null : n;
+    }
+    return null;
+  };
+
+  // Query para Movil por IDs de equipo, soportando Equipo Princ como número o como objeto
+  const buildMovilQueryByEquipoIds = (ids) => {
+    const clean = (ids || []).map(toNumberSafeLocal).filter((n) => n !== null);
+    if (!clean.length) return null;
+
+    return {
+      $or: [
+        { 'Equipo Princ': { $in: clean } },                         // guardado como número
+        { 'Equipo Princ': { $in: clean.map((id) => ({ '': id })) } }, // guardado como { "": id } (match por igualdad)
+        { 'Equipo Princ.ID': { $in: clean } },                      // guardado como { ID: id }
+      ],
+    };
+  };
+
+  const dedupeByKey = (arr, keyFn) => {
+    const map = new Map();
+    for (const x of arr || []) {
+      const k = keyFn(x);
+      if (!k) continue;
+      if (!map.has(k)) map.set(k, x);
+    }
+    return [...map.values()];
+  };
+
+  const intersectById = (arrays) => {
+    if (!arrays.length) return [];
+
+    const sets = arrays.map((a) => new Set((a || []).map((d) => d?._id?.toString()).filter(Boolean)));
+    let inter = sets[0];
+    for (let i = 1; i < sets.length; i++) {
+      const s = sets[i];
+      inter = new Set([...inter].filter((id) => s.has(id)));
+      if (!inter.size) break;
+    }
+    if (!inter.size) return [];
+
+    const idToDoc = new Map();
+    for (const a of arrays) {
+      for (const d of a || []) {
+        const id = d?._id?.toString();
+        if (id && inter.has(id) && !idToDoc.has(id)) idToDoc.set(id, d);
+      }
+    }
+    return [...idToDoc.values()];
+  };
 
   try {
-    let clientes = [];
-    let moviles = [];
-    let equipos = [];
-    let simcards = [];
+    // 1) Seed por filtros directos
+    let clientesByFilter = [];
+    let equiposByFilter = [];
+    let simcardsByFilter = [];
+    let movilesA = []; // por (movil/cliente)
+    let movilesB = []; // por equipo
+    let movilesC = []; // por simcard
 
-    const clienteFilter = cliente ? new RegExp(cliente, 'i') : null;
-    const movilFilter = movil ? new RegExp(movil, 'i') : null;
-    const equipoFilter = equipo ? equipo : null;
-    const simcardFilter = simcard ? new RegExp(simcard, 'i') : null;
-
-    if (clienteFilter) {
-      clientes = await Cliente.find({
-        $or: [{ Cliente: clienteFilter }, { 'Razon Social': clienteFilter }, { RUT: clienteFilter }],
+    if (hasCliente) {
+      clientesByFilter = await Cliente.find({
+        $or: [{ Cliente: clienteRegex }, { 'Razon Social': clienteRegex }, { RUT: clienteRegex }],
       }).lean();
     }
 
-    if (movilFilter || clienteFilter) {
-      const movilQuery = {
-        ...(movilFilter && {
-          $or: [{ Marca: movilFilter }, { Tipo: movilFilter }, { Patente: movilFilter }],
-        }),
-        ...(clienteFilter && { Cliente: { $in: clientes.map((c) => c.Cliente) } }),
-      };
-
-      moviles = await Movil.find(movilQuery).lean();
-
-      if (!clienteFilter && moviles.length > 0) {
-        const clienteNames = [...new Set(moviles.map((m) => m.Cliente))];
-        clientes = await Cliente.find({ Cliente: { $in: clienteNames } }).lean();
-      }
-    }
-
-    if (moviles.length > 0) {
-      const equipoIds = moviles
-        .map((movil) => {
-          const equipoPrinc = movil['Equipo Princ'];
-          if (typeof equipoPrinc === 'number') return equipoPrinc;
-          if (typeof equipoPrinc === 'object' && equipoPrinc !== null) return equipoPrinc[''] || equipoPrinc.ID || null;
-          return null;
-        })
-        .filter((id) => id && !isNaN(id));
-
-      if (equipoIds.length > 0) {
-        equipos = await EquipoAVL.find({ ID: { $in: equipoIds } }).lean();
-      }
-    }
-
-    if (equipoFilter || moviles.length > 0) {
-      let equipoQuery = {};
-
-      if (equipoFilter) {
-        if (!isNaN(equipoFilter)) {
-          equipoQuery.ID = Number(equipoFilter);
-        } else {
-          equipoQuery.$or = [
-            { imei: new RegExp(equipoFilter, 'i') },
-            { serial: new RegExp(equipoFilter, 'i') },
-            { model: new RegExp(equipoFilter, 'i') },
-          ];
-        }
-      }
-
-      const equipoIdsFromMoviles = moviles
-        .map((m) => {
-          const ep = m['Equipo Princ'];
-          if (typeof ep === 'number') return ep;
-          if (ep && typeof ep === 'object') return ep[''] ?? ep.ID ?? null;
-          return null;
-        })
-        .filter((id) => Number.isFinite(id));
-
-      if (equipoIdsFromMoviles.length > 0) {
-        if (!equipoFilter) {
-          equipos = await EquipoAVL.find({ ID: { $in: equipoIdsFromMoviles } }).lean();
-        } else {
-          equipos = await EquipoAVL.find({ $and: [equipoQuery, { ID: { $in: equipoIdsFromMoviles } }] }).lean();
-        }
+    if (hasMovil || hasCliente) {
+      // Si hay clienteFilter pero no hay clientes, la intersección debe ser vacío
+      if (hasCliente && clientesByFilter.length === 0) {
+        movilesA = [];
       } else {
-        equipos = [];
+        const movilQuery = {
+          ...(hasMovil && { $or: [{ Marca: movilRegex }, { Tipo: movilRegex }, { Patente: movilRegex }] }),
+          ...(hasCliente && { Cliente: { $in: clientesByFilter.map((c) => c.Cliente) } }),
+        };
+        movilesA = await Movil.find(movilQuery).lean();
       }
     }
 
-    function toNumberSafeLocal(v) {
-      if (v == null) return null;
-      const n = Number(typeof v === 'object' && v.toString ? v.toString() : v);
-      return Number.isFinite(n) ? n : null;
+    if (hasEquipo) {
+      // Heurística: si es numérico y corto -> ID; si es numérico largo -> IMEI/serial probablemente
+      const isNumeric = !isNaN(equipoRaw);
+      const looksLikeId = isNumeric && equipoRaw.length <= 7;
+
+      const equipoQuery = looksLikeId
+        ? { ID: Number(equipoRaw) }
+        : {
+            $or: [
+              { imei: new RegExp(equipoRaw, 'i') },
+              { model: new RegExp(equipoRaw, 'i') },
+              // serial suele ser number, soporta match por igualdad si viene numérico
+              ...(isNumeric ? [{ serial: Number(equipoRaw) }] : []),
+            ],
+          };
+
+      equiposByFilter = await EquipoAVL.find(equipoQuery).lean();
+
+      const eqIds = equiposByFilter.map((e) => toNumberSafeLocal(e.ID)).filter((n) => n !== null);
+      const qMovB = buildMovilQueryByEquipoIds(eqIds);
+      movilesB = qMovB ? await Movil.find(qMovB).lean() : [];
     }
 
-    let simcardQuery = {};
+    if (hasSimcard) {
+      const simcardQuery = { $or: [{ operador: simRegex }, { portador: simRegex }, { ICCID: simRegex }] };
 
-    if (simcard) {
-      const simcardRegExp = new RegExp(simcard, 'i');
-      simcardQuery.$or = [{ operador: simcardRegExp }, { portador: simcardRegExp }];
-
-      const asNum = toNumberSafeLocal(simcard);
+      const asNum = toNumberSafeLocal(simcardRaw);
       if (asNum !== null) {
-        simcardQuery.$or.push({ ICCID: String(simcard) });
         simcardQuery.$or.push({ fono: asNum });
+        simcardQuery.$or.push({ ID: asNum }); // por si el usuario pega un ID de equipo aquí
       }
+
+      simcardsByFilter = await Simcard.find(simcardQuery).lean();
+
+      const simEqIds = dedupeByKey(
+        simcardsByFilter
+          .map((s) => toNumberSafeLocal(s.ID))
+          .filter((n) => n !== null),
+        (n) => String(n)
+      );
+
+      const qMovC = buildMovilQueryByEquipoIds(simEqIds);
+      movilesC = qMovC ? await Movil.find(qMovC).lean() : [];
     }
 
-    if (equipos.length > 0) {
-      const equipoIds = equipos.map((e) => toNumberSafeLocal(e.ID)).filter((n) => n !== null);
-      if (equipoIds.length > 0) simcardQuery.ID = { $in: equipoIds };
-    }
+    // 2) Construir móviles candidatos (intersección de filtros que apliquen)
+    const movilSets = [];
+    if (hasMovil || hasCliente) movilSets.push(movilesA);
+    if (hasEquipo) movilSets.push(movilesB);
+    if (hasSimcard) movilSets.push(movilesC);
 
-    if (Object.keys(simcardQuery).length > 0) {
-      simcards = await Simcard.find(simcardQuery).lean();
-    } else {
-      simcards = [];
-    }
+    let moviles = intersectById(movilSets);
+    moviles = dedupeByKey(moviles, (m) => m?._id?.toString());
 
-    if (!moviles.length && equipos.length > 0) {
-      const equipoIds = equipos.map((e) => e.ID);
-      const movilesRelacionados = await Movil.find({
-        'Equipo Princ': { $in: equipoIds.map((id) => ({ '': id })) },
-      }).lean();
-      moviles = [...moviles, ...movilesRelacionados];
-    }
+    // 3) Si NO hay móviles, igual permite búsquedas solo Equipo/Simcard (relación directa)
+    const onlyEquipoSim = !hasCliente && !hasMovil && (hasEquipo || hasSimcard);
 
-    if (!clientes.length && moviles.length > 0) {
-      const clienteNames = [...new Set(moviles.map((m) => m.Cliente))];
-      clientes = await Cliente.find({ Cliente: { $in: clienteNames } }).lean();
-    }
-
-    clientes = clientes.filter((c, i, self) => i === self.findIndex((x) => x._id.toString() === c._id.toString()));
-    equipos = equipos.filter((e, i, self) => i === self.findIndex((x) => x.ID === e.ID));
-    simcards = simcards.filter((s, i, self) => i === self.findIndex((x) => x.ICCID === s.ICCID));
-
-    if (clienteFilter && equipoFilter && !isNaN(equipoFilter)) {
-      const equipoId = Number(equipoFilter);
-      moviles = moviles.filter((movil) => {
-        const ep = movil['Equipo Princ'];
-        if (typeof ep === 'number') return ep === equipoId;
-        if (typeof ep === 'object' && ep !== null) return ep[''] === equipoId || ep.ID === equipoId;
-        return false;
-      });
-
-      if (moviles.length > 0) {
-        const clienteNames = [...new Set(moviles.map((m) => m.Cliente))];
-        clientes = clientes.filter((c) => clienteNames.includes(c.Cliente));
-      } else {
-        clientes = [];
+    if (moviles.length === 0) {
+      if (!onlyEquipoSim) {
+        return res.json(bsonToJsonSafe({ Cliente: [], Movil: [], EquipoAVL: [], Simcard: [] }));
       }
+
+      // Caso: solo equipo y/o simcard (sin móviles). Devuelve relación Equipo<->Simcard.
+      let equipos = equiposByFilter;
+      let simcards = simcardsByFilter;
+
+      if (hasEquipo && !hasSimcard) {
+        const eqIds = equipos.map((e) => toNumberSafeLocal(e.ID)).filter((n) => n !== null);
+        simcards = eqIds.length ? await Simcard.find({ ID: { $in: eqIds } }).lean() : [];
+      } else if (hasSimcard && !hasEquipo) {
+        const simEqIds = dedupeByKey(
+          simcards
+            .map((s) => toNumberSafeLocal(s.ID))
+            .filter((n) => n !== null),
+          (n) => String(n)
+        );
+        equipos = simEqIds.length ? await EquipoAVL.find({ ID: { $in: simEqIds } }).lean() : [];
+      } else if (hasEquipo && hasSimcard) {
+        const eqSet = new Set(equiposByFilter.map((e) => toNumberSafeLocal(e.ID)).filter((n) => n !== null));
+        simcards = simcardsByFilter.filter((s) => eqSet.has(toNumberSafeLocal(s.ID)));
+        const interIds = dedupeByKey(
+          simcards.map((s) => toNumberSafeLocal(s.ID)).filter((n) => n !== null),
+          (n) => String(n)
+        );
+        equipos = interIds.length ? await EquipoAVL.find({ ID: { $in: interIds } }).lean() : [];
+      }
+
+      equipos = dedupeByKey(equipos, (e) => String(e.ID));
+      simcards = dedupeByKey(simcards, (s) => String(s.ICCID ?? s._id));
+
+      return res.json(bsonToJsonSafe({ Cliente: [], Movil: [], EquipoAVL: equipos, Simcard: simcards }));
     }
 
-    if (moviles.length > 0) {
-      const equipoIds = moviles
-        .map((movil) => {
-          const ep = movil['Equipo Princ'];
-          if (typeof ep === 'number') return ep;
-          if (typeof ep === 'object' && ep !== null) return ep[''] || ep.ID || null;
-          return null;
-        })
-        .filter((id) => id && !isNaN(id));
+    // 4) Con móviles encontrados, derivar el resto en cadena
+    const clienteNames = dedupeByKey(
+      moviles.map((m) => m.Cliente).filter(Boolean),
+      (x) => String(x)
+    );
 
-      if (equipoIds.length > 0) equipos = await EquipoAVL.find({ ID: { $in: equipoIds } }).lean();
-      else equipos = [];
+    const equipoIdsFromMoviles = dedupeByKey(
+      moviles.map(extractEquipoIdFromMovil).filter((n) => n !== null),
+      (n) => String(n)
+    );
+
+    let equipos = equipoIdsFromMoviles.length ? await EquipoAVL.find({ ID: { $in: equipoIdsFromMoviles } }).lean() : [];
+    let simcards = equipoIdsFromMoviles.length ? await Simcard.find({ ID: { $in: equipoIdsFromMoviles } }).lean() : [];
+    let clientes = clienteNames.length ? await Cliente.find({ Cliente: { $in: clienteNames } }).lean() : [];
+
+    // 5) Aplicar restricciones finales si el filtro existía (intersección con seeds)
+    if (hasCliente) {
+      const idSet = new Set(clientesByFilter.map((c) => c._id.toString()));
+      clientes = clientes.filter((c) => idSet.has(c._id.toString()));
     }
 
-    console.log('\n=== RESULTADOS FINALES ===');
-    console.log(`Clientes: ${clientes.length}, Móviles: ${moviles.length}, Equipos: ${equipos.length}, Simcards: ${simcards.length}`);
+    if (hasEquipo) {
+      const idSet = new Set(equiposByFilter.map((e) => String(e.ID)));
+      equipos = equipos.filter((e) => idSet.has(String(e.ID)));
+      // Si hay filtro equipo, también acota simcards a esos equipos
+      const eqIds = equipos.map((e) => toNumberSafeLocal(e.ID)).filter((n) => n !== null);
+      simcards = simcards.filter((s) => eqIds.includes(toNumberSafeLocal(s.ID)));
+    }
 
-    res.json(
+    if (hasSimcard) {
+      const idSet = new Set(simcardsByFilter.map((s) => s._id.toString()));
+      simcards = simcards.filter((s) => idSet.has(s._id.toString()));
+      // Si hay filtro simcard, acota equipos a los IDs de esas simcards
+      const simEqIds = dedupeByKey(
+        simcards.map((s) => toNumberSafeLocal(s.ID)).filter((n) => n !== null),
+        (n) => String(n)
+      );
+      equipos = equipos.filter((e) => simEqIds.includes(toNumberSafeLocal(e.ID)));
+    }
+
+    // 6) Dedup final
+    clientes = dedupeByKey(clientes, (c) => c?._id?.toString());
+    moviles = dedupeByKey(moviles, (m) => m?._id?.toString());
+    equipos = dedupeByKey(equipos, (e) => String(e.ID));
+    simcards = dedupeByKey(simcards, (s) => String(s.ICCID ?? s._id));
+
+    return res.json(
       bsonToJsonSafe({
         Cliente: clientes,
         Movil: moviles,
@@ -349,9 +432,8 @@ exports.searchData = async (req, res) => {
       })
     );
   } catch (error) {
-    console.error('\n=== ERROR EN LA BÚSQUEDA ===');
-    console.error(error);
-    res.status(500).json({ message: 'Error al realizar la búsqueda', error: error.message });
+    console.error('Error en searchData:', error);
+    return res.status(500).json({ message: 'Error al realizar la búsqueda', error: error.message });
   }
 };
 
