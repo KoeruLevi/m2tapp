@@ -1,16 +1,47 @@
 // utils/mailer.js
-const SibApiV3Sdk = require('sib-api-v3-sdk');
+const PROVIDER = (process.env.MAIL_PROVIDER || 'resend').toLowerCase();
 
-const PROVIDER = (process.env.MAIL_PROVIDER || 'brevo').toLowerCase();
-// Para Brevo:
-const BREVO_KEY = process.env.BREVO_API_KEY;
-// Remitente (usa el mismo para cualquier proveedor)
-const FROM_EMAIL = process.env.MAIL_FROM || process.env.SMTP_FROM || process.env.SMTP_USER;
+// Remitente (para cualquier proveedor)
+const FROM_EMAIL = process.env.MAIL_FROM; // ej: "soporte@tudominio.com"
 const FROM_NAME  = process.env.MAIL_FROM_NAME || 'Soporte M2T';
 
-// --- Inicialización Brevo ---
+// ============ RESEND ============
+let resendClient = null;
+if (PROVIDER === 'resend') {
+  const RESEND_KEY = process.env.RESEND_API_KEY;
+
+  if (!RESEND_KEY) {
+    console.warn('[MAILER] RESEND_API_KEY no está configurada. No se enviarán correos.');
+  } else {
+    // Resend SDK (CommonJS)
+    let ResendCtor = null;
+    try {
+      // Algunas versiones exponen { Resend }
+      ResendCtor = require('resend').Resend;
+    } catch (_) {
+      ResendCtor = null;
+    }
+
+    if (!ResendCtor) {
+      // fallback por si el export cambia
+      const pkg = require('resend');
+      ResendCtor = pkg.Resend || pkg.default || pkg;
+    }
+
+    resendClient = new ResendCtor(RESEND_KEY);
+  }
+
+  if (!FROM_EMAIL) {
+    console.warn('[MAILER] MAIL_FROM no está configurado. Resend requiere "from" válido (dominio verificado).');
+  }
+}
+
+// ============ BREVO (opcional) ============
 let brevoTransactional = null;
 if (PROVIDER === 'brevo') {
+  const SibApiV3Sdk = require('sib-api-v3-sdk');
+  const BREVO_KEY = process.env.BREVO_API_KEY;
+
   if (!BREVO_KEY) {
     console.warn('[MAILER] BREVO_API_KEY no está configurada. No se enviarán correos.');
   } else {
@@ -18,6 +49,10 @@ if (PROVIDER === 'brevo') {
     const apiKey = defaultClient.authentications['api-key'];
     apiKey.apiKey = BREVO_KEY;
     brevoTransactional = new SibApiV3Sdk.TransactionalEmailsApi();
+  }
+
+  if (!FROM_EMAIL) {
+    console.warn('[MAILER] MAIL_FROM no está configurado. Brevo requiere sender verificado.');
   }
 }
 
@@ -30,20 +65,53 @@ function normalizeList(to) {
 }
 
 /**
- * Enviar correo (actualmente Brevo).
+ * Enviar correo
  * @param {{to:string|string[], subject:string, html?:string, text?:string}} param0
  */
 async function sendMail({ to, subject, html, text }) {
   const list = normalizeList(to);
   if (!list.length) return;
 
+  // -------- RESEND --------
+  if (PROVIDER === 'resend') {
+    if (!resendClient || !FROM_EMAIL) {
+      console.log('[MAILER] Envío omitido (Resend no configurado). Destinatarios:', list);
+      return;
+    }
+
+    const from = FROM_NAME ? `${FROM_NAME} <${FROM_EMAIL}>` : FROM_EMAIL;
+
+    try {
+      // Resend: admite "to" como string o array
+      const resp = await resendClient.emails.send({
+        from,
+        to: list,
+        subject,
+        html: html || undefined,
+        text: text || undefined,
+      });
+
+      // resp suele traer id
+      console.log('[MAILER] Resend OK ->', list.join(', '), 'id:', resp?.data?.id || resp?.id);
+    } catch (err) {
+      const detail =
+        err?.response?.data ||
+        err?.message ||
+        err;
+      console.error('[MAILER] Error Resend:', detail);
+    }
+    return;
+  }
+
+  // -------- BREVO --------
   if (PROVIDER === 'brevo') {
-    if (!brevoTransactional) {
+    if (!brevoTransactional || !FROM_EMAIL) {
       console.log('[MAILER] Envío omitido (Brevo no configurado). Destinatarios:', list);
       return;
     }
+
     const payload = {
-      sender: { email: FROM_EMAIL, name: FROM_NAME }, // remitente DEBES tenerlo verificado en Brevo
+      sender: { email: FROM_EMAIL, name: FROM_NAME },
       to: list.map(email => ({ email })),
       subject,
       htmlContent: html,
@@ -56,12 +124,10 @@ async function sendMail({ to, subject, html, text }) {
     } catch (err) {
       const detail = err?.response?.text || err?.message || err;
       console.error('[MAILER] Error Brevo:', detail);
-      // No relanzamos para no bloquear el flujo de la API
     }
     return;
   }
 
-  // Si en el futuro quieres soportar otros proveedores, agrégalos aquí.
   console.warn('[MAILER] MAIL_PROVIDER no soportado:', PROVIDER);
 }
 
