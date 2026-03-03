@@ -3,6 +3,58 @@ const fs = require('fs');
 const path = require('path');
 const { bsonToJsonSafe } = require('../utils/bsonSafe');
 
+// ====== NORMALIZACIÓN A MAYÚSCULAS (writes/updates/import) ======
+const UPPER_EXCLUDE_KEYS = new Set([
+  '_id', '__v', 'createdAt', 'updatedAt',
+  // si quieres que también se mayusculen mails/urls, quita estas claves del set:
+  'MAIL CONTACTO_1',
+  'IMAGEN \nINSTALACION', 'IMAGEN_1', 'IMAGEN_2', 'IMAGEN_3', 'IMAGEN_4',
+]);
+
+function isPlainObjectStrict(v) {
+  return Object.prototype.toString.call(v) === '[object Object]';
+}
+
+function shouldExcludeUpperKey(key) {
+  if (!key) return false;
+  if (UPPER_EXCLUDE_KEYS.has(key)) return true;
+  // por si agregas más imágenes a futuro tipo "IMAGEN_5"
+  if (key.startsWith('IMAGEN_')) return true;
+  return false;
+}
+
+function upperizeDeep(value, currentKey = '') {
+  if (value == null) return value;
+
+  if (typeof value === 'string') {
+    return value.trim().toUpperCase();
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((v) => upperizeDeep(v, currentKey));
+  }
+
+  // No tocar Date / Buffer / etc
+  if (!isPlainObjectStrict(value)) {
+    return value;
+  }
+
+  const out = {};
+  for (const [k, v] of Object.entries(value)) {
+    if (shouldExcludeUpperKey(k)) {
+      out[k] = v;
+    } else {
+      out[k] = upperizeDeep(v, k);
+    }
+  }
+  return out;
+}
+
+// Para checks case-insensitive (evita duplicados por mayúsc/minúsc)
+function escapeRegex(s) {
+  return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function formatearRut(rutInput) {
   if (!rutInput) return '';
   let cleanRut = rutInput.replace(/[^0-9kK]/g, '').toUpperCase();
@@ -163,6 +215,8 @@ function normalizeRow(tipo, row) {
     if (r.estado != null) r.estado = String(r.estado);
   }
 
+    // Mayusculiza todo lo string (excepto excluidos)
+  r = upperizeDeep(r);
   return r;
 }
 
@@ -479,61 +533,98 @@ exports.exportTodo = async (req, res) => {
 exports.createCliente = async (req, res) => {
   const { Cliente } = req.models;
   try {
-    req.body.RUT = formatearRut(req.body.RUT);
-    const existing = await Cliente.findOne({ RUT: req.body.RUT });
-    if (existing) return res.status(400).json({ message: 'Cliente con este RUT ya existe.' });
+    const body = upperizeDeep(req.body);
 
-    const cliente = new Cliente(req.body);
+    if (body.RUT) body.RUT = formatearRut(String(body.RUT));
+    if (body['CONDICION \nCLIENTE']) body['CONDICION \nCLIENTE'] = String(body['CONDICION \nCLIENTE']).toUpperCase();
+    else body['CONDICION \nCLIENTE'] = 'ACTIVO';
+
+    // Evitar duplicados por diferencia de mayúsc/minúsc
+    const existing = body.RUT
+      ? await Cliente.findOne({ RUT: body.RUT })
+      : await Cliente.findOne({ Cliente: new RegExp(`^${escapeRegex(body.Cliente)}$`, 'i') });
+
+    if (existing) {
+      return res.status(400).json({ message: 'Cliente con este RUT (o nombre) ya existe.' });
+    }
+
+    const cliente = new Cliente(body);
     const savedCliente = await cliente.save();
-    res.status(201).json(bsonToJsonSafe(savedCliente));
+    return res.status(201).json(bsonToJsonSafe(savedCliente));
   } catch (error) {
     console.error('Error al crear Cliente:', error);
-    res.status(500).json({ message: 'Error al crear Cliente', error: error.message });
+    return res.status(500).json({ message: 'Error al crear Cliente', error: error.message });
   }
 };
 
 exports.createMovil = async (req, res) => {
   const { Movil } = req.models;
   try {
-    const existing = await Movil.findOne({ Patente: req.body.Patente });
-    if (existing) return res.status(400).json({ message: 'Ya existe un móvil con esta patente.' });
+    const body = upperizeDeep(req.body);
 
-    const movil = new Movil(req.body);
+    if (body.Patente) body.Patente = String(body.Patente).trim().toUpperCase();
+    if (body.Cliente) body.Cliente = String(body.Cliente).trim().toUpperCase();
+
+    if (body['CONDICION \nMOVIL']) body['CONDICION \nMOVIL'] = String(body['CONDICION \nMOVIL']).toUpperCase();
+
+    // Normaliza Equipo Princ para que quede { "": NUMBER } si viene "10074" o 10074
+    body['Equipo Princ'] = normalizarEquipoPrinc(body['Equipo Princ']);
+
+    // Check case-insensitive
+    const existing = await Movil.findOne({ Patente: new RegExp(`^${escapeRegex(body.Patente)}$`, 'i') });
+    if (existing) {
+      return res.status(400).json({ message: 'Ya existe un móvil con esta patente.' });
+    }
+
+    const movil = new Movil(body);
     const savedMovil = await movil.save();
-    res.status(201).json(bsonToJsonSafe(savedMovil));
+    return res.status(201).json(bsonToJsonSafe(savedMovil));
   } catch (error) {
     console.error('Error al crear Movil:', error);
-    res.status(500).json({ message: 'Error al crear Movil', error: error.message });
+    return res.status(500).json({ message: 'Error al crear Movil', error: error.message });
   }
 };
 
 exports.createEquipoAVL = async (req, res) => {
   const { EquipoAVL } = req.models;
   try {
-    const existing = await EquipoAVL.findOne({ ID: req.body.ID });
-    if (existing) return res.status(400).json({ message: 'Ya existe un equipo con este ID.' });
+    const body = upperizeDeep(req.body);
+    if (body.ID != null) body.ID = Number(body.ID);
 
-    const equipo = new EquipoAVL(req.body);
+    const existing = await EquipoAVL.findOne({ ID: body.ID });
+    if (existing) {
+      return res.status(400).json({ message: 'Ya existe un equipo con este ID.' });
+    }
+
+    const equipo = new EquipoAVL(body);
     const savedEquipo = await equipo.save();
-    res.status(201).json(bsonToJsonSafe(savedEquipo));
+    return res.status(201).json(bsonToJsonSafe(savedEquipo));
   } catch (error) {
     console.error('Error al crear EquipoAVL:', error);
-    res.status(500).json({ message: 'Error al crear EquipoAVL', error: error.message });
+    return res.status(500).json({ message: 'Error al crear EquipoAVL', error: error.message });
   }
 };
 
 exports.createSimcard = async (req, res) => {
   const { Simcard } = req.models;
   try {
-    const existing = await Simcard.findOne({ fono: req.body.fono });
-    if (existing) return res.status(400).json({ message: 'Ya existe una simcard con este número.' });
+    const body = upperizeDeep(req.body);
 
-    const simcard = new Simcard(req.body);
+    if (body.fono != null) body.fono = Number(body.fono);
+    if (body.ID != null) body.ID = Number(body.ID);
+    if (body.estado != null) body.estado = String(body.estado).trim(); // enum ya define valores
+
+    const existing = await Simcard.findOne({ fono: body.fono });
+    if (existing) {
+      return res.status(400).json({ message: 'Ya existe una simcard con este número.' });
+    }
+
+    const simcard = new Simcard(body);
     const savedSimcard = await simcard.save();
-    res.status(201).json(bsonToJsonSafe(savedSimcard));
+    return res.status(201).json(bsonToJsonSafe(savedSimcard));
   } catch (error) {
     console.error('Error al crear Simcard:', error);
-    res.status(500).json({ message: 'Error al crear Simcard', error: error.message });
+    return res.status(500).json({ message: 'Error al crear Simcard', error: error.message });
   }
 };
 
@@ -684,7 +775,9 @@ exports.getHistorial = async (req, res) => {
 exports.updateDocumento = async (req, res) => {
   try {
     const { type, data } = req.body;
-    if (!type || !data || !data._id) {
+    const payload = upperizeDeep(data);
+    payload._id = data._id;
+    if (!type || !payload || !data._id) {
       return res.status(400).json({ message: 'Faltan datos para actualizar' });
     }
 
@@ -692,18 +785,18 @@ exports.updateDocumento = async (req, res) => {
     const peer = req.peerModels;
 
     if (type === 'Movil') {
-      if (data['Equipo Princ'] && typeof data['Equipo Princ'] === 'string' && !isNaN(data['Equipo Princ'])) {
-        data['Equipo Princ'] = { '': Number(data['Equipo Princ']) };
+      if (payload['Equipo Princ'] && typeof payload['Equipo Princ'] === 'string' && !isNaN(payload['Equipo Princ'])) {
+        payload['Equipo Princ'] = { '': Number(payload['Equipo Princ']) };
       }
-      if (typeof data['Equipo Princ'] === 'number') {
-        data['Equipo Princ'] = { '': data['Equipo Princ'] };
+      if (typeof payload['Equipo Princ'] === 'number') {
+        payload['Equipo Princ'] = { '': payload['Equipo Princ'] };
       }
     }
-    if (type === 'Cliente' && data['CONDICION \nCLIENTE']) {
-      data['CONDICION \nCLIENTE'] = String(data['CONDICION \nCLIENTE']).toUpperCase();
+    if (type === 'Cliente' && payload['CONDICION \nCLIENTE']) {
+      payload['CONDICION \nCLIENTE'] = String(payload['CONDICION \nCLIENTE']).toUpperCase();
     }
-    if (type === 'Movil' && data['CONDICION \nMOVIL']) {
-      data['CONDICION \nMOVIL'] = String(data['CONDICION \nMOVIL']).toUpperCase();
+    if (type === 'Movil' && payload['CONDICION \nMOVIL']) {
+      payload['CONDICION \nMOVIL'] = String(payload['CONDICION \nMOVIL']).toUpperCase();
     }
 
     let Modelo;
@@ -713,16 +806,16 @@ exports.updateDocumento = async (req, res) => {
     else if (type === 'Simcard') Modelo = Simcard;
     else return res.status(400).json({ message: 'Tipo no válido' });
 
-    const prevDoc = await Modelo.findById(data._id).lean();
+    const prevDoc = await Modelo.findById(payload._id).lean();
     if (!prevDoc) return res.status(404).json({ message: 'Documento no encontrado' });
 
-    await Modelo.updateOne({ _id: data._id }, data);
-    const newDoc = await Modelo.findById(data._id).lean();
+    await Modelo.updateOne({ _id: payload._id }, payload);
+    const newDoc = await Modelo.findById(payload._id).lean();
 
     try {
       if (HistorialCambio && req.user) {
         const cambios = [];
-        const touchedTop = new Set(Object.keys(data).map((k) => k.split('.')[0]));
+        const touchedTop = new Set(Object.keys(payload).map((k) => k.split('.')[0]));
 
         for (const k of touchedTop) {
           const before = prevDoc[k];
@@ -733,7 +826,7 @@ exports.updateDocumento = async (req, res) => {
         if (cambios.length) {
           await HistorialCambio.create({
             entidad: type,
-            entidadId: data._id,
+            entidadId: payload._id,
             usuario: {
               id: req.user._id,
               nombre: req.user.nombre,
@@ -937,7 +1030,7 @@ exports.assignEquipoToMovil = async (req, res) => {
   try {
     const { EquipoAVL, Movil } = req.models;
     const equipoId = toNumberSafe(req.body.equipoId);
-    const patente = (req.body.patente || '').trim();
+    const patente = String(req.body.patente || '').trim().toUpperCase();
 
     if (equipoId === null || !patente) return res.status(400).json({ message: 'equipoId y patente son obligatorios' });
 
@@ -962,7 +1055,7 @@ exports.assignEquipoToMovil = async (req, res) => {
 exports.assignSimcardToEquipo = async (req, res) => {
   try {
     const { Simcard, EquipoAVL } = req.models;
-    const iccid = (req.body.iccid || '').trim();
+    const iccid = (req.body.iccid || '').trim().toUpperCase();
     const equipoId = toNumberSafe(req.body.equipoId);
 
     if (!iccid || equipoId === null) return res.status(400).json({ message: 'iccid y equipoId son obligatorios' });
