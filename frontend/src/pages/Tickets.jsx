@@ -533,21 +533,29 @@ const Tickets = () => {
 
               <label>Asignar a:</label>
               <div className="assignees-list">
-                {users.map(u => (
-                  <label key={u._id} className="check">
-                    <input
-                      type="checkbox"
-                      checked={assignees.includes(u._id)}
-                      disabled={creating}
-                      onChange={(e) => {
-                        const on = e.target.checked;
-                        setAssignees(prev => on ? [...prev, u._id] : prev.filter(x => x !== u._id));
-                      }}
-                    />
-                    <span>{u.nombre} <span className="muted">({u.email})</span></span>
-                  </label>
-                ))}
-              </div>
+              {users.map((u) => {
+              const checked = assignees.includes(u._id);
+
+              return (
+                  <label key={u._id} className={`assignee-row ${checked ? 'is-checked' : ''}`}>
+                  <div className="assignee-info">
+                    <div className="assignee-name">{u.nombre}</div>
+                    <div className="assignee-email">{u.email}</div>
+                  </div>
+
+        <input
+          type="checkbox"
+          checked={checked}
+          disabled={creating}
+          onChange={(e) => {
+            const on = e.target.checked;
+            setAssignees((prev) => (on ? [...prev, u._id] : prev.filter((x) => x !== u._id)));
+          }}
+        />
+      </label>
+    );
+  })}
+</div>
 
               <div className="modal-actions">
                 <button type="button" onClick={() => !creating && setOpenCreate(false)} disabled={creating}>
