@@ -392,44 +392,55 @@ exports.searchData = async (req, res) => {
     let moviles = intersectById(movilSets);
     moviles = dedupeByKey(moviles, (m) => m?._id?.toString());
 
-    // 3) Si NO hay móviles, igual permite búsquedas solo Equipo/Simcard (relación directa)
     const onlyEquipoSim = !hasCliente && !hasMovil && (hasEquipo || hasSimcard);
 
-    if (moviles.length === 0) {
-      if (!onlyEquipoSim) {
-        return res.json(bsonToJsonSafe({ Cliente: [], Movil: [], EquipoAVL: [], Simcard: [] }));
-      }
+if (moviles.length === 0) {
+  // ✅ FIX: si la búsqueda es SOLO por cliente, devuelve clientes aunque no tengan móviles
+  const onlyCliente = hasCliente && !hasMovil && !hasEquipo && !hasSimcard;
+  if (onlyCliente) {
+    const clientesSolo = dedupeByKey(clientesByFilter, (c) => c?._id?.toString());
+    return res.json(
+      bsonToJsonSafe({
+        Cliente: clientesSolo,
+        Movil: [],
+        EquipoAVL: [],
+        Simcard: [],
+      })
+    );
+  }
 
-      // Caso: solo equipo y/o simcard (sin móviles). Devuelve relación Equipo<->Simcard.
-      let equipos = equiposByFilter;
-      let simcards = simcardsByFilter;
+  if (!onlyEquipoSim) {
+    return res.json(bsonToJsonSafe({ Cliente: [], Movil: [], EquipoAVL: [], Simcard: [] }));
+  }
 
-      if (hasEquipo && !hasSimcard) {
-        const eqIds = equipos.map((e) => toNumberSafeLocal(e.ID)).filter((n) => n !== null);
-        simcards = eqIds.length ? await Simcard.find({ ID: { $in: eqIds } }).lean() : [];
-      } else if (hasSimcard && !hasEquipo) {
-        const simEqIds = dedupeByKey(
-          simcards
-            .map((s) => toNumberSafeLocal(s.ID))
-            .filter((n) => n !== null),
-          (n) => String(n)
-        );
-        equipos = simEqIds.length ? await EquipoAVL.find({ ID: { $in: simEqIds } }).lean() : [];
-      } else if (hasEquipo && hasSimcard) {
-        const eqSet = new Set(equiposByFilter.map((e) => toNumberSafeLocal(e.ID)).filter((n) => n !== null));
-        simcards = simcardsByFilter.filter((s) => eqSet.has(toNumberSafeLocal(s.ID)));
-        const interIds = dedupeByKey(
-          simcards.map((s) => toNumberSafeLocal(s.ID)).filter((n) => n !== null),
-          (n) => String(n)
-        );
-        equipos = interIds.length ? await EquipoAVL.find({ ID: { $in: interIds } }).lean() : [];
-      }
+  // Caso: solo equipo y/o simcard (sin móviles). Devuelve relación Equipo<->Simcard.
+  let equipos = equiposByFilter;
+  let simcards = simcardsByFilter;
 
-      equipos = dedupeByKey(equipos, (e) => String(e.ID));
-      simcards = dedupeByKey(simcards, (s) => String(s.ICCID ?? s._id));
+  if (hasEquipo && !hasSimcard) {
+    const eqIds = equipos.map((e) => toNumberSafeLocal(e.ID)).filter((n) => n !== null);
+    simcards = eqIds.length ? await Simcard.find({ ID: { $in: eqIds } }).lean() : [];
+  } else if (hasSimcard && !hasEquipo) {
+    const simEqIds = dedupeByKey(
+      simcards.map((s) => toNumberSafeLocal(s.ID)).filter((n) => n !== null),
+      (n) => String(n)
+    );
+    equipos = simEqIds.length ? await EquipoAVL.find({ ID: { $in: simEqIds } }).lean() : [];
+  } else if (hasEquipo && hasSimcard) {
+    const eqSet = new Set(equiposByFilter.map((e) => toNumberSafeLocal(e.ID)).filter((n) => n !== null));
+    simcards = simcardsByFilter.filter((s) => eqSet.has(toNumberSafeLocal(s.ID)));
+    const interIds = dedupeByKey(
+      simcards.map((s) => toNumberSafeLocal(s.ID)).filter((n) => n !== null),
+      (n) => String(n)
+    );
+    equipos = interIds.length ? await EquipoAVL.find({ ID: { $in: interIds } }).lean() : [];
+  }
 
-      return res.json(bsonToJsonSafe({ Cliente: [], Movil: [], EquipoAVL: equipos, Simcard: simcards }));
-    }
+  equipos = dedupeByKey(equipos, (e) => String(e.ID));
+  simcards = dedupeByKey(simcards, (s) => String(s.ICCID ?? s._id));
+
+  return res.json(bsonToJsonSafe({ Cliente: [], Movil: [], EquipoAVL: equipos, Simcard: simcards }));
+}
 
     // 4) Con móviles encontrados, derivar el resto en cadena
     const clienteNames = dedupeByKey(
