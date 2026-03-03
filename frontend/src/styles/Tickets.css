@@ -274,3 +274,106 @@
   cursor: pointer;
   color: #334;
 }
+
+.ticket-main {
+  cursor: pointer;
+}
+.ticket-main:focus {
+  outline: none;
+}
+
+/* Body truncado (visual) */
+.t-body--trunc {
+  color: #1f3b82;
+}
+.t-body--trunc:hover {
+  text-decoration: underline;
+}
+
+/* Modal detalles / resultado */
+.ticket-modal {
+  width: 820px;
+  max-width: 96vw;
+}
+.result-modal {
+  width: 720px;
+  max-width: 96vw;
+}
+
+.ticket-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.ticket-modal-title {
+  font-weight: 800;
+  color: #1f3b82;
+}
+
+.ticket-modal-close {
+  border: none;
+  background: #eef4ff;
+  color: #1f3b82;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.ticket-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 16px;
+  border: 1px solid #e6eeff;
+  background: #f7faff;
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}
+
+.ticket-section {
+  border: 1px solid #e6eeff;
+  background: #fff;
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}
+
+.ticket-section-title {
+  font-weight: 800;
+  color: #1f3b82;
+  margin-bottom: 8px;
+}
+
+.ticket-pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: #223;
+  background: #f7faff;
+  border: 1px solid #e6eeff;
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.ticket-modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.result-textarea {
+  width: 100%;
+  border: 1px solid #d6e3ff;
+  border-radius: 10px;
+  padding: 10px 12px;
+  resize: vertical;
+  min-height: 160px;
+  background: #ffffff;
+}
