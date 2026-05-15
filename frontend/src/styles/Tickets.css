@@ -463,3 +463,93 @@
   accent-color: #2d6cdf;
   flex: 0 0 auto;
 }
+
+/* ===== MODAL CREAR TICKET CENTRADO ===== */
+
+.create-ticket-modal {
+  width: 720px;
+  max-width: 96vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 28px 32px;
+}
+
+.create-ticket-title {
+  text-align: center;
+  color: #0b3768;
+  font-weight: 800;
+  margin: 0 0 24px;
+}
+
+.create-ticket-form {
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.create-ticket-form label {
+  text-align: center;
+  color: #0b3768;
+  font-weight: 700;
+  margin: 12px 0 6px;
+}
+
+/* Inputs y textareas del modal: fondo claro + texto legible */
+.create-ticket-modal input,
+.create-ticket-modal textarea,
+.create-ticket-modal select,
+.result-modal textarea,
+.ticket-modal textarea,
+.result-textarea {
+  background: #f4f7fb !important;
+  color: #111827 !important;
+  caret-color: #111827 !important;
+  border: 1px solid #c8d7ee !important;
+  border-radius: 10px !important;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.create-ticket-modal input::placeholder,
+.create-ticket-modal textarea::placeholder,
+.result-textarea::placeholder {
+  color: #6b7280 !important;
+  opacity: 1;
+}
+
+.create-ticket-modal input:focus,
+.create-ticket-modal textarea:focus,
+.result-textarea:focus {
+  outline: none;
+  border-color: #2d6cdf !important;
+  box-shadow: 0 0 0 3px rgba(45, 108, 223, 0.18);
+  background: #ffffff !important;
+}
+
+/* Tamaño más cómodo para descripción */
+.create-ticket-modal textarea {
+  min-height: 150px;
+  resize: vertical;
+}
+
+/* Date input legible */
+.create-ticket-modal input[type="datetime-local"] {
+  color-scheme: light;
+}
+
+/* Lista de usuarios centrada visualmente */
+.create-ticket-modal .assignees-list {
+  width: 100%;
+  max-height: 230px;
+  margin: 0 auto;
+  background: #f7fbff;
+}
+
+/* Botones del modal centrados */
+.create-ticket-modal .modal-actions {
+  justify-content: center;
+  margin-top: 16px;
+}

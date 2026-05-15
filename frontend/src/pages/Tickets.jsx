@@ -504,9 +504,9 @@ const Tickets = () => {
       {/* Modal crear ticket (sin cambios funcionales) */}
       {openCreate && (
         <div className="modal-overlay">
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h3>Nuevo ticket</h3>
-            <form onSubmit={createTicket} className="create-form">
+          <div className="modal create-ticket-modal" onClick={(e) => e.stopPropagation()}>
+            <h3 className="create-ticket-title">Nuevo ticket</h3>
+            <form onSubmit={createTicket} className="create-form create-ticket-form">
               <input
                 placeholder="Título"
                 value={title}
