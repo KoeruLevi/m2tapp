@@ -12,6 +12,130 @@ const canEditResult = (user, ticket) => {
   if (String(ticket.createdBy) === String(user._id)) return true;
   return (ticket.assignees || []).some(a => String(a) === String(user._id));
 };
+function escapeHtml(value = '') {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function nl2br(value = '') {
+  return escapeHtml(value).replace(/\r?\n/g, '<br/>');
+}
+
+function buildTicketAssignedText({ ticket, limit, appUrl }) {
+  return `Se te asignó el Ticket #${ticket.number}
+
+Título: ${ticket.title}
+
+Descripción:
+${ticket.body}
+
+Fecha límite: ${limit}
+
+Ir a la app: ${appUrl}/tickets
+`;
+}
+
+function buildTicketAssignedHtml({ ticket, limit, appUrl }) {
+  const safeNumber = escapeHtml(ticket.number);
+  const safeTitle = escapeHtml(ticket.title);
+  const safeBody = nl2br(ticket.body);
+  const safeLimit = escapeHtml(limit);
+  const safeAppUrl = escapeHtml(`${appUrl}/tickets`);
+
+  return `
+<!doctype html>
+<html>
+  <body style="margin:0; padding:0; background:#eef6ff; font-family:Arial, Helvetica, sans-serif; color:#0b2f57;">
+    <div style="display:none; max-height:0; overflow:hidden; opacity:0;">
+      Se te asignó el Ticket #${safeNumber}: ${safeTitle}
+    </div>
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eef6ff; padding:28px 0;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px; max-width:94%; background:#ffffff; border-radius:16px; overflow:hidden; box-shadow:0 8px 24px rgba(0,0,0,0.10);">
+            
+            <tr>
+              <td style="background:#007bff; padding:22px 28px; color:#ffffff;">
+                <div style="font-size:22px; font-weight:700; letter-spacing:.2px;">
+                  Soporte M2T
+                </div>
+                <div style="font-size:14px; opacity:.92; margin-top:4px;">
+                  Nuevo ticket asignado
+                </div>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="padding:28px;">
+                <div style="margin-bottom:18px;">
+                  <span style="display:inline-block; background:#e8f1ff; color:#0057c2; border:1px solid #cfe3ff; border-radius:999px; padding:7px 12px; font-size:13px; font-weight:700;">
+                    Ticket #${safeNumber}
+                  </span>
+                </div>
+
+                <h1 style="margin:0 0 12px; font-size:24px; line-height:1.25; color:#003b73;">
+                  ${safeTitle}
+                </h1>
+
+                <p style="margin:0 0 22px; font-size:15px; line-height:1.6; color:#334;">
+                  Se te asignó un nuevo ticket en la plataforma de soporte M2T.
+                </p>
+
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse; margin:0 0 22px;">
+                  <tr>
+                    <td style="padding:14px 16px; background:#f7fbff; border:1px solid #dbeafe; border-radius:12px;">
+                      <div style="font-size:13px; font-weight:700; color:#1f3b82; margin-bottom:8px;">
+                        Descripción
+                      </div>
+                      <div style="font-size:15px; line-height:1.6; color:#222;">
+                        ${safeBody || '—'}
+                      </div>
+                    </td>
+                  </tr>
+                </table>
+
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse; margin:0 0 24px;">
+                  <tr>
+                    <td style="padding:14px 16px; background:#fff8e6; border:1px solid #ffe0a3; border-radius:12px;">
+                      <div style="font-size:13px; font-weight:700; color:#8a5a00; margin-bottom:4px;">
+                        Fecha límite
+                      </div>
+                      <div style="font-size:16px; font-weight:700; color:#4a3200;">
+                        ${safeLimit}
+                      </div>
+                    </td>
+                  </tr>
+                </table>
+
+                <div style="text-align:center; margin:28px 0 10px;">
+                  <a href="${safeAppUrl}" target="_blank" rel="noopener" style="display:inline-block; background:#007bff; color:#ffffff; text-decoration:none; padding:13px 22px; border-radius:10px; font-size:15px; font-weight:700;">
+                    Abrir ticket en M2Tapp
+                  </a>
+                </div>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="padding:18px 28px; background:#f5f8fc; border-top:1px solid #e6eef8; color:#667; font-size:12px; line-height:1.5;">
+                Este correo fue generado automáticamente por la plataforma de soporte M2T.
+                <br/>
+                No respondas directamente a este mensaje si el buzón no está habilitado para respuestas.
+              </td>
+            </tr>
+
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
+`;
+}
 /** VO listo para UI */
 function viewOf(ticket) {
   const t = ticket;
@@ -150,26 +274,17 @@ exports.create = async (req, res) => {
           : '—';
         const appUrl = process.env.APP_URL || 'https://m2tapp.vercel.app';
 
-        const text = `Se te asignó el Ticket #${payload.number}
+        const text = buildTicketAssignedText({
+          ticket: payload,
+          limit,
+          appUrl,
+        });
 
-Título: ${payload.title}
-
-Descripción:
-${payload.body}
-
-Fecha límite: ${limit}
-
-Ir a la app: ${appUrl}/tickets
-`;
-
-        const html = `
-          <p>Se te asignó el <b>Ticket #${payload.number}</b></p>
-          <p><b>Título:</b> ${payload.title}</p>
-          <p><b>Descripción:</b><br/>${String(payload.body || '')
-            .replace(/\n/g, '<br/>')}</p>
-          <p><b>Fecha límite:</b> ${limit}</p>
-          <p><a href="${appUrl}/tickets" target="_blank" rel="noopener">Abrir en la app</a></p>
-        `;
+        const html = buildTicketAssignedHtml({
+          ticket: payload,
+          limit,
+          appUrl,
+        });
 
         await sendMail({ to, subject: subj, text, html });
       } catch (e) {
