@@ -2,3 +2,4 @@ docker-compose.yml
 .env
 backend/.env
 
+backend/.env

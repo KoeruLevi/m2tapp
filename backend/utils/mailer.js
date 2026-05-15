@@ -1,134 +1,145 @@
 // utils/mailer.js
-const PROVIDER = (process.env.MAIL_PROVIDER || 'resend').toLowerCase();
 
-// Remitente (para cualquier proveedor)
-const FROM_EMAIL = process.env.MAIL_FROM; // ej: "soporte@tudominio.com"
-const FROM_NAME  = process.env.MAIL_FROM_NAME || 'Soporte M2T';
+const PROVIDER = (process.env.MAIL_PROVIDER || 'emailjs').toLowerCase();
 
-// ============ RESEND ============
-let resendClient = null;
-if (PROVIDER === 'resend') {
-  const RESEND_KEY = process.env.RESEND_API_KEY;
+const FROM_NAME = process.env.MAIL_FROM_NAME || 'Soporte M2T';
 
-  if (!RESEND_KEY) {
-    console.warn('[MAILER] RESEND_API_KEY no está configurada. No se enviarán correos.');
-  } else {
-    // Resend SDK (CommonJS)
-    let ResendCtor = null;
-    try {
-      // Algunas versiones exponen { Resend }
-      ResendCtor = require('resend').Resend;
-    } catch (_) {
-      ResendCtor = null;
-    }
+// EmailJS
+const EMAILJS_SERVICE_ID = process.env.EMAILJS_SERVICE_ID;
+const EMAILJS_TEMPLATE_ID = process.env.EMAILJS_TEMPLATE_ID;
+const EMAILJS_PUBLIC_KEY = process.env.EMAILJS_PUBLIC_KEY;
+const EMAILJS_PRIVATE_KEY = process.env.EMAILJS_PRIVATE_KEY;
+const EMAILJS_REPLY_TO = process.env.EMAILJS_REPLY_TO || '';
 
-    if (!ResendCtor) {
-      // fallback por si el export cambia
-      const pkg = require('resend');
-      ResendCtor = pkg.Resend || pkg.default || pkg;
-    }
+const EMAILJS_ENDPOINT = 'https://api.emailjs.com/api/v1.0/email/send';
 
-    resendClient = new ResendCtor(RESEND_KEY);
-  }
-
-  if (!FROM_EMAIL) {
-    console.warn('[MAILER] MAIL_FROM no está configurado. Resend requiere "from" válido (dominio verificado).');
-  }
-}
-
-// ============ BREVO (opcional) ============
-let brevoTransactional = null;
-if (PROVIDER === 'brevo') {
-  const SibApiV3Sdk = require('sib-api-v3-sdk');
-  const BREVO_KEY = process.env.BREVO_API_KEY;
-
-  if (!BREVO_KEY) {
-    console.warn('[MAILER] BREVO_API_KEY no está configurada. No se enviarán correos.');
-  } else {
-    const defaultClient = SibApiV3Sdk.ApiClient.instance;
-    const apiKey = defaultClient.authentications['api-key'];
-    apiKey.apiKey = BREVO_KEY;
-    brevoTransactional = new SibApiV3Sdk.TransactionalEmailsApi();
-  }
-
-  if (!FROM_EMAIL) {
-    console.warn('[MAILER] MAIL_FROM no está configurado. Brevo requiere sender verificado.');
-  }
-}
+// EmailJS tiene rate limit de 1 request por segundo.
+// Como los tickets pueden tener varios asignados, se envía uno por uno.
+const EMAILJS_DELAY_MS = Number(process.env.EMAILJS_DELAY_MS || 1100);
 
 function normalizeList(to) {
   if (Array.isArray(to)) return to.filter(Boolean);
+
   return String(to || '')
     .split(',')
-    .map(s => s.trim())
+    .map((s) => s.trim())
     .filter(Boolean);
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function stripHtml(html = '') {
+  return String(html)
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .trim();
+}
+
+function ensureEmailJsConfig() {
+  const missing = [];
+
+  if (!EMAILJS_SERVICE_ID) missing.push('EMAILJS_SERVICE_ID');
+  if (!EMAILJS_TEMPLATE_ID) missing.push('EMAILJS_TEMPLATE_ID');
+  if (!EMAILJS_PUBLIC_KEY) missing.push('EMAILJS_PUBLIC_KEY');
+
+  if (missing.length) {
+    console.warn(`[MAILER] EmailJS no configurado. Faltan variables: ${missing.join(', ')}`);
+    return false;
+  }
+
+  return true;
+}
+
+async function sendEmailJsOne({ toEmail, subject, html, text }) {
+  if (typeof fetch !== 'function') {
+    console.error('[MAILER] fetch no está disponible. Usa Node 18+ o Node 20 en Render.');
+    return;
+  }
+
+  const messageText = text || stripHtml(html || '');
+
+  const payload = {
+    service_id: EMAILJS_SERVICE_ID,
+    template_id: EMAILJS_TEMPLATE_ID,
+    user_id: EMAILJS_PUBLIC_KEY,
+    template_params: {
+      to_email: toEmail,
+      from_name: FROM_NAME,
+      reply_to: EMAILJS_REPLY_TO,
+      subject,
+      message_text: messageText,
+      message_html: html || messageText,
+    },
+  };
+
+  // Private Key / Access Token de EmailJS.
+  // Es opcional en EmailJS, pero recomendado si se usa desde backend.
+  if (EMAILJS_PRIVATE_KEY) {
+    payload.accessToken = EMAILJS_PRIVATE_KEY;
+  }
+
+  const response = await fetch(EMAILJS_ENDPOINT, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const responseText = await response.text();
+
+  if (!response.ok) {
+    throw new Error(`EmailJS respondió ${response.status}: ${responseText}`);
+  }
+
+  console.log('[MAILER] EmailJS OK ->', toEmail, responseText || 'OK');
+}
+
 /**
- * Enviar correo
+ * Enviar correo.
+ * Mantiene la misma interfaz que ya usa ticketController.js:
+ * sendMail({ to, subject, html, text })
+ *
  * @param {{to:string|string[], subject:string, html?:string, text?:string}} param0
  */
 async function sendMail({ to, subject, html, text }) {
   const list = normalizeList(to);
-  if (!list.length) return;
 
-  // -------- RESEND --------
-  if (PROVIDER === 'resend') {
-    if (!resendClient || !FROM_EMAIL) {
-      console.log('[MAILER] Envío omitido (Resend no configurado). Destinatarios:', list);
-      return;
-    }
-
-    const from = FROM_NAME ? `${FROM_NAME} <${FROM_EMAIL}>` : FROM_EMAIL;
-
-    try {
-      // Resend: admite "to" como string o array
-      const resp = await resendClient.emails.send({
-        from,
-        to: list,
-        subject,
-        html: html || undefined,
-        text: text || undefined,
-      });
-
-      // resp suele traer id
-      console.log('[MAILER] Resend OK ->', list.join(', '), 'id:', resp?.data?.id || resp?.id);
-    } catch (err) {
-      const detail =
-        err?.response?.data ||
-        err?.message ||
-        err;
-      console.error('[MAILER] Error Resend:', detail);
-    }
+  if (!list.length) {
+    console.log('[MAILER] Envío omitido: no hay destinatarios.');
     return;
   }
 
-  // -------- BREVO --------
-  if (PROVIDER === 'brevo') {
-    if (!brevoTransactional || !FROM_EMAIL) {
-      console.log('[MAILER] Envío omitido (Brevo no configurado). Destinatarios:', list);
-      return;
-    }
-
-    const payload = {
-      sender: { email: FROM_EMAIL, name: FROM_NAME },
-      to: list.map(email => ({ email })),
-      subject,
-      htmlContent: html,
-      textContent: text,
-    };
-
-    try {
-      const data = await brevoTransactional.sendTransacEmail(payload);
-      console.log('[MAILER] Brevo OK ->', list.join(', '), 'messageId:', data?.messageId || data?.messageIds?.[0]);
-    } catch (err) {
-      const detail = err?.response?.text || err?.message || err;
-      console.error('[MAILER] Error Brevo:', detail);
-    }
+  if (PROVIDER !== 'emailjs') {
+    console.warn('[MAILER] MAIL_PROVIDER no soportado en este mailer:', PROVIDER);
     return;
   }
 
-  console.warn('[MAILER] MAIL_PROVIDER no soportado:', PROVIDER);
+  if (!ensureEmailJsConfig()) {
+    console.log('[MAILER] Envío omitido. Destinatarios:', list);
+    return;
+  }
+
+  for (let i = 0; i < list.length; i++) {
+    const toEmail = list[i];
+
+    try {
+      await sendEmailJsOne({ toEmail, subject, html, text });
+    } catch (err) {
+      console.error('[MAILER] Error EmailJS:', err?.message || err);
+    }
+
+    if (i < list.length - 1) {
+      await sleep(EMAILJS_DELAY_MS);
+    }
+  }
 }
 
 module.exports = { sendMail };

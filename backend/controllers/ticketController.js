@@ -6,7 +6,12 @@ const { sendMail } = require('../utils/mailer');
 const atLeastHalf = (doneCount, total) => total === 0 ? true : (doneCount / total) >= 0.5;
 const canManage = (user, ticket) =>
   user && (user.rol === 'admin' || String(ticket.createdBy) === String(user._id));
-
+const canEditResult = (user, ticket) => {
+  if (!user || !ticket) return false;
+  if (user.rol === 'admin') return true;
+  if (String(ticket.createdBy) === String(user._id)) return true;
+  return (ticket.assignees || []).some(a => String(a) === String(user._id));
+};
 /** VO listo para UI */
 function viewOf(ticket) {
   const t = ticket;
@@ -183,10 +188,22 @@ exports.updateMeta = async (req, res) => {
     const { id } = req.params;
     const t = await Ticket.findById(id);
     if (!t) return res.status(404).json({ message: 'Ticket no encontrado' });
-    if (!canManage(req.user, t)) return res.status(403).json({ message: 'No autorizado' });
 
-    if (typeof req.body.result === 'string') t.result = req.body.result.trim();
-    if (req.body.dueAt !== undefined) t.dueAt = req.body.dueAt ? new Date(req.body.dueAt) : null;
+    const wantsResult = typeof req.body.result === 'string';
+    const wantsDueAt = req.body.dueAt !== undefined;
+
+    // Permisos:
+    // - result: admin / creador / asignado
+    // - dueAt: admin / creador
+    if (wantsResult && !canEditResult(req.user, t)) {
+      return res.status(403).json({ message: 'No autorizado' });
+    }
+    if (wantsDueAt && !canManage(req.user, t)) {
+      return res.status(403).json({ message: 'No autorizado' });
+    }
+
+    if (wantsResult) t.result = req.body.result.trim();
+    if (wantsDueAt) t.dueAt = req.body.dueAt ? new Date(req.body.dueAt) : null;
 
     await t.save();
 
@@ -194,6 +211,7 @@ exports.updateMeta = async (req, res) => {
       .populate('createdBy', 'nombre email')
       .populate('assignees', 'nombre email')
       .lean();
+
     res.json(viewOf(withPop));
   } catch (err) {
     res.status(500).json({ message: 'Error al actualizar ticket', error: err.message });
